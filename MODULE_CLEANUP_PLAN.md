@@ -28,8 +28,10 @@ This plan consolidates a deep audit of the CloudERPs / Ghaima codebase. Each fin
 - ❌ Move accounting modules — out of scope for shared infra.
 - ❌ Theme modules — entire saas-theme repo excluded.
 
+### Done (continued, 2026-05-06 evening)
+- 🔴 **D1 — Geidea webhook HMAC verification hoisted to controller boundary.** Model-level `_process_notification_data` always verified the HMAC (forgery was not possible), but the controller acked 200 OK on any POST and let the model flip a real customer's tx into `error` state — a DoS vector for anyone who learned a `merchantReferenceId`. The controller now rejects unsigned/unknown/bad-signed webhooks with 400/401/404 before the tx record is ever touched. Verified with 8 curl scenarios including a synthetic valid-HMAC payload (tx transitioned `draft`→`cancel` as expected).
+
 ### Deferred / not yet started
-- **D1** — Geidea webhook HMAC signature verification (security)
 - **D8** — Retire `ab_saas_admin_dashboard` after `ab_saas_unified_dashboard` reaches feature parity
 - **D9** — Merge `ab_approval_flow` into `ab_approval_base`
 - **D10** — Merge `ab_ghaima_responsive` into `ab_ghaima_theme` (theme repo, excluded for now)
@@ -231,7 +233,7 @@ These were considered and found justified — listing so they aren't re-debated 
 
 Tick what you want to do; I'll plan implementation per item.
 
-- [ ] **D1** — Geidea webhook HMAC verification (P0 security) — *deferred*
+- [x] **D1** — Geidea webhook HMAC verification hoisted to controller boundary (was already enforced at model level; controller now rejects unsigned/bad-sig before touching tx state)
 - [x] **D2** — Unify `ab_s3_attachment` (canonical = apps copy with boto3 fallback fix; now in saas-share)
 - [x] **D3** — Delete `ab_redis_session` apps-side copy (was double-nested + dead; saas-client copy is canonical, now in saas-share)
 - [x] **D4** — Delete the 7 empty HR `_account` stubs
