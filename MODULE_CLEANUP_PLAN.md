@@ -30,9 +30,9 @@ This plan consolidates a deep audit of the CloudERPs / Ghaima codebase. Each fin
 
 ### Done (continued, 2026-05-06 evening)
 - 🔴 **D1 — Geidea webhook HMAC verification hoisted to controller boundary.** Model-level `_process_notification_data` always verified the HMAC (forgery was not possible), but the controller acked 200 OK on any POST and let the model flip a real customer's tx into `error` state — a DoS vector for anyone who learned a `merchantReferenceId`. The controller now rejects unsigned/unknown/bad-signed webhooks with 400/401/404 before the tx record is ever touched. Verified with 8 curl scenarios including a synthetic valid-HMAC payload (tx transitioned `draft`→`cancel` as expected).
+- **D8 — Investigated, no action needed.** The audit's framing was incorrect: `ab_saas_admin_dashboard` (real ~420-LOC dashboard widget with 2 models, JS, CSS, security) and `ab_saas_unified_dashboard` (1-XML-file menu-reparenting bridge with no Python) are **complementary, not competing**. Unified depends on admin and reparents its menu under Odoo's "Dashboards" root. Both stay.
 
 ### Deferred / not yet started
-- **D8** — Retire `ab_saas_admin_dashboard` after `ab_saas_unified_dashboard` reaches feature parity
 - **D9** — Merge `ab_approval_flow` into `ab_approval_base`
 - **D10** — Merge `ab_ghaima_responsive` into `ab_ghaima_theme` (theme repo, excluded for now)
 - **D11** — Mass author rebrand "Bytekol" → "Ghaima Tech" across `bk_*` manifests
@@ -240,7 +240,7 @@ Tick what you want to do; I'll plan implementation per item.
 - [x] **D5** — Retire `ab_dashboard_ai`
 - [x] **D6** — Extract `ab_mobile_api_common` (lives in saas-share)
 - [x] **D7** — Audit POS PIN fields — no duplication; removed one orphan file
-- [ ] **D8** — Retire `ab_saas_admin_dashboard` (after unified parity) — *deferred*
+- [x] **D8** — Investigated; no action. Admin and unified are complementary layers (admin = dashboard widget, unified = menu reparenting). Both stay.
 - [ ] **D9** — Merge `ab_approval_flow` into `ab_approval_base` — *deferred*
 - [ ] **D10** — Merge `ab_ghaima_responsive` into `ab_ghaima_theme` — *deferred (theme repo excluded)*
 - [ ] **D11** — Mass author rebrand to "Ghaima Tech" — *deferred*
