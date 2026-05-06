@@ -31,6 +31,9 @@ This plan consolidates a deep audit of the CloudERPs / Ghaima codebase. Each fin
 ### Done (continued, 2026-05-06 evening)
 - 🔴 **D1 — Geidea webhook HMAC verification hoisted to controller boundary.** Model-level `_process_notification_data` always verified the HMAC (forgery was not possible), but the controller acked 200 OK on any POST and let the model flip a real customer's tx into `error` state — a DoS vector for anyone who learned a `merchantReferenceId`. The controller now rejects unsigned/unknown/bad-signed webhooks with 400/401/404 before the tx record is ever touched. Verified with 8 curl scenarios including a synthetic valid-HMAC payload (tx transitioned `draft`→`cancel` as expected).
 - **D8 — Investigated, no action needed.** The audit's framing was incorrect: `ab_saas_admin_dashboard` (real ~420-LOC dashboard widget with 2 models, JS, CSS, security) and `ab_saas_unified_dashboard` (1-XML-file menu-reparenting bridge with no Python) are **complementary, not competing**. Unified depends on admin and reparents its menu under Odoo's "Dashboards" root. Both stay.
+- 🟢 **D11 — Author rebrand.** 11 manifests in `saas-erp` updated `'author': 'Bytekol'` → `'Ghaima Tech'`. `bk_acme` also got a `name` rename (`Bytekol - ACME` → `Ghaima Tech - ACME`).
+- 🟢 **D12 — Abstract methods + JSON error boundary.** `bk_odoo_entity_sale.controllers.main`: the 3 `NotImplementedError` stubs now carry explicit messages naming the subclass modules (`bk_odoo_saas_kit_pro` / `bk_odoo_saas_kit_subscription_ee`). New `_json_safe` decorator wraps the 3 `type='json'` routes (`/entity/check-subdomain`, `/get_other_*_creation_page_data`, `/entity/save-customer-info`) so `UserError`/`ValidationError` → `{success:False, error, code:USER_ERROR}` and unexpected exceptions → `{success:False, error:'Internal', code:SERVER_ERROR}` (no traceback leak).
+- 🟢 **D9 — Merge `ab_approval_flow` → `ab_approval_base`.** Flow's 3 models + 2 views + 4 ACL rows folded into base. `ab_approval_integration_hr` depends list shortened (no longer references `ab_approval_flow`). None of the approval modules were installed anywhere, so no data migration. Bonus: `<tree>` → `<list>` migration on 4 view files. Followup task #95: complete the Odoo-18 view migration (`attrs`, `states` removal) before anyone tries to install the approval engine.
 
 ### Deferred / not yet started
 - **D9** — Merge `ab_approval_flow` into `ab_approval_base`
@@ -241,10 +244,10 @@ Tick what you want to do; I'll plan implementation per item.
 - [x] **D6** — Extract `ab_mobile_api_common` (lives in saas-share)
 - [x] **D7** — Audit POS PIN fields — no duplication; removed one orphan file
 - [x] **D8** — Investigated; no action. Admin and unified are complementary layers (admin = dashboard widget, unified = menu reparenting). Both stay.
-- [ ] **D9** — Merge `ab_approval_flow` into `ab_approval_base` — *deferred*
+- [x] **D9** — Merged `ab_approval_flow` into `ab_approval_base`. Bonus tree→list migration. Followup #95 covers the remaining attrs/states migration.
 - [ ] **D10** — Merge `ab_ghaima_responsive` into `ab_ghaima_theme` — *deferred (theme repo excluded)*
-- [ ] **D11** — Mass author rebrand to "Ghaima Tech" — *deferred*
-- [ ] **D12** — Add `@abstractmethod` to `bk_odoo_entity_sale` hooks + JSON error boundaries — *deferred*
+- [x] **D11** — 11 manifests rebranded "Bytekol" → "Ghaima Tech"; bk_acme's name also updated.
+- [x] **D12** — `bk_odoo_entity_sale` abstract methods documented + `_json_safe` decorator wrapping the 3 type='json' routes.
 
 Bonus done: **`ab_ai_base` moved** from `saas-ai` → `saas-share`, and **`bytekol_db_filter`** dead module deleted (fork patch in `odoo/http.py` replaced its DB-routing role).
 
