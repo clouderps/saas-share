@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- AI Config Tree View -->
+    <record id="view_ai_provider_config_tree" model="ir.ui.view">
+        <field name="name">ai.provider.config.tree</field>
+        <field name="model">ai.provider.config</field>
+        <field name="arch" type="xml">
+            <list string="AI Configurations">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="ai_provider" widget="badge"/>
+                <field name="total_requests"/>
+                <field name="last_used"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- AI Config Form View -->
+    <record id="view_ai_provider_config_form" model="ir.ui.view">
+        <field name="name">ai.provider.config.form</field>
+        <field name="model">ai.provider.config</field>
+        <field name="arch" type="xml">
+            <form string="AI Configuration">
+                <header>
+                    <button name="action_test_connection"
+                            string="Test Connection"
+                            type="object"
+                            class="btn-primary"
+                            invisible="not ai_provider"/>
+                    <field name="active" widget="boolean_toggle"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="e.g., Production AI Config"/>
+                        </h1>
+                    </div>
+
+                    <group>
+                        <group>
+                            <field name="sequence"/>
+                            <field name="ai_provider" widget="radio"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group string="Usage Statistics">
+                            <field name="total_requests" readonly="1"/>
+                            <field name="total_tokens" readonly="1"/>
+                            <field name="last_used" readonly="1"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <!-- OpenAI Settings -->
+                        <page string="OpenAI Settings" name="openai_settings" invisible="ai_provider != 'openai'">
+                            <group>
+                                <div class="alert alert-info" role="alert">
+                                    <strong>OpenAI Configuration</strong>
+                                    <p>Get your API key from: <a href="https://platform.openai.com/api-keys" target="_blank">https://platform.openai.com/api-keys</a></p>
+                                </div>
+                            </group>
+                            <group>
+                                <group>
+                                    <field name="openai_model" widget="radio"/>
+                                </group>
+                                <group>
+                                    <field name="openai_api_key" password="True" placeholder="sk-..."/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <!-- Google Gemini Settings -->
+                        <page string="Google Gemini Settings" name="gemini_settings" invisible="ai_provider != 'google'">
+                            <group>
+                                <div class="alert alert-info" role="alert">
+                                    <strong>Google Gemini Configuration</strong>
+                                    <p>Get your API key from: <a href="https://makersuite.google.com/app/apikey" target="_blank">https://makersuite.google.com/app/apikey</a></p>
+                                </div>
+                            </group>
+                            <group>
+                                <group>
+                                    <field name="gemini_model" widget="radio"/>
+                                </group>
+                                <group>
+                                    <field name="gemini_api_key" password="True" placeholder="AIza..."/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <!-- Anthropic Claude Settings -->
+                        <page string="Anthropic Claude Settings" name="claude_settings" invisible="ai_provider != 'anthropic'">
+                            <group>
+                                <div class="alert alert-info" role="alert">
+                                    <strong>Anthropic Claude Configuration</strong>
+                                    <p>Get your API key from: <a href="https://console.anthropic.com/" target="_blank">https://console.anthropic.com/</a></p>
+                                </div>
+                            </group>
+                            <group>
+                                <group>
+                                    <field name="claude_model" widget="radio"/>
+                                </group>
+                                <group>
+                                    <field name="claude_api_key" password="True" placeholder="sk-ant-..."/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <!-- Local LLM Settings -->
+                        <page string="Local LLM Settings" name="local_settings" invisible="ai_provider != 'local'">
+                            <group>
+                                <div class="alert alert-info" role="alert">
+                                    <strong>Local LLM Configuration</strong>
+                                    <p>Configure your local LLM endpoint (e.g., Ollama running on localhost)</p>
+                                    <p>Install Ollama from: <a href="https://ollama.ai/" target="_blank">https://ollama.ai/</a></p>
+                                </div>
+                            </group>
+                            <group>
+                                <group>
+                                    <field name="local_llm_endpoint" placeholder="http://localhost:11434/api/generate"/>
+                                    <field name="local_llm_model" placeholder="llama2"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <!-- Generation Settings -->
+                        <page string="Generation Settings" name="generation_settings">
+                            <group>
+                                <group>
+                                    <field name="temperature"/>
+                                    <field name="max_tokens"/>
+                                </group>
+                                <group>
+                                    <field name="timeout"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <!-- System Prompt -->
+                        <page string="System Prompt" name="system_prompt">
+                            <group>
+                                <field name="system_prompt" widget="text" nolabel="1" placeholder="Default system prompt for AI calls..."/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- AI Config Action -->
+    <record id="action_ai_provider_config" model="ir.actions.act_window">
+        <field name="name">AI Configuration</field>
+        <field name="res_model">ai.provider.config</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Configure AI Integration
+            </p>
+            <p>
+                Set up your AI provider (OpenAI, Google Gemini, Anthropic Claude, or Local LLM) for AI-powered features across all modules.
+            </p>
+        </field>
+    </record>
+
+</odoo>

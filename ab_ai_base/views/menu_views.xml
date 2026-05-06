@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- AI Configuration menu under Settings -->
+    <menuitem id="menu_ai_config_root"
+              name="AI"
+              parent="base.menu_administration"
+              sequence="90"
+              groups="group_ai_manager"/>
+
+    <menuitem id="menu_ai_provider_config"
+              name="AI Provider Configuration"
+              parent="menu_ai_config_root"
+              action="action_ai_provider_config"
+              sequence="1"/>
+
+</odoo>

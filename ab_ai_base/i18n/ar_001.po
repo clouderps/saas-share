@@ -1,0 +1,544 @@
+# Arabic (Saudi Arabia) translation for ab_ai_base.
+# This file contains the translation of the following modules:
+# 	* ab_ai_base
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-04 11:53+0000\n"
+"PO-Revision-Date: 2026-04-04 11:53+0000\n"
+"Last-Translator: \n"
+"Language-Team: Arabic (Saudi Arabia)\n"
+"Language: ar_001\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 ? 4 : 5;\n"
+
+#. module: ab_ai_base
+#: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
+msgid "<strong>Anthropic Claude Configuration</strong>"
+msgstr ""
+
+#. module: ab_ai_base
+#: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
+msgid "<strong>Google Gemini Configuration</strong>"
+msgstr ""
+
+#. module: ab_ai_base
+#: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
+msgid "<strong>Local LLM Configuration</strong>"
+msgstr ""
+
+#. module: ab_ai_base
+#: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
+msgid "<strong>OpenAI Configuration</strong>"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.ui.menu,name:ab_ai_base.menu_ai_config_root
+msgid "AI"
+msgstr "الذكاء الاصطناعي"
+
+#. module: ab_ai_base
+#: model:ir.actions.act_window,name:ab_ai_base.action_ai_provider_config
+#: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
+msgid "AI Configuration"
+msgstr ""
+
+#. module: ab_ai_base
+#: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_tree
+msgid "AI Configurations"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__ai_provider
+#: model:ir.module.category,name:ab_ai_base.module_category_ai
+msgid "AI Provider"
+msgstr "مزوّد الذكاء الاصطناعي"
+
+#. module: ab_ai_base
+#: model:ir.model,name:ab_ai_base.model_ai_provider_config
+#: model:ir.ui.menu,name:ab_ai_base.menu_ai_provider_config
+msgid "AI Provider Configuration"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model,name:ab_ai_base.model_ai_provider_service
+msgid "AI Provider Service"
+msgstr ""
+
+#. module: ab_ai_base
+#. odoo-python
+#: code:addons/ab_ai_base/models/ai_service.py:0
+msgid "AI connection successful!"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:res.groups,comment:ab_ai_base.group_ai_manager
+msgid "AI manager - full CRUD on AI provider configurations."
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.module.category,description:ab_ai_base.module_category_ai
+msgid "AI provider configuration and service"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:res.groups,comment:ab_ai_base.group_ai_user
+msgid "AI user - can use AI services but not configure them."
+msgstr ""
+
+#. module: ab_ai_base
+#: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
+msgid "AIza..."
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__active
+msgid "Active"
+msgstr "نشط"
+
+#. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__claude_api_key
+msgid "Anthropic API Key"
+msgstr ""
+
+#. module: ab_ai_base
+#. odoo-python
+#: code:addons/ab_ai_base/models/ai_config.py:0
+msgid "Anthropic API Key is required when using Claude provider"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__ai_provider__anthropic
+msgid "Anthropic Claude"
+msgstr ""
+
+#. module: ab_ai_base
+#: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
+msgid "Anthropic Claude Settings"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__claude_model__claude-3-haiku-20240307
+msgid "Claude 3 Haiku"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__claude_model__claude-3-opus-20240229
+msgid "Claude 3 Opus"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__claude_model__claude-3-sonnet-20240229
+msgid "Claude 3 Sonnet"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__claude_model__claude-3-5-haiku-20241022
+msgid "Claude 3.5 Haiku"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__claude_model__claude-3-5-sonnet-20241022
+msgid "Claude 3.5 Sonnet (Latest)"
+msgstr ""
+
+#. module: ab_ai_base
+#. odoo-python
+#: code:addons/ab_ai_base/models/ai_service.py:0
+msgid "Claude API Error: %s"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__claude_model
+msgid "Claude Model"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__company_id
+msgid "Company"
+msgstr "الشركة"
+
+#. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__name
+msgid "Configuration Name"
+msgstr ""
+
+#. module: ab_ai_base
+#: model_terms:ir.actions.act_window,help:ab_ai_base.action_ai_provider_config
+msgid "Configure AI Integration"
+msgstr ""
+
+#. module: ab_ai_base
+#: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
+msgid "Configure your local LLM endpoint (e.g., Ollama running on localhost)"
+msgstr ""
+
+#. module: ab_ai_base
+#. odoo-python
+#: code:addons/ab_ai_base/models/ai_config.py:0
+msgid "Connection Failed"
+msgstr ""
+
+#. module: ab_ai_base
+#. odoo-python
+#: code:addons/ab_ai_base/models/ai_config.py:0
+msgid "Connection Test"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields,help:ab_ai_base.field_ai_provider_config__temperature
+msgid "Controls randomness (0.0 = deterministic, 1.0 = creative)"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__create_uid
+msgid "Created by"
+msgstr "أنشئ بواسطة"
+
+#. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__create_date
+msgid "Created on"
+msgstr "أنشئ في"
+
+#. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__system_prompt
+msgid "Default System Prompt"
+msgstr ""
+
+#. module: ab_ai_base
+#: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
+msgid "Default system prompt for AI calls..."
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__display_name
+msgid "Display Name"
+msgstr "الاسم المعروض"
+
+#. module: ab_ai_base
+#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__openai_model__gpt-3_5-turbo
+msgid "GPT-3.5 Turbo"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__openai_model__gpt-4
+msgid "GPT-4"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__openai_model__gpt-4-turbo
+msgid "GPT-4 Turbo"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__openai_model__gpt-4o
+msgid "GPT-4o (Latest)"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__openai_model__gpt-4o-mini
+msgid "GPT-4o Mini"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__gemini_model__gemini-1_5-flash
+msgid "Gemini 1.5 Flash"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__gemini_model__gemini-1_5-pro
+msgid "Gemini 1.5 Pro"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__gemini_model__gemini-2_0-flash-exp
+msgid "Gemini 2.0 Flash (Experimental)"
+msgstr ""
+
+#. module: ab_ai_base
+#. odoo-python
+#: code:addons/ab_ai_base/models/ai_service.py:0
+msgid "Gemini API Error: %s"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__gemini_model
+msgid "Gemini Model"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__gemini_model__gemini-pro
+msgid "Gemini Pro"
+msgstr ""
+
+#. module: ab_ai_base
+#: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
+msgid "Generation Settings"
+msgstr ""
+
+#. module: ab_ai_base
+#: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
+msgid "Get your API key from:"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__gemini_api_key
+msgid "Google AI API Key"
+msgstr ""
+
+#. module: ab_ai_base
+#. odoo-python
+#: code:addons/ab_ai_base/models/ai_config.py:0
+msgid "Google AI API Key is required when using Gemini provider"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__ai_provider__google
+msgid "Google Gemini"
+msgstr ""
+
+#. module: ab_ai_base
+#: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
+msgid "Google Gemini Settings"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__id
+msgid "ID"
+msgstr "المعرّف"
+
+#. module: ab_ai_base
+#: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
+msgid "Install Ollama from:"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__write_uid
+msgid "Last Updated by"
+msgstr "آخر تحديث بواسطة"
+
+#. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__write_date
+msgid "Last Updated on"
+msgstr "آخر تحديث في"
+
+#. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__last_used
+msgid "Last Used"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__ai_provider__local
+msgid "Local LLM"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__local_llm_endpoint
+msgid "Local LLM Endpoint"
+msgstr ""
+
+#. module: ab_ai_base
+#. odoo-python
+#: code:addons/ab_ai_base/models/ai_service.py:0
+msgid "Local LLM Error: %s"
+msgstr ""
+
+#. module: ab_ai_base
+#: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
+msgid "Local LLM Settings"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__local_llm_model
+msgid "Local Model Name"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:res.groups,name:ab_ai_base.group_ai_manager
+msgid "Manager"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__max_tokens
+msgid "Max Tokens"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields,help:ab_ai_base.field_ai_provider_config__max_tokens
+msgid "Maximum length of generated response"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields,help:ab_ai_base.field_ai_provider_config__timeout
+msgid "Maximum time to wait for AI response"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields,help:ab_ai_base.field_ai_provider_config__local_llm_model
+msgid "Model name (e.g., llama2, mistral, codellama)"
+msgstr ""
+
+#. module: ab_ai_base
+#. odoo-python
+#: code:addons/ab_ai_base/models/ai_config.py:0
+msgid "No active AI configuration found. Please configure AI settings first."
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields,help:ab_ai_base.field_ai_provider_config__local_llm_endpoint
+msgid "Ollama or other local LLM endpoint"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__ai_provider__openai
+msgid "OpenAI (ChatGPT)"
+msgstr ""
+
+#. module: ab_ai_base
+#. odoo-python
+#: code:addons/ab_ai_base/models/ai_service.py:0
+msgid "OpenAI API Error: %s"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__openai_api_key
+msgid "OpenAI API Key"
+msgstr ""
+
+#. module: ab_ai_base
+#. odoo-python
+#: code:addons/ab_ai_base/models/ai_config.py:0
+msgid "OpenAI API Key is required when using OpenAI provider"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__openai_model
+msgid "OpenAI Model"
+msgstr ""
+
+#. module: ab_ai_base
+#: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
+msgid "OpenAI Settings"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__timeout
+msgid "Request Timeout (seconds)"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__sequence
+msgid "Sequence"
+msgstr "التسلسل"
+
+#. module: ab_ai_base
+#: model_terms:ir.actions.act_window,help:ab_ai_base.action_ai_provider_config
+msgid ""
+"Set up your AI provider (OpenAI, Google Gemini, Anthropic Claude, or Local "
+"LLM) for AI-powered features across all modules."
+msgstr ""
+
+#. module: ab_ai_base
+#: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
+msgid "System Prompt"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__temperature
+msgid "Temperature"
+msgstr ""
+
+#. module: ab_ai_base
+#: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
+msgid "Test Connection"
+msgstr "اختبار الاتصال"
+
+#. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__total_requests
+msgid "Total Requests"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__total_tokens
+msgid "Total Tokens Used"
+msgstr ""
+
+#. module: ab_ai_base
+#. odoo-python
+#: code:addons/ab_ai_base/models/ai_service.py:0
+msgid "Unsupported AI provider: %s"
+msgstr ""
+
+#. module: ab_ai_base
+#: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
+msgid "Usage Statistics"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:res.groups,name:ab_ai_base.group_ai_user
+msgid "User"
+msgstr "المستخدم"
+
+#. module: ab_ai_base
+#: model:ir.model.fields,help:ab_ai_base.field_ai_provider_config__claude_api_key
+msgid "Your Anthropic API key from https://console.anthropic.com/"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields,help:ab_ai_base.field_ai_provider_config__gemini_api_key
+msgid "Your Google AI API key from https://makersuite.google.com/app/apikey"
+msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields,help:ab_ai_base.field_ai_provider_config__openai_api_key
+msgid "Your OpenAI API key from https://platform.openai.com/api-keys"
+msgstr ""
+
+#. module: ab_ai_base
+#: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
+msgid "e.g., Production AI Config"
+msgstr ""
+
+#. module: ab_ai_base
+#: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
+msgid "http://localhost:11434/api/generate"
+msgstr ""
+
+#. module: ab_ai_base
+#: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
+msgid "https://console.anthropic.com/"
+msgstr ""
+
+#. module: ab_ai_base
+#: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
+msgid "https://makersuite.google.com/app/apikey"
+msgstr ""
+
+#. module: ab_ai_base
+#: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
+msgid "https://ollama.ai/"
+msgstr ""
+
+#. module: ab_ai_base
+#: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
+msgid "https://platform.openai.com/api-keys"
+msgstr ""
+
+#. module: ab_ai_base
+#: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
+msgid "llama2"
+msgstr ""
+
+#. module: ab_ai_base
+#: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
+msgid "sk-..."
+msgstr ""
+
+#. module: ab_ai_base
+#: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
+msgid "sk-ant-..."
+msgstr ""
