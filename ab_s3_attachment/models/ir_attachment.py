@@ -114,13 +114,22 @@ class IrAttachment(models.Model):
                 Key=key
             )
             return response['Body'].read()
-        except Exception as e:
-            _logger.warning('S3 _file_read failed for key %s: %s', key, e)
-            # Fallback to local filesystem (for migration period)
+        except Exception as s3_err:
+            # Fallback to local filesystem (migration window) — but log
+            # both legs so a real "neither S3 nor disk" miss is observable
+            # instead of silently returning b'' to the browser.
             try:
-                return super()._file_read(fname)
+                data = super()._file_read(fname)
+                _logger.warning(
+                    'ab_s3_attachment: S3 miss for key=%s (%s) — served from local disk',
+                    key, type(s3_err).__name__,
+                )
+                return data
             except Exception:
-                pass
+                _logger.warning(
+                    'ab_s3_attachment: file missing in S3 and local disk: key=%s err=%s',
+                    key, s3_err,
+                )
         return b''
 
     def _to_http_stream(self):
@@ -154,6 +163,15 @@ class IrAttachment(models.Model):
             stream.type = 'data'
             stream.data = self.raw
         else:
+            # File truly missing — neither in S3 nor inline. Logged in
+            # _file_read above. Surface 404 via empty stream + size=0; the
+            # WARNING line plus this attachment's id/key makes the miss
+            # findable in journalctl.
+            _logger.warning(
+                'ab_s3_attachment: 404 for attachment id=%s name=%r key=%s — '
+                'file missing in both S3 and DB inline',
+                self.id, self.name, self._s3_key(self.store_fname or ''),
+            )
             stream.type = 'data'
             stream.data = b''
             stream.size = 0
