@@ -42,6 +42,9 @@
                         <group>
                             <field name="sequence"/>
                             <field name="ai_provider" widget="radio"/>
+                            <field name="fallback_provider_id"
+                                   options="{'no_create': True}"
+                                   help="Engaged on transport / 5xx from the primary. One-hop chain only."/>
                             <field name="company_id" groups="base.group_multi_company"/>
                         </group>
                         <group string="Usage Statistics">

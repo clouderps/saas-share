@@ -26,9 +26,24 @@ class AIProviderService(models.AbstractModel):
         Returns:
             tuple: (response_text, usage_dict) where usage_dict has:
                 prompt_tokens, completion_tokens, total_tokens, model, provider
+                (`provider` is 'simulation' when no real call was made).
+
+        Simulation (Phase 2 of SAAS_AI_PLAN.md):
+          - If ir.config_parameter `ab_ai_gateway.simulation` is True,
+            we short-circuit before any HTTP and return a canned
+            placeholder so the downstream pipeline still completes.
+          - If no active ai.provider.config exists, we also simulate
+            (rather than raising UserError) so a fresh install doesn't
+            crash every AI feature.
         """
+        if self._is_simulation_mode():
+            return self._simulate_call(reason='explicit_toggle')
+
         if not config:
-            config = self.env['ai.provider.config'].get_active_config()
+            config = self.env['ai.provider.config'].sudo().search(
+                [('active', '=', True)], limit=1)
+            if not config:
+                return self._simulate_call(reason='no_provider_configured')
 
         full_prompt = prompt
         if system_prompt:
@@ -44,6 +59,42 @@ class AIProviderService(models.AbstractModel):
             response_text, usage = self._call_ai_api(full_prompt, config)
         config.increment_usage(tokens=usage.get('total_tokens', 0))
         return response_text, usage
+
+    def _is_simulation_mode(self):
+        """True when the gateway is configured to skip real provider calls."""
+        icp = self.env['ir.config_parameter'].sudo()
+        return str(icp.get_param('ab_ai_gateway.simulation', 'False')).lower() \
+                in ('1', 'true', 'yes')
+
+    def _simulate_call(self, reason='explicit_toggle'):
+        """Return a placeholder response without hitting any provider.
+
+        The placeholder is a plain string with a clear marker so the
+        consumer can either:
+          - parse as JSON (daily report does; its parser falls through
+            to wrapping as `<p>{text}</p>` because the keys don't match);
+          - render as text (chatbot, chatter — they just paint the
+            response).
+
+        Either way the pipeline completes cleanly and audit logs show
+        zero-token rows tagged with provider='simulation'.
+        """
+        _logger.info('ai.provider.service: simulation mode (%s)', reason)
+        text = (
+            '[Simulated AI output — gateway running in simulation mode. '
+            'Configure an active ai.provider.config and set '
+            'ir.config_parameter ab_ai_gateway.simulation=False to '
+            'enable real LLM responses. Reason: %s]'
+        ) % reason
+        usage = {
+            'prompt_tokens': 0,
+            'completion_tokens': 0,
+            'total_tokens': 0,
+            'model': 'simulation',
+            'provider': 'simulation',
+            'simulated_reason': reason,
+        }
+        return text, usage
 
     def test_connection(self, config):
         """Test AI API connection."""

@@ -148,7 +148,17 @@ class AIProviderConfig(models.Model):
         string='Default System Prompt',
         default='You are a helpful AI assistant. Return structured JSON when asked for configurations.'
     )
-    
+
+    # Fallback chain (Phase 2 of SAAS_AI_PLAN.md)
+    fallback_provider_id = fields.Many2one(
+        'ai.provider.config',
+        string='Fallback provider',
+        ondelete='set null',
+        help='Engaged once if the primary provider returns a transport '
+             'error or 5xx. Both attempts are audited as separate '
+             'ai.usage.log rows linked via parent_log_id.',
+    )
+
     company_id = fields.Many2one(
         'res.company',
         string='Company',
@@ -158,6 +168,13 @@ class AIProviderConfig(models.Model):
     @api.constrains('ai_provider', 'openai_api_key', 'gemini_api_key', 'claude_api_key')
     def _check_api_key(self):
         """Validate that API key is provided for selected provider"""
+        # Bypass key validation when global simulation toggle is on —
+        # ops may want to save a config skeleton with empty keys for
+        # later, and simulation mode never hits the provider anyway.
+        icp = self.env['ir.config_parameter'].sudo()
+        if str(icp.get_param('ab_ai_gateway.simulation', 'False')).lower() \
+                in ('1', 'true', 'yes'):
+            return
         for config in self:
             if config.ai_provider == 'openai' and not config.openai_api_key:
                 raise ValidationError(_('OpenAI API Key is required when using OpenAI provider'))
@@ -165,6 +182,20 @@ class AIProviderConfig(models.Model):
                 raise ValidationError(_('Google AI API Key is required when using Gemini provider'))
             elif config.ai_provider == 'anthropic' and not config.claude_api_key:
                 raise ValidationError(_('Anthropic API Key is required when using Claude provider'))
+
+    @api.constrains('fallback_provider_id')
+    def _check_no_fallback_loop(self):
+        """Prevent fallback chains > 1 hop and self-references."""
+        for cfg in self:
+            if cfg.fallback_provider_id == cfg:
+                raise ValidationError(_(
+                    'A config cannot be its own fallback.'))
+            if cfg.fallback_provider_id \
+                    and cfg.fallback_provider_id.fallback_provider_id:
+                raise ValidationError(_(
+                    'Fallback chains are limited to one hop. '
+                    '%s already has its own fallback configured.'
+                ) % cfg.fallback_provider_id.name)
 
     def get_active_config(self):
         """Get the active AI configuration"""
