@@ -1,6 +1,6 @@
-import hashlib
 import logging
 import threading
+import time
 
 from odoo import api, models, _
 from odoo.exceptions import UserError
@@ -12,9 +12,11 @@ _logger = logging.getLogger(__name__)
 # missing optional dep should never blank the whole tenant site.
 try:
     import boto3 as _boto3
+    from botocore.exceptions import ClientError as _BotoClientError
     HAS_BOTO3 = True
 except ImportError:
     _boto3 = None
+    _BotoClientError = Exception
     HAS_BOTO3 = False
     _logger.warning(
         'boto3 is not installed — S3 attachment storage is disabled and all '
@@ -25,6 +27,12 @@ except ImportError:
 # Thread-safe S3 client cache
 _s3_client_cache = {}
 _s3_client_lock = threading.Lock()
+
+# Codes worth retrying once. 5xx + SlowDown are transient.
+_RETRYABLE_S3_CODES = frozenset({
+    'InternalError', 'SlowDown', 'ServiceUnavailable',
+    'RequestTimeout', 'RequestTimeoutException',
+})
 
 
 def _get_s3_config(env):
@@ -48,8 +56,6 @@ def _get_s3_client(config):
             return _s3_client_cache[cache_key]
 
     if not HAS_BOTO3:
-        # Caller should have already gated on _is_s3_storage(); raise to keep
-        # signature contract for any direct caller.
         raise UserError(_('boto3 is not installed. Run: pip install boto3'))
 
     client = _boto3.client(
@@ -104,47 +110,82 @@ class IrAttachment(models.Model):
     # ==================== Core Overrides ====================
 
     def _file_read(self, fname):
+        """Read file content from S3, fall back to local disk on miss.
+
+        Three explicit outcomes (logged distinctly so missing files are
+        observable without ambiguity):
+          - S3 hit            → DEBUG, return data
+          - S3 miss, disk hit → INFO  ("served from local disk"), return data
+          - both miss         → WARNING (one line w/ key), return b''
+
+        Returning b'' is the same contract as base Odoo's _file_read.
+        """
         if not self._is_s3_storage():
             return super()._file_read(fname)
 
         key = self._s3_key(fname)
+        # Attempt S3 first.
         try:
             response = self._s3_client().get_object(
                 Bucket=self._s3_config()['bucket'],
-                Key=key
+                Key=key,
             )
-            return response['Body'].read()
+            data = response['Body'].read()
+            _logger.debug('ab_s3_attachment: read key=%s size=%d', key, len(data))
+            return data
         except Exception as s3_err:
-            # Fallback to local filesystem (migration window) — but log
-            # both legs so a real "neither S3 nor disk" miss is observable
-            # instead of silently returning b'' to the browser.
+            s3_err_name = type(s3_err).__name__
+            # Fall back to local disk. Base _file_read swallows IOError
+            # internally and returns b'' — so we must explicitly distinguish
+            # "disk had it" from "disk also empty".
+            disk_data = b''
             try:
-                data = super()._file_read(fname)
-                _logger.warning(
-                    'ab_s3_attachment: S3 miss for key=%s (%s) — served from local disk',
-                    key, type(s3_err).__name__,
-                )
-                return data
+                disk_data = super()._file_read(fname)
             except Exception:
-                _logger.warning(
-                    'ab_s3_attachment: file missing in S3 and local disk: key=%s err=%s',
-                    key, s3_err,
+                # Defensive — base swallows IOError but might raise on
+                # other oddities. Treat as no-data.
+                disk_data = b''
+
+            if disk_data:
+                _logger.info(
+                    'ab_s3_attachment: S3 miss (%s) — served from local disk: key=%s',
+                    s3_err_name, key,
                 )
-        return b''
+                return disk_data
+
+            _logger.warning(
+                'ab_s3_attachment: file missing in S3 AND local disk: key=%s err=%s',
+                key, s3_err_name,
+            )
+            return b''
 
     def _to_http_stream(self):
         """Override to serve files from S3 instead of local disk.
 
-        The base Odoo method uses stream.type='path' and os.stat() to serve
-        files directly from the filesystem. This crashes with FileNotFoundError
-        when files are on S3. We override to use stream.type='data' with
-        the file content read from S3.
+        Base Odoo uses stream.type='path' + os.stat() which FileNotFoundError-s
+        on S3-only attachments. We force type='data' with bytes from S3
+        (or local fallback). On true miss we return an HTTP 404 stream
+        rather than a 200 with an empty body — empty 200 confuses browser
+        cache and the user sees broken images with no clear error.
         """
         if not self._is_s3_storage() or not self.store_fname:
             return super()._to_http_stream()
 
-        from odoo.http import Stream, request
+        from odoo.http import Stream
+        from werkzeug.exceptions import NotFound
         self.ensure_one()
+
+        data = self._file_read(self.store_fname)
+        if not data and self.db_datas:
+            data = self.raw
+
+        if not data:
+            _logger.warning(
+                'ab_s3_attachment: 404 attachment id=%s name=%r key=%s — '
+                'file missing in S3 and DB inline',
+                self.id, self.name, self._s3_key(self.store_fname or ''),
+            )
+            raise NotFound()
 
         stream = Stream(
             mimetype=self.mimetype,
@@ -152,33 +193,23 @@ class IrAttachment(models.Model):
             etag=self.checksum,
             public=self.public,
         )
-
-        # Read from S3
-        data = self._file_read(self.store_fname)
-        if data:
-            stream.type = 'data'
-            stream.data = data
-            stream.size = len(data)
-        elif self.db_datas:
-            stream.type = 'data'
-            stream.data = self.raw
-        else:
-            # File truly missing — neither in S3 nor inline. Logged in
-            # _file_read above. Surface 404 via empty stream + size=0; the
-            # WARNING line plus this attachment's id/key makes the miss
-            # findable in journalctl.
-            _logger.warning(
-                'ab_s3_attachment: 404 for attachment id=%s name=%r key=%s — '
-                'file missing in both S3 and DB inline',
-                self.id, self.name, self._s3_key(self.store_fname or ''),
-            )
-            stream.type = 'data'
-            stream.data = b''
-            stream.size = 0
-
+        stream.type = 'data'
+        stream.data = data
+        stream.size = len(data)
         return stream
 
     def _file_write(self, bin_value, checksum):
+        """Write bytes to S3 with idempotent dedup + transient-error retry.
+
+        Dedup safety: rely on a SQL existence check first ("does any other
+        ir_attachment row already reference this checksum?"). Only then
+        confirm with head_object and skip the upload — avoids dedup loss
+        when a unique uploader hits a transient HEAD failure.
+
+        Transient errors (5xx, SlowDown, RequestTimeout) get one retry
+        with 1s backoff. Permanent errors (NoSuchBucket, AccessDenied,
+        QuotaExceeded) raise UserError immediately.
+        """
         if not self._is_s3_storage():
             return super()._file_write(bin_value, checksum)
 
@@ -186,46 +217,91 @@ class IrAttachment(models.Model):
         key = self._s3_key(fname)
         config = self._s3_config()
 
-        # Check if already exists (dedup by checksum)
-        if self._s3_object_exists(key):
+        # Cheap dedup pre-check: is another row already pointing at this
+        # fname? (one SQL beats one S3 HEAD round-trip)
+        if self._s3_dedup_skip_write(fname, key):
             return fname
 
-        # Check quota before write
         self._check_s3_quota(len(bin_value))
 
-        try:
-            self._s3_client().put_object(
-                Bucket=config['bucket'],
-                Key=key,
-                Body=bin_value,
-            )
-        except Exception as e:
-            _logger.error('S3 _file_write failed for key %s: %s', key, e)
-            raise UserError(_('Failed to upload file to S3: %s') % str(e))
+        last_err = None
+        for attempt in (1, 2):
+            try:
+                self._s3_client().put_object(
+                    Bucket=config['bucket'],
+                    Key=key,
+                    Body=bin_value,
+                )
+                _logger.debug(
+                    'ab_s3_attachment: wrote key=%s size=%d (attempt %d)',
+                    key, len(bin_value), attempt,
+                )
+                return fname
+            except _BotoClientError as e:
+                code = (e.response or {}).get('Error', {}).get('Code', '')
+                last_err = e
+                if code in _RETRYABLE_S3_CODES and attempt == 1:
+                    _logger.warning(
+                        'ab_s3_attachment: transient S3 error %s on key=%s — retrying',
+                        code, key,
+                    )
+                    time.sleep(1)
+                    continue
+                _logger.error(
+                    'ab_s3_attachment: S3 write failed key=%s code=%s err=%s',
+                    key, code, e,
+                )
+                raise UserError(_('Failed to upload file to S3: %s') % str(e))
+            except Exception as e:
+                last_err = e
+                _logger.error(
+                    'ab_s3_attachment: S3 write failed key=%s err=%s',
+                    key, e,
+                )
+                raise UserError(_('Failed to upload file to S3: %s') % str(e))
 
-        return fname
+        # Belt-and-braces: shouldn't reach here, the loop returns or raises.
+        raise UserError(_('Failed to upload file to S3: %s') % str(last_err))
 
     def _file_delete(self, fname):
-        if not self._is_s3_storage():
-            return super()._file_delete(fname)
+        """Deferred delete via Odoo's GC checklist.
 
-        key = self._s3_key(fname)
-        try:
-            self._s3_client().delete_object(
-                Bucket=self._s3_config()['bucket'],
-                Key=key
-            )
-        except Exception as e:
-            _logger.warning('S3 _file_delete failed for key %s: %s', key, e)
+        Eagerly deleting from S3 here would wipe out files still referenced
+        by other ir.attachment rows (Odoo dedups by checksum — one fname
+        can back many rows). Base Odoo handles this safely by spooling
+        deletes to a checklist and letting _file_gc / our
+        _gc_s3_file_store decide what's actually orphaned at vacuum time.
+
+        We defer to super() (which just touches the checklist), then let
+        @api.autovacuum _gc_s3_file_store cross-check against the DB
+        before any S3 DELETE.
+        """
+        # Always defer — even when S3 is not active, base does the right
+        # thing (spool checklist for the local filestore GC).
+        return super()._file_delete(fname)
 
     # ==================== Helpers ====================
 
-    def _s3_object_exists(self, key):
-        """Check if an S3 object exists."""
+    def _s3_dedup_skip_write(self, fname, key):
+        """Return True iff we can safely skip the S3 PUT for this fname.
+
+        Two-step check: SQL row + S3 HEAD. Both must agree, otherwise we
+        upload (it's idempotent — same checksum overwrites with same bytes).
+        """
+        # Cheap SQL: any OTHER row already referencing this fname?
+        self.env.cr.execute(
+            "SELECT 1 FROM ir_attachment WHERE store_fname = %s LIMIT 1",
+            (fname,),
+        )
+        if not self.env.cr.fetchone():
+            return False
+
+        # A row references it — confirm the S3 object is actually present.
+        # If HEAD fails for any reason, do the PUT (safe, idempotent).
         try:
             self._s3_client().head_object(
                 Bucket=self._s3_config()['bucket'],
-                Key=key
+                Key=key,
             )
             return True
         except Exception:
@@ -257,7 +333,12 @@ class IrAttachment(models.Model):
 
     @api.autovacuum
     def _gc_s3_file_store(self):
-        """Garbage collect orphaned S3 objects."""
+        """Garbage collect orphaned S3 objects.
+
+        Cross-checks each S3 key against the DB before deleting — so a
+        dedup-shared fname that's still referenced anywhere is NEVER
+        purged. This is what makes deferred _file_delete safe.
+        """
         if not self._is_s3_storage():
             return
 
@@ -282,8 +363,7 @@ class IrAttachment(models.Model):
         for page in paginator.paginate(Bucket=bucket, Prefix=f"{prefix}/"):
             for obj in page.get('Contents', []):
                 s3_key = obj['Key']
-                # Extract fname from key (remove prefix)
-                fname = s3_key[len(prefix) + 1:]  # strip prefix/
+                fname = s3_key[len(prefix) + 1:]
                 if fname and fname not in db_fnames:
                     to_delete.append({'Key': s3_key})
 
@@ -311,21 +391,27 @@ class IrAttachment(models.Model):
         errors = 0
         for att in attachments:
             key = self._s3_key(att.store_fname)
-            if not self._s3_object_exists(key):
-                try:
-                    data = super(IrAttachment, att)._file_read(att.store_fname)
-                    if data:
-                        self._s3_client().put_object(
-                            Bucket=self._s3_config()['bucket'],
-                            Key=key,
-                            Body=data,
-                        )
-                        migrated += 1
-                except Exception as e:
-                    _logger.warning('S3 migration failed for %s: %s', att.store_fname, e)
-                    errors += 1
-            else:
+            try:
+                self._s3_client().head_object(
+                    Bucket=self._s3_config()['bucket'],
+                    Key=key,
+                )
                 migrated += 1  # already on S3
+                continue
+            except Exception:
+                pass
+            try:
+                data = super(IrAttachment, att)._file_read(att.store_fname)
+                if data:
+                    self._s3_client().put_object(
+                        Bucket=self._s3_config()['bucket'],
+                        Key=key,
+                        Body=data,
+                    )
+                    migrated += 1
+            except Exception as e:
+                _logger.warning('S3 migration failed for %s: %s', att.store_fname, e)
+                errors += 1
         return {'status': 'ok', 'migrated': migrated, 'errors': errors, 'total': len(attachments)}
 
     def _s3_get_usage_bytes(self):
