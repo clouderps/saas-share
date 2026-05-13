@@ -48,9 +48,14 @@ export class AiResponse extends Component {
         streamBody: { type: Object, optional: true },
         streamHeaders: { type: Object, optional: true },
         compact: { type: Boolean, optional: true },
+        // When true, suppress the ProvenanceBar (model/cost/tokens/
+        // verdict footer). The chatbot defaults to hiding it for a
+        // cleaner conversation feel; daily-report / dashboard / scan
+        // surfaces leave it visible for ops diagnostics.
+        hideProvenance: { type: Boolean, optional: true },
     };
     static defaultProps = {
-        loading: false, error: false, compact: false,
+        loading: false, error: false, compact: false, hideProvenance: false,
     };
 
     setup() {

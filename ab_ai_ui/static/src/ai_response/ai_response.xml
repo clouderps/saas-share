@@ -65,7 +65,7 @@
                                calls="toolCalls"/>
                 </div>
 
-                <ProvenanceBar t-if="provenance"
+                <ProvenanceBar t-if="provenance and !props.hideProvenance"
                                provenance="provenance"
                                streaming="state.streaming"/>
             </t>
