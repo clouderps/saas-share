@@ -1,6 +1,7 @@
 /** @odoo-module **/
 
 import { registry } from "@web/core/registry";
+import { rpc } from "@web/core/network/rpc";
 
 /** Helper service that calls /api/v1/ai/analyze and normalises the
  *  response shape for <AiResponse/>. Consumers can stay one-liner:
@@ -16,8 +17,7 @@ import { registry } from "@web/core/registry";
  *  via ``opts.token`` or reads ir.config_parameter ``ab_ai_ui.token``
  *  from the active env as a default. */
 const aiResponseService = {
-    dependencies: ["rpc"],
-    start(env, { rpc }) {
+    start(env) {
         async function _resolveToken(opts) {
             if (opts && opts.token) {
                 return opts.token;
