@@ -687,49 +687,61 @@ class AIProviderService(models.AbstractModel):
         ) % config.ai_provider)
 
     def _call_gemini_embed(self, texts, config):
-        """Call Gemini's embedContent endpoint. Returns (vectors, usage).
+        """Call Gemini's embedContent endpoint, looping per-text.
 
-        Endpoint:
-          POST /v1beta/models/text-embedding-004:batchEmbedContents
-        Free tier is generous; 768-dim output, normalised."""
-        model = "text-embedding-004"  # one-off — separate from the chat model
-        url = (
+        gemini-embedding-001 supports only the single-text
+        embedContent method (no synchronous batch). It returns 3072
+        dims by default; we request outputDimensionality=768 via
+        Matryoshka so the resulting vectors fit our pgvector(768)
+        column and stay compact.
+
+        Returns (vectors, usage). Vectors are 1:1 with `texts`. If a
+        single call fails the loop still returns an empty vector for
+        that slot so the caller's indexing stays aligned."""
+        model = "gemini-embedding-001"
+        base_url = (
             "https://generativelanguage.googleapis.com/v1beta/models/"
-            "%s:batchEmbedContents?key=%s" % (model, config.gemini_api_key)
+            "%s:embedContent?key=%s" % (model, config.gemini_api_key)
         )
-        # Cap each call at 100 inputs (API limit). Caller batches above that.
         if len(texts) > 100:
             raise UserError(_('Embedding batch too large (max 100 per call).'))
-        try:
-            response = requests.post(
-                url,
-                headers={"Content-Type": "application/json"},
-                json={
-                    "requests": [
-                        {
-                            "model": f"models/{model}",
-                            "content": {"parts": [{"text": (t or '')[:8000]}]},
-                        }
-                        for t in texts
-                    ],
-                },
-                timeout=config.timeout,
-            )
-            response.raise_for_status()
-            data = response.json()
-            embeddings = data.get('embeddings') or []
-            vectors = [
-                [float(x) for x in (e.get('values') or [])]
-                for e in embeddings
-            ]
-            return vectors, {
-                'provider': 'google',
-                'model': model,
-                'total_tokens': sum(len((t or '').split()) for t in texts),
-            }
-        except requests.exceptions.RequestException as e:
-            _logger.error("Gemini embedding API error: %s", e)
-            raise UserError(_('Gemini Embedding Error: %s') % e)
+
+        vectors: list[list[float]] = []
+        ok = 0
+        for t in texts:
+            text = (t or '')[:8000]
+            if not text.strip():
+                vectors.append([])
+                continue
+            try:
+                response = requests.post(
+                    base_url,
+                    headers={"Content-Type": "application/json"},
+                    json={
+                        "model": f"models/{model}",
+                        "content": {"parts": [{"text": text}]},
+                        # Matryoshka — request a smaller vector that
+                        # still preserves most of the semantic signal.
+                        # Fits our pgvector(768) column.
+                        "outputDimensionality": 768,
+                    },
+                    timeout=config.timeout,
+                )
+                response.raise_for_status()
+                data = response.json()
+                values = (data.get('embedding') or {}).get('values') or []
+                vectors.append([float(x) for x in values])
+                if values:
+                    ok += 1
+            except requests.exceptions.RequestException as e:
+                _logger.warning("Gemini embed call failed for one text: %s", e)
+                vectors.append([])
+        return vectors, {
+            'provider': 'google',
+            'model': model,
+            'total_tokens': sum(len((t or '').split()) for t in texts),
+            'count_ok': ok,
+        }
 
     def _call_local_llm(self, prompt, config):
         """Call local LLM (Ollama or similar). Returns (text, usage_dict)."""
