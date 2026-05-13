@@ -44,6 +44,10 @@ export class ProvenanceBar extends Component {
         return chips;
     }
 
+    get provenanceJson() {
+        return JSON.stringify(this.props.provenance, null, 2);
+    }
+
     get summary() {
         const p = this.props.provenance || {};
         const bits = [];

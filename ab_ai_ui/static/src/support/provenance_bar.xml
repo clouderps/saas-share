@@ -16,6 +16,6 @@
         </div>
         <pre t-if="state.expanded" class="ai-prov__details mt-2"
              style="font-size:0.75rem; background:var(--ghaima-bg); padding:8px 10px; border-radius:var(--ghaima-radius-sm); overflow-x:auto;"
-             t-esc="JSON.stringify(props.provenance, null, 2)"/>
+             t-esc="provenanceJson"/>
     </t>
 </templates>
