@@ -41,6 +41,19 @@ export class ProvenanceBar extends Component {
         if (p.tool_calls_count > 0) {
             chips.push({ kind: "brand", icon: "fa-wrench", text: p.tool_calls_count + " tool" + (p.tool_calls_count === 1 ? "" : "s") });
         }
+        // Stage 4 verdict chip — green / yellow / grey based on the
+        // validator's verified / partial / unverified label. Hidden
+        // when the envelope doesn't carry a verdict (legacy responses).
+        if (p.verdict) {
+            const map = {
+                verified:           { kind: "good", icon: "fa-check-circle",  text: "verified" },
+                partial:            { kind: "warn", icon: "fa-adjust",        text: "partial"  },
+                unverified:         { kind: "muted", icon: "fa-question-circle", text: "unverified" },
+                policy_violation:   { kind: "bad",  icon: "fa-shield",        text: "rule fix" },
+            };
+            const v = map[p.verdict];
+            if (v) chips.push(v);
+        }
         return chips;
     }
 

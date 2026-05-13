@@ -163,6 +163,12 @@ export class AiResponse extends Component {
             tool_calls_count: p.tool_calls_count,
             duration_s: p.usage?.duration,
             cost_usd: p.usage?.cost_usd,
+            // Stage 4 validator verdict — surfaces verified / partial /
+            // unverified / policy_violation on the ProvenanceBar.
+            verdict: p.provenance?.verdict,
+            apology_emitted: p.provenance?.apology_emitted,
+            citations_checked: p.provenance?.citations_checked,
+            citations_failed: p.provenance?.citations_failed,
             tokens: p.usage ? {
                 prompt: p.usage.prompt_tokens,
                 completion: p.usage.completion_tokens,

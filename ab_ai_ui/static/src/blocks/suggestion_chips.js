@@ -1,6 +1,6 @@
 /** @odoo-module **/
 
-import { Component, useRef } from "@odoo/owl";
+import { Component, useRef, useState } from "@odoo/owl";
 
 /** <SuggestionChips/> — clarification UX.
  *
@@ -26,11 +26,19 @@ export class SuggestionChips extends Component {
 
     setup() {
         this.rootRef = useRef("root");
+        // Track which chip the user clicked so we can paint it as
+        // "picked" while the chat re-runs in the background. Reset
+        // when SuggestionChips is unmounted (new message renders).
+        this.state = useState({ pickedIndex: -1 });
     }
 
-    onPick(item) {
-        // Bubble through DOM so any ancestor (chat panel, scan widget,
-        // dashboard) can listen without owning a Bus instance.
+    isPicked(index) {
+        return this.state.pickedIndex === index;
+    }
+
+    onPick(item, index) {
+        if (this.state.pickedIndex >= 0) return;  // double-click guard
+        this.state.pickedIndex = index;
         const root = this.rootRef.el;
         if (root) {
             root.dispatchEvent(new CustomEvent("ai-chip-pick", {

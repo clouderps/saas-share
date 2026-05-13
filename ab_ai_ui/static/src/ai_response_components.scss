@@ -486,6 +486,26 @@
     outline-offset: 2px;
 }
 
+/* Picked-state ack — short visual feedback after click so the user
+ * sees that the chat is about to reload with the chosen interpretation. */
+.ai-chips__chip.is-picked {
+    background: var(--ghaima-blue);
+    color: #FFFFFF;
+    border-color: var(--ghaima-blue);
+    pointer-events: none;
+    opacity: 0.85;
+}
+.ai-chips__chip .fa-check {
+    margin-inline-start: 6px;
+}
+
+/* muted chip variant on ProvenanceBar (for verdict='unverified') */
+.ai-prov__chip--muted {
+    background: #F1F5F9;
+    color: #64748B;
+    border: 1px solid #E2E8F0;
+}
+
 /* Stream cursor */
 .ai-stream-cursor {
     display: inline-block;

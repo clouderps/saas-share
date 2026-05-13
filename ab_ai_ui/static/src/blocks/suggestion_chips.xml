@@ -6,11 +6,13 @@
             <div class="ai-chips__row">
                 <button t-foreach="props.items" t-as="item" t-key="item_index"
                         type="button"
-                        class="ai-chips__chip"
-                        t-on-click="() => this.onPick(item)"
-                        t-att-title="item.prompt">
+                        t-attf-class="ai-chips__chip #{isPicked(item_index) ? 'is-picked' : ''}"
+                        t-on-click="() => this.onPick(item, item_index)"
+                        t-att-title="item.prompt"
+                        t-att-disabled="state.pickedIndex >= 0 ? 'disabled' : null">
                     <i t-if="item.icon" t-attf-class="fa #{item.icon} me-1"/>
                     <span t-esc="item.label"/>
+                    <i t-if="isPicked(item_index)" class="fa fa-check" aria-hidden="true"/>
                 </button>
             </div>
         </div>
