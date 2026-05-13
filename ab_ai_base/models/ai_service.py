@@ -644,6 +644,93 @@ class AIProviderService(models.AbstractModel):
             _logger.error("Gemini Vision error: %s", e)
             raise UserError(_('Gemini Vision Error: %s') % e)
 
+    # ------------------------------------------------------------------
+    # Embeddings (Phase B — semantic retrieval).
+    # ------------------------------------------------------------------
+    def call_embedding(self, texts, config=None):
+        """Embed a list of strings. Returns (vectors, usage_dict).
+
+        ``vectors`` is a list[list[float]] with one row per input. We
+        dispatch by provider so adding OpenAI / Ollama embeddings is a
+        single function. Today only Google's text-embedding-004 is
+        wired — others raise gracefully.
+
+        Empty input → ([], {}). Single-string input is auto-wrapped.
+        """
+        if not texts:
+            return [], {}
+        if isinstance(texts, str):
+            texts = [texts]
+        config = config or self.env['ai.provider.config'].search(
+            [('active', '=', True)], limit=1,
+        )
+        if not config:
+            raise UserError(_('No active AI provider configured.'))
+        if self._is_simulation_mode():
+            # Deterministic pseudo-vectors so tests / dev flows still work.
+            import hashlib
+            vectors = []
+            for t in texts:
+                h = hashlib.sha256((t or '').encode('utf-8')).digest()
+                # 32 bytes -> 32 normalised floats. Repeat to 768 dims so
+                # downstream code that hard-codes the dim still works.
+                base = [(b - 128) / 128.0 for b in h]
+                vec = (base * 24)[:768]
+                vectors.append(vec)
+            return vectors, {'provider': 'simulation', 'model': 'sim-embed', 'total_tokens': 0}
+        if config.ai_provider == 'google':
+            return self._call_gemini_embed(texts, config)
+        # Fallthrough — providers without an embedding impl yet.
+        raise UserError(_(
+            "Embedding not implemented for provider '%s'. "
+            "Switch to Google (gemini text-embedding-004) or add a wrapper."
+        ) % config.ai_provider)
+
+    def _call_gemini_embed(self, texts, config):
+        """Call Gemini's embedContent endpoint. Returns (vectors, usage).
+
+        Endpoint:
+          POST /v1beta/models/text-embedding-004:batchEmbedContents
+        Free tier is generous; 768-dim output, normalised."""
+        model = "text-embedding-004"  # one-off — separate from the chat model
+        url = (
+            "https://generativelanguage.googleapis.com/v1beta/models/"
+            "%s:batchEmbedContents?key=%s" % (model, config.gemini_api_key)
+        )
+        # Cap each call at 100 inputs (API limit). Caller batches above that.
+        if len(texts) > 100:
+            raise UserError(_('Embedding batch too large (max 100 per call).'))
+        try:
+            response = requests.post(
+                url,
+                headers={"Content-Type": "application/json"},
+                json={
+                    "requests": [
+                        {
+                            "model": f"models/{model}",
+                            "content": {"parts": [{"text": (t or '')[:8000]}]},
+                        }
+                        for t in texts
+                    ],
+                },
+                timeout=config.timeout,
+            )
+            response.raise_for_status()
+            data = response.json()
+            embeddings = data.get('embeddings') or []
+            vectors = [
+                [float(x) for x in (e.get('values') or [])]
+                for e in embeddings
+            ]
+            return vectors, {
+                'provider': 'google',
+                'model': model,
+                'total_tokens': sum(len((t or '').split()) for t in texts),
+            }
+        except requests.exceptions.RequestException as e:
+            _logger.error("Gemini embedding API error: %s", e)
+            raise UserError(_('Gemini Embedding Error: %s') % e)
+
     def _call_local_llm(self, prompt, config):
         """Call local LLM (Ollama or similar). Returns (text, usage_dict)."""
         try:
