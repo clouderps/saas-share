@@ -41,8 +41,16 @@ export class SuggestionChips extends Component {
         this.state.pickedIndex = index;
         const root = this.rootRef.el;
         if (root) {
+            // ``action`` carries a structured payload for write-action
+            // confirmation chips (e.g. {type:'confirm_tool', tool, key}).
+            // Host (chatbot widget) detects it and dispatches to the
+            // dedicated confirm endpoint instead of the LLM path.
             root.dispatchEvent(new CustomEvent("ai-chip-pick", {
-                detail: { prompt: item.prompt, label: item.label },
+                detail: {
+                    prompt: item.prompt,
+                    label: item.label,
+                    action: item.action || null,
+                },
                 bubbles: true,
                 composed: true,
             }));
