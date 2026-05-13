@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="ab_ai_ui.DataTable">
+        <div class="ai-table-wrap">
+            <table class="ai-table">
+                <caption t-if="props.title" t-esc="props.title"/>
+                <thead t-if="props.headers and props.headers.length">
+                    <tr>
+                        <th t-foreach="props.headers" t-as="h" t-key="h_index" t-esc="h"/>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr t-foreach="props.rows" t-as="row" t-key="row_index">
+                        <td t-foreach="row" t-as="cell" t-key="cell_index" t-esc="cell"/>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </t>
+</templates>

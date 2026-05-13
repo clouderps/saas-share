@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="ab_ai_ui.KpiGrid">
+        <div class="ai-kpi-grid" role="list" aria-label="Key performance indicators">
+            <div t-foreach="props.items" t-as="item" t-key="item_index" class="ai-kpi" role="listitem">
+                <div class="ai-kpi__label" t-esc="item.label"/>
+                <div>
+                    <span class="ai-kpi__value" t-esc="item.value"/>
+                    <span t-if="item.delta_pct" t-att-class="'ai-kpi__delta ' + toneClass(item.tone)"
+                          t-esc="item.delta_pct"/>
+                </div>
+            </div>
+        </div>
+    </t>
+</templates>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="ab_ai_ui.ErrorEnvelope">
+        <div class="ai-error" role="alert" aria-live="assertive">
+            <div class="ai-error__title">
+                <i class="fa fa-exclamation-circle me-1"/>
+                AI request failed
+            </div>
+            <div t-esc="props.message || 'Unknown error'"/>
+            <div class="ai-error__hint" t-esc="hint"/>
+        </div>
+    </t>
+</templates>

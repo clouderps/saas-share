@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="ab_ai_ui.CalloutCard">
+        <div t-att-class="'ai-callout' + (props.tone ? ' ai-callout--' + props.tone : '')"
+             role="note">
+            <div class="ai-callout__icon"><i t-att-class="'fa ' + props.icon"/></div>
+            <div>
+                <div t-if="props.title" class="ai-callout__title" t-esc="props.title"/>
+                <div class="ai-callout__body" t-esc="props.body"/>
+            </div>
+        </div>
+    </t>
+</templates>

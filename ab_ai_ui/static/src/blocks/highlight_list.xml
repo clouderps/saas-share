@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="ab_ai_ui.HighlightList">
+        <div t-att-class="'ai-hl' + (props.tone ? ' ai-hl--' + props.tone : '')">
+            <h6 t-if="props.title" class="ai-hl__title" t-esc="props.title"/>
+            <ul>
+                <li t-foreach="props.items" t-as="item" t-key="item_index" t-esc="item"/>
+            </ul>
+        </div>
+    </t>
+</templates>

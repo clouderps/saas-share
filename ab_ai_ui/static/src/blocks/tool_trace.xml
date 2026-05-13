@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="ab_ai_ui.ToolTrace">
+        <div class="ai-tooltrace">
+            <div class="ai-tooltrace__head" role="button" tabindex="0"
+                 t-on-click="onToggle"
+                 t-att-aria-expanded="state.open ? 'true' : 'false'">
+                <i t-att-class="'fa ' + (state.open ? 'fa-chevron-down' : 'fa-chevron-right')"/>
+                <span>Tools used (<t t-esc="props.calls.length"/>)</span>
+            </div>
+            <t t-if="state.open">
+                <div t-foreach="props.calls" t-as="call" t-key="call_index">
+                    <div class="ai-tooltrace__row" t-on-click="() => this.onRowToggle(call_index)" role="button">
+                        <span class="ai-tooltrace__name" t-esc="call.tool_name or call.name"/>
+                        <span class="text-muted" t-esc="call.success ? 'ok' : (call.error_message or 'failed')"/>
+                        <span class="ai-tooltrace__duration" t-esc="formatDuration(call.duration)"/>
+                        <span t-att-class="'ai-tooltrace__status--' + (call.success ? 'ok' : 'err')">
+                            <i t-att-class="'fa ' + (call.success ? 'fa-check' : 'fa-times')"/>
+                        </span>
+                    </div>
+                    <pre t-if="state.expanded[call_index]" class="ai-tooltrace__row-body">
+args: <t t-esc="formatJson(call.arguments_json or call.arguments)"/>
+result: <t t-esc="formatJson(call.result_json or call.result)"/>
+                    </pre>
+                </div>
+            </t>
+        </div>
+    </t>
+</templates>

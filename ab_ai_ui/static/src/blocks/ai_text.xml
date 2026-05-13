@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="ab_ai_ui.AiText">
+        <div class="ai-text" dir="auto">
+            <p t-foreach="paragraphs" t-as="lines" t-key="lines_index">
+                <t t-foreach="lines" t-as="line" t-key="line_index">
+                    <t t-esc="line"/>
+                    <br t-if="!line_last"/>
+                </t>
+            </p>
+            <span t-if="props.streaming" class="ai-stream-cursor" aria-hidden="true"/>
+        </div>
+    </t>
+</templates>

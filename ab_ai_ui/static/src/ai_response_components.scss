@@ -1,0 +1,355 @@
+/*  AB AI UI — shared styling for <AiResponse/> + block kit.
+ *  Uses Ghaima design tokens defined in ab_ghaima_theme/static/src/css/ghaima_variables.css.
+ *  RTL-first: every directional offset uses CSS logical properties.
+ *  Per repo policy (feedback_match_native_odoo_patterns) — no hardcoded brand colours.
+ */
+
+:root {
+    /* Fallbacks so the renderer still looks reasonable on tenants where
+     * ab_ghaima_theme isn't installed. ab_ghaima_theme overrides these. */
+    --ghaima-blue:        var(--ghaima-blue, #005FF6);
+    --ghaima-navy:        var(--ghaima-navy, #0D00A2);
+    --ghaima-cyan:        var(--ghaima-cyan, #5DD8CA);
+    --ghaima-bg:          var(--ghaima-bg,   #F7F8FC);
+    --ghaima-radius-sm:   var(--ghaima-radius-sm, 6px);
+    --ghaima-radius-md:   var(--ghaima-radius-md, 10px);
+    --ghaima-radius-lg:   var(--ghaima-radius-lg, 14px);
+    --ghaima-shadow-sm:   var(--ghaima-shadow-sm, 0 1px 2px rgba(13, 0, 162, 0.06));
+    --ghaima-shadow-md:   var(--ghaima-shadow-md, 0 4px 12px rgba(13, 0, 162, 0.08));
+    --ai-good:            #16A34A;
+    --ai-warn:            #D97706;
+    --ai-bad:             #DC2626;
+    --ai-muted:           #64748B;
+    --ai-border:          #E2E8F0;
+}
+
+.ai-response {
+    background: #FFFFFF;
+    border: 1px solid var(--ai-border);
+    border-radius: var(--ghaima-radius-lg);
+    box-shadow: var(--ghaima-shadow-sm);
+    padding: 16px 18px;
+    margin-block: 8px;
+    font-family: var(--ghaima-font-body, system-ui, -apple-system, "Segoe UI", sans-serif);
+    color: #0F172A;
+    line-height: 1.55;
+}
+
+.ai-response[dir="rtl"] {
+    text-align: start;
+}
+
+.ai-response__title {
+    font-family: var(--ghaima-font-heading, system-ui);
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0 0 4px 0;
+    color: var(--ghaima-navy);
+}
+
+.ai-response__subtitle {
+    color: var(--ai-muted);
+    font-size: 0.85rem;
+    margin: 0 0 14px 0;
+}
+
+.ai-response__blocks > * + * {
+    margin-block-start: 14px;
+}
+
+/* ───── Skeleton shimmer (Phase A streaming placeholder) ───── */
+
+.ai-skel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.ai-skel__line {
+    height: 12px;
+    border-radius: var(--ghaima-radius-sm);
+    background: linear-gradient(90deg,
+        rgba(13, 0, 162, 0.04) 0%,
+        rgba(13, 0, 162, 0.12) 50%,
+        rgba(13, 0, 162, 0.04) 100%);
+    background-size: 200% 100%;
+    animation: aiSkelShimmer 1.4s linear infinite;
+}
+.ai-skel__line--short { width: 60%; }
+.ai-skel__line--mid   { width: 85%; }
+.ai-skel__line--long  { width: 100%; }
+
+@keyframes aiSkelShimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ───── Provenance bar ───── */
+
+.ai-prov {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-block-start: 14px;
+    padding-block-start: 10px;
+    border-block-start: 1px solid var(--ai-border);
+    font-size: 0.78rem;
+    color: var(--ai-muted);
+}
+.ai-prov__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    background: var(--ghaima-bg);
+    border-radius: 999px;
+}
+.ai-prov__chip--warn  { background: #FEF3C7; color: #92400E; }
+.ai-prov__chip--bad   { background: #FEE2E2; color: #991B1B; }
+.ai-prov__chip--good  { background: #DCFCE7; color: #065F46; }
+.ai-prov__chip--brand { background: rgba(0, 95, 246, 0.08); color: var(--ghaima-blue); }
+
+.ai-prov__btn {
+    border: none;
+    background: transparent;
+    color: var(--ghaima-blue);
+    font-size: 0.78rem;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: var(--ghaima-radius-sm);
+}
+.ai-prov__btn:hover { background: rgba(0, 95, 246, 0.08); }
+
+/* ───── KPI grid ───── */
+
+.ai-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+}
+.ai-kpi {
+    background: var(--ghaima-bg);
+    border-radius: var(--ghaima-radius-md);
+    padding: 12px 14px;
+    border: 1px solid transparent;
+}
+.ai-kpi__label {
+    color: var(--ai-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin-bottom: 4px;
+}
+.ai-kpi__value {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #0F172A;
+    font-family: var(--ghaima-font-heading, system-ui);
+}
+.ai-kpi__delta {
+    display: inline-block;
+    margin-inline-start: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+.ai-kpi__delta--good { color: var(--ai-good); }
+.ai-kpi__delta--warn { color: var(--ai-warn); }
+.ai-kpi__delta--bad  { color: var(--ai-bad); }
+
+/* ───── Highlight list ───── */
+
+.ai-hl {
+    border-radius: var(--ghaima-radius-md);
+    padding: 12px 14px;
+    background: #FFFFFF;
+    border-inline-start: 4px solid var(--ghaima-cyan);
+}
+.ai-hl--good { border-inline-start-color: var(--ai-good); }
+.ai-hl--warn { border-inline-start-color: var(--ai-warn); background: #FFFBEB; }
+.ai-hl--bad  { border-inline-start-color: var(--ai-bad);  background: #FEF2F2; }
+.ai-hl__title {
+    font-weight: 600;
+    margin: 0 0 6px 0;
+    font-size: 0.9rem;
+    color: var(--ghaima-navy);
+}
+.ai-hl ul {
+    margin: 0;
+    padding-inline-start: 18px;
+}
+.ai-hl li + li { margin-block-start: 4px; }
+
+/* ───── Data table ───── */
+
+.ai-table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--ai-border);
+    border-radius: var(--ghaima-radius-md);
+}
+.ai-table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.875rem;
+}
+.ai-table caption {
+    text-align: start;
+    padding: 8px 12px;
+    font-weight: 600;
+    color: var(--ghaima-navy);
+    background: var(--ghaima-bg);
+    caption-side: top;
+}
+.ai-table th, .ai-table td {
+    padding: 8px 12px;
+    border-block-start: 1px solid var(--ai-border);
+    text-align: start;
+}
+.ai-table th {
+    background: var(--ghaima-bg);
+    font-weight: 600;
+    color: var(--ai-muted);
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+}
+.ai-table tr:hover td { background: rgba(0, 95, 246, 0.03); }
+
+/* ───── Callout ───── */
+
+.ai-callout {
+    display: flex;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: var(--ghaima-radius-md);
+    background: var(--ghaima-bg);
+    border-inline-start: 4px solid var(--ghaima-blue);
+}
+.ai-callout--good { border-inline-start-color: var(--ai-good); background: #F0FDF4; }
+.ai-callout--warn { border-inline-start-color: var(--ai-warn); background: #FFFBEB; }
+.ai-callout--bad  { border-inline-start-color: var(--ai-bad);  background: #FEF2F2; }
+.ai-callout__icon { font-size: 1.2rem; }
+.ai-callout__title { font-weight: 600; margin-block-end: 2px; }
+.ai-callout__body  { color: var(--ai-muted); font-size: 0.9rem; }
+
+/* ───── Action button row ───── */
+
+.ai-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.ai-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: var(--ghaima-radius-md);
+    background: var(--ghaima-blue);
+    color: #FFFFFF;
+    border: none;
+    font-weight: 500;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: transform 0.05s ease;
+}
+.ai-action:hover { filter: brightness(1.05); }
+.ai-action:active { transform: translateY(1px); }
+.ai-action--danger { background: var(--ai-bad); }
+.ai-action--secondary {
+    background: transparent;
+    color: var(--ghaima-blue);
+    border: 1px solid var(--ghaima-blue);
+}
+
+/* ───── Tool trace (Phase F) ───── */
+
+.ai-tooltrace {
+    border: 1px solid var(--ai-border);
+    border-radius: var(--ghaima-radius-md);
+    overflow: hidden;
+}
+.ai-tooltrace__head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--ghaima-bg);
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--ghaima-navy);
+}
+.ai-tooltrace__head:hover { background: rgba(0, 95, 246, 0.05); }
+.ai-tooltrace__row {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: 8px;
+    padding: 8px 12px;
+    border-block-start: 1px solid var(--ai-border);
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.8rem;
+}
+.ai-tooltrace__name { color: var(--ghaima-navy); font-weight: 600; }
+.ai-tooltrace__duration { color: var(--ai-muted); }
+.ai-tooltrace__status--ok  { color: var(--ai-good); }
+.ai-tooltrace__status--err { color: var(--ai-bad); }
+.ai-tooltrace__row-body {
+    grid-column: 1 / -1;
+    background: #0F172A;
+    color: #E2E8F0;
+    padding: 10px 12px;
+    border-radius: var(--ghaima-radius-sm);
+    margin-block-start: 6px;
+    overflow-x: auto;
+}
+
+/* ───── Error envelope ───── */
+
+.ai-error {
+    border: 1px solid #FCA5A5;
+    background: #FEF2F2;
+    border-radius: var(--ghaima-radius-md);
+    padding: 12px 14px;
+    color: #991B1B;
+}
+.ai-error__title { font-weight: 600; margin-block-end: 4px; }
+.ai-error__hint  { color: #7F1D1D; font-size: 0.85rem; margin-block-start: 6px; }
+
+/* ───── Layout variants ───── */
+
+.ai-response--chat {
+    /* Chat replies sit tighter inside the systray panel. */
+    padding: 12px 14px;
+    margin-block: 6px;
+    box-shadow: none;
+    background: #FFFFFF;
+}
+.ai-response--summary {
+    /* Dashboard summaries fit a smaller card surface. */
+    padding: 12px 14px;
+}
+.ai-response--extract {
+    /* Scan-docs preview — keep blocks compact, no shadow. */
+    box-shadow: none;
+    background: var(--ghaima-bg);
+}
+.ai-response--report {
+    /* Full daily report card. Default tone. */
+}
+.ai-response--error {
+    border-color: #FCA5A5;
+}
+
+/* Stream cursor */
+.ai-stream-cursor {
+    display: inline-block;
+    width: 7px;
+    height: 1em;
+    background: var(--ghaima-blue);
+    margin-inline-start: 2px;
+    animation: aiCursorBlink 1s infinite;
+    vertical-align: text-bottom;
+}
+@keyframes aiCursorBlink {
+    0%, 49%   { opacity: 1; }
+    50%, 100% { opacity: 0; }
+}

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="ab_ai_ui.SkeletonShimmer">
+        <div class="ai-skel" role="status" aria-live="polite" aria-label="AI response is loading">
+            <div t-foreach="lineWidths" t-as="w" t-key="w_index"
+                 t-att-class="'ai-skel__line ai-skel__line--' + w"/>
+        </div>
+    </t>
+</templates>

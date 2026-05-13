@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="ab_ai_ui.ProvenanceBar">
+        <div class="ai-prov" role="contentinfo" aria-label="AI response metadata">
+            <span t-foreach="chips" t-as="chip" t-key="chip_index"
+                  t-att-class="'ai-prov__chip ai-prov__chip--' + chip.kind">
+                <i t-att-class="'fa ' + chip.icon"/>
+                <t t-esc="chip.text"/>
+            </span>
+            <span t-if="summary" class="ai-prov__chip" t-esc="summary"/>
+            <button t-if="props.provenance" type="button" class="ai-prov__btn"
+                    t-on-click="onToggle" t-att-aria-expanded="state.expanded ? 'true' : 'false'">
+                <i t-att-class="'fa ' + (state.expanded ? 'fa-chevron-up' : 'fa-chevron-down')"/>
+                <t t-esc="state.expanded ? 'less' : 'details'"/>
+            </button>
+        </div>
+        <pre t-if="state.expanded" class="ai-prov__details mt-2"
+             style="font-size:0.75rem; background:var(--ghaima-bg); padding:8px 10px; border-radius:var(--ghaima-radius-sm); overflow-x:auto;"
+             t-esc="JSON.stringify(props.provenance, null, 2)"/>
+    </t>
+</templates>

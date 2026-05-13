@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="ab_ai_ui.AiResponse">
+        <section t-att-class="classes" role="article" dir="auto">
+            <!-- Loading state ─ skeleton until envelope or first delta -->
+            <SkeletonShimmer t-if="isLoading" lines="3"/>
+
+            <!-- Error state ─ failed envelope or stream error -->
+            <ErrorEnvelope t-elif="errorMessage"
+                           message="errorMessage"
+                           status="errorStatus"/>
+
+            <!-- Streaming text in flight (chat layout only — JSON layouts
+                 wait for the done event before painting) -->
+            <t t-elif="props.streamUrl and !state.streamDone and layout == 'chat'">
+                <AiText text="state.streamedText" streaming="true"/>
+            </t>
+
+            <!-- Normal rendered response (envelope or finished stream) -->
+            <t t-else="">
+                <header t-if="title">
+                    <h3 class="ai-response__title" t-esc="title"/>
+                    <p t-if="subtitle" class="ai-response__subtitle" t-esc="subtitle"/>
+                </header>
+
+                <div class="ai-response__blocks">
+                    <t t-foreach="blocks" t-as="block" t-key="block_index">
+                        <AiText t-if="isBlock(block, 'text')"
+                                text="block.text"
+                                streaming="false"/>
+                        <KpiGrid t-elif="isBlock(block, 'kpi_grid')"
+                                 items="block.items or []"/>
+                        <HighlightList t-elif="isBlock(block, 'highlight_list')"
+                                       title="block.title"
+                                       tone="block.tone"
+                                       items="block.items or []"/>
+                        <DataTable t-elif="isBlock(block, 'data_table')"
+                                   title="block.title"
+                                   headers="block.headers or []"
+                                   rows="block.rows or []"/>
+                        <CalloutCard t-elif="isBlock(block, 'callout')"
+                                     title="block.title"
+                                     body="block.body"
+                                     tone="block.tone"
+                                     icon="block.icon or 'fa-info-circle'"/>
+                        <div t-elif="isBlock(block, 'actions')" class="ai-actions">
+                            <AiActionButton t-foreach="block.items or []" t-as="action" t-key="action_index"
+                                            label="action.label"
+                                            method="action.method"
+                                            kwargs="action.kwargs or {}"
+                                            danger="action.danger or false"
+                                            secondary="action.secondary or false"
+                                            icon="action.icon or ''"/>
+                        </div>
+                        <ToolTrace t-elif="isBlock(block, 'tool_trace')"
+                                   calls="block.calls or []"/>
+                    </t>
+
+                    <!-- Auto-append tool trace when envelope carries one
+                         outside the blocks array (e.g. ab_ai_gateway logs
+                         them as ai.usage.tool.log children). -->
+                    <ToolTrace t-if="toolCalls.length and !blocks.find((b) => b.type == 'tool_trace')"
+                               calls="toolCalls"/>
+                </div>
+
+                <ProvenanceBar t-if="provenance"
+                               provenance="provenance"
+                               streaming="state.streaming"/>
+            </t>
+        </section>
+    </t>
+</templates>

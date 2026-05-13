@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="ab_ai_ui.AiActionButton">
+        <button type="button" t-att-class="classes"
+                t-att-disabled="state.running"
+                t-on-click="onRun"
+                t-att-aria-busy="state.running ? 'true' : 'false'">
+            <i t-if="state.running" class="fa fa-spinner fa-spin"/>
+            <i t-elif="props.icon" t-att-class="'fa ' + props.icon"/>
+            <span t-esc="props.label"/>
+        </button>
+    </t>
+</templates>
