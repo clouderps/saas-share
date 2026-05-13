@@ -6,6 +6,7 @@ import { SkeletonShimmer } from "../support/skeleton_shimmer";
 import { ErrorEnvelope } from "../support/error_envelope";
 import { ProvenanceBar } from "../support/provenance_bar";
 import { AiText } from "../blocks/ai_text";
+import { AiMarkdown } from "../blocks/ai_markdown";
 import { KpiGrid } from "../blocks/kpi_grid";
 import { HighlightList } from "../blocks/highlight_list";
 import { DataTable } from "../blocks/data_table";
@@ -34,7 +35,7 @@ export class AiResponse extends Component {
     static template = "ab_ai_ui.AiResponse";
     static components = {
         SkeletonShimmer, ErrorEnvelope, ProvenanceBar,
-        AiText, KpiGrid, HighlightList, DataTable,
+        AiText, AiMarkdown, KpiGrid, HighlightList, DataTable,
         CalloutCard, AiActionButton, ToolTrace,
     };
     static props = {

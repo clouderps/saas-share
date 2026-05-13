@@ -317,11 +317,108 @@
 /* ───── Layout variants ───── */
 
 .ai-response--chat {
-    /* Chat replies sit tighter inside the systray panel. */
+    /* Chat replies sit tighter inside the systray / full-page panel. */
     padding: 12px 14px;
     margin-block: 6px;
     box-shadow: none;
     background: #FFFFFF;
+    border-color: transparent;
+}
+.ai-response--chat.ai-response--compact {
+    padding: 0;
+}
+
+/* ───── AiMarkdown (chat rich-text body) ─────
+ * Inline-markdown subset rendered by safe escape + targeted replace.
+ * Tuned for chat-density: smaller headings, tight list spacing. */
+.ai-md {
+    color: #0F172A;
+    font-size: 0.95rem;
+    line-height: 1.65;
+}
+.ai-md > * + * {
+    margin-block-start: 8px;
+}
+.ai-md .ai-md-p {
+    margin: 0;
+}
+.ai-md .ai-md-h1,
+.ai-md .ai-md-h2,
+.ai-md .ai-md-h3 {
+    font-family: var(--ghaima-font-heading, inherit);
+    color: var(--ghaima-navy);
+    margin: 14px 0 4px 0;
+    font-weight: 600;
+    line-height: 1.3;
+}
+.ai-md .ai-md-h1 { font-size: 1.05rem; }
+.ai-md .ai-md-h2 { font-size: 0.98rem; }
+.ai-md .ai-md-h3 { font-size: 0.92rem; color: var(--ghaima-blue); }
+.ai-md .ai-md-ul,
+.ai-md .ai-md-ol {
+    margin: 4px 0;
+    padding-inline-start: 22px;
+}
+.ai-md .ai-md-ul li,
+.ai-md .ai-md-ol li {
+    margin: 3px 0;
+}
+.ai-md .ai-md-ul li::marker {
+    color: var(--ghaima-cyan);
+}
+.ai-md .ai-md-ol li::marker {
+    color: var(--ghaima-blue);
+    font-weight: 600;
+}
+.ai-md code {
+    background: var(--ghaima-bg);
+    border: 1px solid var(--ai-border);
+    border-radius: var(--ghaima-radius-sm);
+    padding: 1px 6px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.88em;
+    color: var(--ghaima-navy);
+}
+.ai-md pre.ai-md-code {
+    background: #0B1226;
+    color: #E2E8F0;
+    border-radius: var(--ghaima-radius-md);
+    padding: 12px 14px;
+    margin: 6px 0;
+    overflow-x: auto;
+    font-size: 0.85em;
+    line-height: 1.55;
+}
+.ai-md pre.ai-md-code code {
+    background: transparent;
+    border: none;
+    color: inherit;
+    padding: 0;
+    font-size: inherit;
+}
+.ai-md .ai-md-quote {
+    border-inline-start: 3px solid var(--ghaima-cyan);
+    background: var(--ghaima-bg);
+    padding: 8px 12px;
+    color: var(--ai-muted);
+    margin: 6px 0;
+    border-radius: var(--ghaima-radius-sm);
+    font-style: italic;
+}
+.ai-md a.ai-md-link {
+    color: var(--ghaima-blue);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(0, 95, 246, 0.25);
+    transition: border-color 0.12s ease;
+}
+.ai-md a.ai-md-link:hover {
+    border-bottom-color: var(--ghaima-blue);
+}
+.ai-md strong { color: var(--ghaima-navy); font-weight: 700; }
+.ai-md em     { color: #1E293B; }
+[dir="rtl"] .ai-md .ai-md-ul,
+[dir="rtl"] .ai-md .ai-md-ol {
+    padding-inline-start: 22px;
 }
 .ai-response--summary {
     /* Dashboard summaries fit a smaller card surface. */

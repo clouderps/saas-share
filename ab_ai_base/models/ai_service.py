@@ -454,15 +454,22 @@ class AIProviderService(models.AbstractModel):
             url = "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s" % (
                 config.gemini_model, config.gemini_api_key
             )
+            generation_config = {
+                "temperature": config.temperature,
+                "maxOutputTokens": config.max_tokens,
+            }
+            # Gemini 2.5 family enables "thinking" by default, which silently
+            # eats most of maxOutputTokens before the visible reply starts.
+            # Disable it for structured replies — we want the full budget on
+            # the JSON envelope, not hidden chain-of-thought.
+            if (config.gemini_model or '').startswith('gemini-2.5'):
+                generation_config["thinkingConfig"] = {"thinkingBudget": 0}
             response = requests.post(
                 url,
                 headers={"Content-Type": "application/json"},
                 json={
                     "contents": [{"parts": [{"text": prompt}]}],
-                    "generationConfig": {
-                        "temperature": config.temperature,
-                        "maxOutputTokens": config.max_tokens,
-                    },
+                    "generationConfig": generation_config,
                 },
                 timeout=config.timeout,
             )
@@ -602,6 +609,12 @@ class AIProviderService(models.AbstractModel):
             url = "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s" % (
                 config.gemini_model, config.gemini_api_key
             )
+            generation_config = {
+                "temperature": config.temperature,
+                "maxOutputTokens": config.max_tokens,
+            }
+            if (config.gemini_model or '').startswith('gemini-2.5'):
+                generation_config["thinkingConfig"] = {"thinkingBudget": 0}
             response = requests.post(
                 url,
                 headers={"Content-Type": "application/json"},
@@ -613,10 +626,7 @@ class AIProviderService(models.AbstractModel):
                             "data": image_data,
                         }},
                     ]}],
-                    "generationConfig": {
-                        "temperature": config.temperature,
-                        "maxOutputTokens": config.max_tokens,
-                    },
+                    "generationConfig": generation_config,
                 },
                 timeout=config.timeout,
             )

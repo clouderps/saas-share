@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="ab_ai_ui.AiMarkdown">
+        <div class="ai-md" dir="auto" t-out="html"/>
+    </t>
+</templates>

@@ -25,9 +25,8 @@
 
                 <div class="ai-response__blocks">
                     <t t-foreach="blocks" t-as="block" t-key="block_index">
-                        <AiText t-if="isBlock(block, 'text')"
-                                text="block.text"
-                                streaming="false"/>
+                        <AiMarkdown t-if="isBlock(block, 'text')"
+                                    text="block.text"/>
                         <KpiGrid t-elif="isBlock(block, 'kpi_grid')"
                                  items="block.items or []"/>
                         <HighlightList t-elif="isBlock(block, 'highlight_list')"
