@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="ab_ai_ui.AiResponseEnvelopeField">
+        <t t-if="envelope">
+            <AiResponse envelope="envelope" layout="layout"/>
+        </t>
+        <t t-else="">
+            <div class="text-muted p-3" role="status">
+                <i class="fa fa-magic me-1"/>
+                AI analysis not generated yet.
+            </div>
+        </t>
+    </t>
+</templates>

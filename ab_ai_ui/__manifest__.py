@@ -68,6 +68,8 @@ colours. RTL-first via CSS logical properties.
             'ab_ai_ui/static/src/ai_response/ai_response.js',
             'ab_ai_ui/static/src/ai_response/ai_response.xml',
             'ab_ai_ui/static/src/ai_response/ai_response_service.js',
+            'ab_ai_ui/static/src/widgets/ai_response_envelope_widget.js',
+            'ab_ai_ui/static/src/widgets/ai_response_envelope_widget.xml',
         ],
         'point_of_sale._assets_pos': [
             'ab_ai_ui/static/src/ai_response_components.scss',
