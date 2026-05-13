@@ -59,12 +59,17 @@ class AIProviderConfig(models.Model):
     )
     
     # Google Gemini Settings
+    # 2.0 variants ('gemini-2.0-flash-001' / 'gemini-2.0-flash-lite-001')
+    # were dropped on 2026-05-13 after Google's API responded
+    # `404 "This model is no longer available to new users"` against a
+    # fresh key. The replacements below were smoke-tested live against
+    # generativelanguage.googleapis.com/v1beta on the same date.
     gemini_model = fields.Selection(
         [
             ('gemini-2.5-flash', 'Gemini 2.5 Flash'),
             ('gemini-2.5-pro', 'Gemini 2.5 Pro'),
-            ('gemini-2.0-flash-001', 'Gemini 2.0 Flash'),
-            ('gemini-2.0-flash-lite-001', 'Gemini 2.0 Flash Lite'),
+            ('gemini-2.5-flash-lite', 'Gemini 2.5 Flash Lite'),
+            ('gemini-flash-latest', 'Gemini Flash (latest)'),
         ],
         string='Gemini Model',
         default='gemini-2.5-flash'
