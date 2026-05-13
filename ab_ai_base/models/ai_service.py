@@ -2,7 +2,9 @@
 
 from odoo import models, api, _
 from odoo.exceptions import UserError
+import json
 import logging
+import time
 import requests
 
 _logger = logging.getLogger(__name__)
@@ -95,6 +97,274 @@ class AIProviderService(models.AbstractModel):
             'simulated_reason': reason,
         }
         return text, usage
+
+    # ------------------------------------------------------------------
+    # Phase 6 of SAAS_AI_PLAN.md — streaming (Server-Sent Events).
+    # ------------------------------------------------------------------
+
+    def stream_call(self, prompt, config=None, system_prompt=None,
+                    tools=None):
+        """Generator-style streaming variant of ``call()``.
+
+        Yields a sequence of dicts:
+            {'delta': '...', 'done': False, 'usage': None, 'tool_calls': None}
+            ...
+            {'delta': '',    'done': True,  'usage': {...}, 'tool_calls': [...]}
+
+        The final dict's ``usage`` is populated when the provider supplies
+        it; ``tool_calls`` is populated when the model decided to invoke
+        a tool (Phase 7 — the gateway dispatcher consumes it).
+
+        Providers without real streaming fall through to the non-streaming
+        ``call()`` and yield the whole response as a single delta plus a
+        terminating done dict — keeps the consumer code shape identical
+        across providers.
+        """
+        if self._is_simulation_mode():
+            yield from self._simulate_stream(reason='explicit_toggle')
+            return
+
+        if not config:
+            config = self.env['ai.provider.config'].sudo().search(
+                [('active', '=', True)], limit=1)
+            if not config:
+                yield from self._simulate_stream(reason='no_provider_configured')
+                return
+
+        full_prompt = prompt
+        if system_prompt:
+            full_prompt = f"{system_prompt}\n\n{prompt}"
+        elif config.system_prompt:
+            full_prompt = f"{config.system_prompt}\n\n{prompt}"
+
+        provider = config.ai_provider
+        if provider == 'openai':
+            yield from self._stream_openai(full_prompt, config, tools=tools)
+        else:
+            # No real-streaming implementation for this provider yet —
+            # do a regular call and emit a single chunk + done so the
+            # consumer's protocol stays uniform.
+            _logger.info(
+                'stream_call: provider %s lacks streaming impl — '
+                'using non-streaming fallback', provider)
+            text, usage = self._call_ai_api(full_prompt, config)
+            config.increment_usage(tokens=usage.get('total_tokens', 0))
+            yield {'delta': text, 'done': False, 'usage': None, 'tool_calls': None}
+            yield {'delta': '', 'done': True, 'usage': usage, 'tool_calls': None}
+
+    def _simulate_stream(self, reason='explicit_toggle'):
+        """Yield the simulation placeholder text as 4 chunks so the
+        consumer's streaming UI exercises the partial-paint path."""
+        _logger.info('ai.provider.service: stream simulation (%s)', reason)
+        text = (
+            '[Simulated AI stream — gateway running in simulation mode. '
+            'Configure an active ai.provider.config and set '
+            'ir.config_parameter ab_ai_gateway.simulation=False to '
+            'enable real LLM responses. Reason: %s]'
+        ) % reason
+        chunks = [text[i:i + max(1, len(text) // 4)]
+                  for i in range(0, len(text), max(1, len(text) // 4))]
+        for chunk in chunks:
+            yield {'delta': chunk, 'done': False, 'usage': None, 'tool_calls': None}
+            time.sleep(0.05)
+        yield {
+            'delta': '',
+            'done': True,
+            'usage': {
+                'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0,
+                'model': 'simulation', 'provider': 'simulation',
+                'simulated_reason': reason,
+            },
+            'tool_calls': None,
+        }
+
+    def _stream_openai(self, prompt, config, tools=None):
+        """Real OpenAI streaming via SSE. Yields the same dict shape as
+        ``stream_call``. Token usage arrives in the final chunk when
+        ``stream_options.include_usage`` is on."""
+        messages = [
+            {"role": "system",
+             "content": "You are a helpful assistant that returns only valid JSON."},
+            {"role": "user", "content": prompt},
+        ]
+        payload = {
+            "model": config.openai_model,
+            "messages": messages,
+            "temperature": config.temperature,
+            "max_tokens": config.max_tokens,
+            "stream": True,
+            "stream_options": {"include_usage": True},
+        }
+        if tools:
+            payload["tools"] = tools
+
+        try:
+            with requests.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers={
+                    "Authorization": "Bearer %s" % config.openai_api_key,
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+                timeout=config.timeout,
+                stream=True,
+            ) as response:
+                response.raise_for_status()
+                aggregated = []
+                final_usage = None
+                tool_calls_acc = {}  # index → partial tool_call dict
+
+                for raw_line in response.iter_lines(decode_unicode=True):
+                    if not raw_line:
+                        continue
+                    if not raw_line.startswith("data:"):
+                        continue
+                    data_str = raw_line[len("data:"):].strip()
+                    if data_str == "[DONE]":
+                        break
+                    try:
+                        chunk = json.loads(data_str)
+                    except ValueError:
+                        continue
+                    choices = chunk.get("choices") or []
+                    if choices:
+                        delta = choices[0].get("delta") or {}
+                        content = delta.get("content")
+                        if content:
+                            aggregated.append(content)
+                            yield {
+                                'delta': content, 'done': False,
+                                'usage': None, 'tool_calls': None,
+                            }
+                        for tc in delta.get("tool_calls") or []:
+                            idx = tc.get("index", 0)
+                            slot = tool_calls_acc.setdefault(idx, {
+                                'id': tc.get('id'),
+                                'type': tc.get('type', 'function'),
+                                'function': {'name': '', 'arguments': ''},
+                            })
+                            fn = tc.get('function') or {}
+                            if fn.get('name'):
+                                slot['function']['name'] = fn['name']
+                            if fn.get('arguments'):
+                                slot['function']['arguments'] += fn['arguments']
+                    if chunk.get("usage"):
+                        u = chunk["usage"]
+                        final_usage = {
+                            'prompt_tokens': u.get('prompt_tokens', 0),
+                            'completion_tokens': u.get('completion_tokens', 0),
+                            'total_tokens': u.get('total_tokens', 0),
+                            'model': config.openai_model, 'provider': 'openai',
+                        }
+
+                if final_usage is None:
+                    # Approximate when the provider didn't supply usage
+                    full_text = ''.join(aggregated)
+                    final_usage = {
+                        'prompt_tokens': max(1, len(prompt) // 4),
+                        'completion_tokens': max(1, len(full_text) // 4),
+                        'total_tokens': max(2, (len(prompt) + len(full_text)) // 4),
+                        'model': config.openai_model, 'provider': 'openai',
+                    }
+                config.increment_usage(tokens=final_usage.get('total_tokens', 0))
+                tool_calls = list(tool_calls_acc.values()) if tool_calls_acc else None
+                yield {
+                    'delta': '', 'done': True,
+                    'usage': final_usage, 'tool_calls': tool_calls,
+                }
+        except requests.exceptions.RequestException as e:
+            _logger.error("OpenAI stream error: %s", e)
+            yield {
+                'delta': '', 'done': True,
+                'usage': {
+                    'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0,
+                    'model': config.openai_model, 'provider': 'openai',
+                    'error': str(e),
+                },
+                'tool_calls': None,
+            }
+
+    # ------------------------------------------------------------------
+    # Phase 7 — tool calling (non-streaming variant).
+    # ------------------------------------------------------------------
+
+    def call_with_tools(self, prompt, config=None, system_prompt=None, tools=None):
+        """Non-streaming call that surfaces the model's tool_calls when
+        the model decides to invoke a tool. Returns
+            (response_text, usage_dict, tool_calls_list_or_None).
+
+        ``tool_calls`` is None when the model returned plain text.
+        The gateway service handles dispatch + re-call loops on top.
+        Only OpenAI is wired today; other providers return tool_calls=None
+        and behave like plain call().
+        """
+        if self._is_simulation_mode() or not tools:
+            text, usage = self.call(prompt, config=config, system_prompt=system_prompt)
+            return text, usage, None
+
+        if not config:
+            config = self.env['ai.provider.config'].sudo().search(
+                [('active', '=', True)], limit=1)
+            if not config:
+                text, usage = self._simulate_call(reason='no_provider_configured')
+                return text, usage, None
+
+        full_prompt = prompt
+        if system_prompt:
+            full_prompt = f"{system_prompt}\n\n{prompt}"
+        elif config.system_prompt:
+            full_prompt = f"{config.system_prompt}\n\n{prompt}"
+
+        if config.ai_provider == 'openai':
+            return self._call_openai_with_tools(full_prompt, config, tools)
+
+        # Other providers: ignore tools for now.
+        _logger.info(
+            'call_with_tools: provider %s lacks tool-calling impl — '
+            'ignoring tools and doing plain call', config.ai_provider)
+        text, usage = self._call_ai_api(full_prompt, config)
+        config.increment_usage(tokens=usage.get('total_tokens', 0))
+        return text, usage, None
+
+    def _call_openai_with_tools(self, prompt, config, tools):
+        """OpenAI tool-calling. Returns (text, usage, tool_calls|None)."""
+        try:
+            response = requests.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers={
+                    "Authorization": "Bearer %s" % config.openai_api_key,
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": config.openai_model,
+                    "messages": [
+                        {"role": "system",
+                         "content": "You are a helpful assistant. Call tools when appropriate."},
+                        {"role": "user", "content": prompt},
+                    ],
+                    "tools": tools,
+                    "temperature": config.temperature,
+                    "max_tokens": config.max_tokens,
+                },
+                timeout=config.timeout,
+            )
+            response.raise_for_status()
+            data = response.json()
+            choice = data['choices'][0]['message']
+            text = (choice.get('content') or '').strip()
+            tool_calls = choice.get('tool_calls') or None
+            api_usage = data.get('usage', {})
+            usage = {
+                'prompt_tokens': api_usage.get('prompt_tokens', 0),
+                'completion_tokens': api_usage.get('completion_tokens', 0),
+                'total_tokens': api_usage.get('total_tokens', 0),
+                'model': config.openai_model, 'provider': 'openai',
+            }
+            config.increment_usage(tokens=usage.get('total_tokens', 0))
+            return text, usage, tool_calls
+        except requests.exceptions.RequestException as e:
+            _logger.error("OpenAI tools API error: %s", e)
+            raise UserError(_('OpenAI Tools Error: %s') % e)
 
     def test_connection(self, config):
         """Test AI API connection."""
