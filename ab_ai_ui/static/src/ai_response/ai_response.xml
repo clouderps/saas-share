@@ -53,6 +53,9 @@
                         </div>
                         <ToolTrace t-elif="isBlock(block, 'tool_trace')"
                                    calls="block.calls or []"/>
+                        <SuggestionChips t-elif="isBlock(block, 'suggestion_chips')"
+                                         title="block.title or ''"
+                                         items="block.items or []"/>
                     </t>
 
                     <!-- Auto-append tool trace when envelope carries one

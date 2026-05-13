@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="ab_ai_ui.SuggestionChips">
+        <div class="ai-chips" t-ref="root" dir="auto">
+            <p t-if="props.title" class="ai-chips__title" t-esc="props.title"/>
+            <div class="ai-chips__row">
+                <button t-foreach="props.items" t-as="item" t-key="item_index"
+                        type="button"
+                        class="ai-chips__chip"
+                        t-on-click="() => this.onPick(item)"
+                        t-att-title="item.prompt">
+                    <i t-if="item.icon" t-attf-class="fa #{item.icon} me-1"/>
+                    <span t-esc="item.label"/>
+                </button>
+            </div>
+        </div>
+    </t>
+</templates>
