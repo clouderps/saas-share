@@ -94,14 +94,59 @@ def call_llm(env, agent, *, system_prompt, user_prompt, tools=None,
 
 
 def _try_get_gateway(env):
-    """Return an active ai.client.config or None — never raises."""
+    """Return an active ai.client.config or None — never raises.
+
+    Probes whether the gateway is *really* installed by checking for
+    its own tables. On tenants and dev workspaces where saas-ai is
+    on the addons_path but ab_ai_gateway isn't installed, the model
+    classes load but tables are absent — calling the gateway endpoint
+    in that case pollutes the log with "relation does not exist" lines
+    AND wastes 1-3 s per request before the runtime falls back to the
+    direct provider path. Probe result is cached on the registry per
+    process so the SQL only fires once after a restart.
+    """
     Cfg = env.get('ai.client.config')
     if Cfg is None:
         return None
+
+    registry = env.registry
+    cached = getattr(registry, '_aigent_gateway_installed', None)
+    if cached is None:
+        cached = _probe_gateway_installed(env)
+        try:
+            registry._aigent_gateway_installed = cached
+        except Exception:
+            pass
+    if not cached:
+        return None
+
     try:
         return Cfg.sudo().get_config()
     except Exception:
         return None
+
+
+def _probe_gateway_installed(env):
+    """True iff the gateway's own tables / columns exist on this DB.
+
+    Cheap one-shot SQL — runs once per process. Tenants where
+    ab_ai_gateway isn't installed get False and the runtime skips
+    the broken endpoint entirely."""
+    try:
+        env.cr.execute("""
+            SELECT 1 FROM information_schema.tables
+             WHERE table_name = 'ai_tenant_budget'
+        """)
+        if env.cr.fetchone() is None:
+            return False
+        env.cr.execute("""
+            SELECT 1 FROM information_schema.columns
+             WHERE table_name = 'ai_prompt_template'
+               AND column_name = 'model_class'
+        """)
+        return env.cr.fetchone() is not None
+    except Exception:
+        return False
 
 
 def _feature_for(agent):

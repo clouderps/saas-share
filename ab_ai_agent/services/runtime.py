@@ -242,14 +242,30 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
         on_event('done', run_id=agent_run.id, state='maxhops')
         return envelope['response'], agent_run, envelope
 
-    # ── 5. Citations ──────────────────────────────────────────
-    rendered_text, sources = citation_svc.apply_numeric_citations(
-        final_text, source_lookup or {})
+    # ── 5. Lift render envelope ───────────────────────────────
+    # The LLM was told to emit a JSON `render` block for reports.
+    # When `final_text` is itself a JSON object with a `render` key,
+    # extract that block and stash on the envelope so the OWL
+    # <AiResponse/> renderer paints it as a data_table / kpi_grid
+    # instead of dumping the raw JSON in the chat bubble.
+    extracted_render = None
+    extracted_text = final_text
+    parsed_payload = _try_parse_report_payload(final_text)
+    if parsed_payload:
+        extracted_render = parsed_payload.get('render')
+        extracted_text = parsed_payload.get('response') or parsed_payload.get('summary') or ''
+        if not extracted_text and extracted_render:
+            extracted_text = extracted_render.get('title') or ''
 
-    # ── 6. Build the final envelope ───────────────────────────
+    # ── 6. Citations ──────────────────────────────────────────
+    rendered_text, sources = citation_svc.apply_numeric_citations(
+        extracted_text, source_lookup or {})
+
+    # ── 7. Build the final envelope ───────────────────────────
     latency_ms = int((time.perf_counter() - started_perf) * 1000)
     envelope = {
         'response': rendered_text,
+        'render': extracted_render,
         'agent_id': agent.id,
         'agent_code': agent.code,
         'usage': {
@@ -386,6 +402,44 @@ def _compose_system_prompt(env, agent, *, locale='en', skill=None, record_ref=No
         parts.append('## Locale\nRespond in clear, concise English.')
 
     return '\n\n'.join(p for p in parts if p)
+
+
+def _try_parse_report_payload(text):
+    """When the LLM emits a final answer as JSON `{"render": {...}}`,
+    return a dict with parsed render + optional summary. Returns None
+    if `text` isn't a parseable report payload.
+
+    Tolerant of ```json fences and surrounding whitespace."""
+    if not text or not isinstance(text, str):
+        return None
+    raw = text.strip()
+    # Strip ```json … ``` fences.
+    if raw.startswith('```'):
+        raw = raw.lstrip('`')
+        if raw.lower().startswith('json'):
+            raw = raw[4:]
+        raw = raw.strip()
+        if raw.endswith('```'):
+            raw = raw[:-3].rstrip()
+    # Quick reject — must look like an object.
+    if not (raw.startswith('{') and raw.endswith('}')):
+        return None
+    import json as _json
+    try:
+        obj = _json.loads(raw)
+    except (ValueError, TypeError):
+        return None
+    if not isinstance(obj, dict):
+        return None
+    if 'render' not in obj:
+        return None
+    render = obj.get('render')
+    if not isinstance(render, dict):
+        return None
+    return {
+        'render': render,
+        'response': obj.get('response') or obj.get('summary') or '',
+    }
 
 
 def _business_snapshot_block(env):
