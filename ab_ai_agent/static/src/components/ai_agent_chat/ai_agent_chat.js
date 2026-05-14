@@ -65,10 +65,15 @@ export class AiAgentChat extends Component {
         locale: { type: String, optional: true },
         onClose: { type: Function, optional: true },
         title: { type: String, optional: true },
+        // Manager-only: enables Web Speech API mic input + voice
+        // playback of assistant replies. Off by default — passed in
+        // via the Manager Console client action params.
+        enableVoice: { type: Boolean, optional: true },
     };
     static defaultProps = {
         surface: "chat",
         hideSidebar: false,
+        enableVoice: false,
     };
 
     setup() {
@@ -91,11 +96,17 @@ export class AiAgentChat extends Component {
             messages: [],
             isThinking: false,
             muted,
+            // Voice (manager-only, gated by props.enableVoice)
+            recording: false,
+            speechAvailable: typeof window !== "undefined"
+                && (window.SpeechRecognition || window.webkitSpeechRecognition),
         });
 
         this.streamRef = useRef("stream");
         this.textareaRef = useRef("textarea");
         this._audioCtx = null;
+        this._recognition = null;       // SpeechRecognition instance, lazy
+        this._lastSpoken = null;        // throttle re-speak of same text
 
         // Auto-scroll on new messages.
         useEffect(
@@ -243,6 +254,97 @@ export class AiAgentChat extends Component {
         this.state.muted = !this.state.muted;
         try { localStorage.setItem("ai_agent_chat_muted", this.state.muted ? "1" : "0"); }
         catch (e) {}
+        // If we just muted while a response is being read aloud, cut it.
+        if (this.state.muted) {
+            try { window.speechSynthesis?.cancel(); } catch (e) {}
+        }
+    }
+
+    // ── Voice in (SpeechRecognition) ──────────────────────────
+
+    get speechLang() {
+        return (this.props.locale || "en").startsWith("ar") ? "ar-SA" : "en-US";
+    }
+
+    toggleRecording() {
+        if (!this.props.enableVoice) return;
+        if (this.state.recording) {
+            this._stopRecording();
+        } else {
+            this._startRecording();
+        }
+    }
+
+    _startRecording() {
+        const Recog = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!Recog) {
+            this.notification.add("Voice input not supported in this browser.",
+                                  { type: "warning" });
+            return;
+        }
+        try {
+            const r = new Recog();
+            r.lang = this.speechLang;
+            r.continuous = false;
+            r.interimResults = true;
+            r.onresult = (ev) => {
+                let transcript = "";
+                for (let i = 0; i < ev.results.length; i++) {
+                    transcript += ev.results[i][0].transcript;
+                }
+                this.state.input = transcript;
+            };
+            r.onend = () => {
+                this.state.recording = false;
+                this._recognition = null;
+                // Auto-send when the user paused (non-empty result).
+                const text = (this.state.input || "").trim();
+                if (text) this._send(text);
+            };
+            r.onerror = (ev) => {
+                this.state.recording = false;
+                this._recognition = null;
+                if (ev.error !== "no-speech" && ev.error !== "aborted") {
+                    this.notification.add(`Voice error: ${ev.error}`,
+                                          { type: "warning" });
+                }
+            };
+            r.start();
+            this._recognition = r;
+            this.state.recording = true;
+            this.state.input = "";
+        } catch (e) {
+            this.notification.add(e.message || "Voice start failed",
+                                  { type: "warning" });
+        }
+    }
+
+    _stopRecording() {
+        try { this._recognition?.stop(); }
+        catch (e) {}
+    }
+
+    // ── Voice out (SpeechSynthesis) ───────────────────────────
+
+    _speakResponse(text) {
+        if (!this.props.enableVoice || this.state.muted || !text) return;
+        if (!window.speechSynthesis) return;
+        // Throttle re-speak of identical text (welcomes, errors).
+        if (text === this._lastSpoken) return;
+        this._lastSpoken = text;
+        // Cap length so we don't bombard the user with a 5-minute readout.
+        const safe = text.slice(0, 600);
+        try {
+            const utter = new SpeechSynthesisUtterance(safe);
+            utter.lang = this.speechLang;
+            utter.rate = 1.05;
+            utter.pitch = 1.0;
+            utter.volume = 0.95;
+            window.speechSynthesis.cancel();    // stop any prior utterance
+            window.speechSynthesis.speak(utter);
+        } catch (e) {
+            // Voice synth can fail mid-load; silent.
+        }
     }
 
     /**
@@ -375,6 +477,11 @@ export class AiAgentChat extends Component {
                 feedback: null,
             });
             this._playDoneSound();
+            // Voice playback for the Manager Console — reads the
+            // rendered text (or report summary) aloud through the
+            // browser's SpeechSynthesis. No-op when enableVoice=false
+            // or the user has muted.
+            this._speakResponse(envelope.response || "");
             // If the envelope carries a navigation action (open_menu,
             // doAction descriptor), surface it as a chip on the bubble.
             if (envelope.action) {

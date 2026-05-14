@@ -174,9 +174,19 @@
             <!-- ── Footer ─────────────────────────────────────────── -->
             <footer class="o_ai_agent_chat__footer">
                 <form class="o_ai_agent_chat__form" t-on-submit.prevent="send">
+                    <!-- Voice input (manager-only, requires Web Speech API) -->
+                    <button t-if="props.enableVoice and state.speechAvailable"
+                            type="button"
+                            class="o_ai_agent_chat__mic"
+                            t-att-class="{ 'is-recording': state.recording }"
+                            t-on-click="toggleRecording"
+                            t-att-title="state.recording ? 'Stop recording (tap to send)' : 'Hold conversation — tap to speak'">
+                        <i t-att-class="state.recording ? 'fa fa-stop' : 'fa fa-microphone'"/>
+                        <span t-if="state.recording" class="o_ai_agent_chat__mic_pulse"/>
+                    </button>
                     <textarea t-ref="textarea" class="o_ai_agent_chat__textarea"
                               t-model="state.input"
-                              t-att-placeholder="placeholderText"
+                              t-att-placeholder="state.recording ? 'Listening…' : placeholderText"
                               t-on-keydown="onInputKeydown"
                               rows="1"/>
                     <button class="o_ai_agent_chat__send" type="submit"
@@ -195,7 +205,8 @@
         <div class="o_ai_agent_chat_page">
             <div class="o_ai_agent_chat_page__inner">
                 <AiAgentChat agentCode="params.agent_code"
-                             surface="'chat'"/>
+                             surface="'chat'"
+                             enableVoice="!!params.enable_voice"/>
             </div>
         </div>
     </t>
