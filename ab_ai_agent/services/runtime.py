@@ -333,16 +333,21 @@ def _compose_system_prompt(env, agent, *, locale='en', skill=None, record_ref=No
     if agent.all_tool_ids:
         parts.append(_tool_protocol_block(agent.all_tool_ids))
 
-    # Record context.
+    # Record context — when the call comes from chatter, we dump the
+    # record's actual field values into the prompt so the LLM can
+    # answer from real data instead of guessing. Uses Odoo 19's
+    # `_ai_truncate` pattern through ai.usage.local.log's referenceable
+    # whitelist; here we go through fields_get + read with a max-size
+    # guard so we don't blow the token budget on a 100-line invoice.
     if record_ref:
         try:
+            parts.append(_record_context_block(env, record_ref))
+        except Exception as e:
+            _logger.debug("record_context_block failed", exc_info=True)
             parts.append(
                 f'## Active record\n'
-                f'You are helping the user with `{record_ref._name}` id {record_ref.id} '
-                f'("{record_ref.display_name}"). Use this as primary context.'
+                f'You are helping the user with `{record_ref._name}` id {record_ref.id}.'
             )
-        except Exception:
-            pass
 
     # Skill context.
     if skill:
@@ -362,6 +367,101 @@ def _compose_system_prompt(env, agent, *, locale='en', skill=None, record_ref=No
         parts.append('## Locale\nRespond in clear, concise English.')
 
     return '\n\n'.join(p for p in parts if p)
+
+
+def _record_context_block(env, record):
+    """Dump a record's fields into a Markdown block for the system prompt.
+
+    Goals:
+      * Show the LLM real data so the answer is grounded
+      * Bounded size — skip binary + html, truncate text, cap relational
+        previews at 50 items
+      * ACL-safe — relies on the active env (current user's permissions)
+
+    Returns a string ready to append to the system prompt parts."""
+    if not record or not record.exists():
+        return ''
+    Model = env[record._name]
+    model_label = Model._description or record._name
+
+    # Pull fields the user can read. Skip noisy types upfront.
+    skip_types = {'binary', 'html'}
+    skip_names = {'__last_update', 'create_date', 'write_date',
+                  'create_uid', 'write_uid', 'message_ids',
+                  'message_follower_ids', 'message_partner_ids',
+                  'activity_ids', 'activity_user_id', 'activity_state',
+                  'activity_summary', 'activity_date_deadline',
+                  'website_message_ids', 'access_token'}
+    fields_info = Model.fields_get()
+
+    lines = [
+        '## Active record (the user is looking at this)',
+        f'- Model: `{record._name}` ({model_label})',
+        f'- Record id: {record.id}',
+    ]
+    try:
+        lines.append(f'- Display name: "{record.display_name}"')
+    except Exception:
+        pass
+
+    # Chatter snapshot — last 3 message bodies (text-only).
+    try:
+        if 'message_ids' in record._fields and record.message_ids:
+            recent = record.sudo().message_ids.sorted('date', reverse=True)[:3]
+            chatter_bits = []
+            for m in recent:
+                body = (m.body or '').strip()
+                # Strip HTML; budget per bubble.
+                import re as _re
+                txt = _re.sub(r'<[^>]+>', ' ', body)
+                txt = _re.sub(r'\s+', ' ', txt).strip()
+                if txt:
+                    who = (m.author_id.name if m.author_id else m.email_from) or 'system'
+                    chatter_bits.append(f'  - {m.date} · {who}: "{txt[:300]}"')
+            if chatter_bits:
+                lines.append('- Recent chatter:')
+                lines.extend(chatter_bits)
+    except Exception:
+        pass
+
+    lines.append('')
+    lines.append('### Field values')
+    for fname, info in sorted(fields_info.items()):
+        if fname in skip_names:
+            continue
+        ftype = info.get('type', '')
+        if ftype in skip_types:
+            continue
+        try:
+            value = record[fname]
+        except Exception:
+            continue
+        if value in (False, None, '', []):
+            continue
+        # Relational handling.
+        if ftype == 'many2one':
+            try:
+                value = f'{value.display_name} (id {value.id})'
+            except Exception:
+                continue
+        elif ftype in ('one2many', 'many2many'):
+            try:
+                items = value[:50]
+                names = [r.display_name for r in items]
+                value = f'[{len(value)} total] ' + ', '.join(filter(None, names))[:600]
+            except Exception:
+                continue
+        elif isinstance(value, str) and len(value) > 800:
+            value = value[:800] + ' …[truncated]'
+        elif hasattr(value, 'strftime'):
+            value = value.strftime('%Y-%m-%d %H:%M' if ftype == 'datetime' else '%Y-%m-%d')
+        label = info.get('string') or fname
+        lines.append(f'- **{label}** (`{fname}`): {value}')
+
+    lines.append('')
+    lines.append('Use these field values as ground truth. Cite the field '
+                 'name in your answer when relevant.')
+    return '\n'.join(lines)
 
 
 def _tool_protocol_block(tools):

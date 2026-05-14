@@ -102,13 +102,49 @@ export class AiAgentChat extends Component {
                     this.aiAgent.setActiveAgent(found);
                 }
             }
-            // Initial welcome message — adapt to surface.
-            this._addAssistantWelcome();
-            // If parent passed an initial message, auto-send.
+            // Chatter / record-anchored surface: load any prior
+            // conversation history before painting the welcome.
+            if (this.props.recordModel && this.props.recordId) {
+                const loaded = await this._loadRecordHistory();
+                if (!loaded) {
+                    this._addAssistantWelcome();
+                }
+            } else {
+                this._addAssistantWelcome();
+            }
+            // Auto-send the initial prompt if the parent passed one.
             if (this.props.initialMessage) {
                 await this._send(this.props.initialMessage);
             }
         });
+    }
+
+    async _loadRecordHistory() {
+        try {
+            const res = await this.aiAgent.lookupRecordConversation({
+                recordModel: this.props.recordModel,
+                recordId: this.props.recordId,
+                agentCode: this.props.agentCode,
+            });
+            if (res?.success && res.messages?.length) {
+                const agent = this.activeAgent;
+                this._loadedConversationId = res.conversation_id;
+                for (const m of res.messages) {
+                    this.state.messages.push({
+                        role: m.role || "assistant",
+                        id: `h-${m.id}`,
+                        text: m.text,
+                        agentName: agent?.name || "Ghaima Assistant",
+                        agentAccent: agent?.accent || "blue",
+                        isHistorical: true,
+                    });
+                }
+                return true;
+            }
+        } catch (e) {
+            // Best-effort — fall back to welcome on any error.
+        }
+        return false;
     }
 
     // ── Derived state ─────────────────────────────────────────

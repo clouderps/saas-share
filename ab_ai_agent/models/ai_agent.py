@@ -181,6 +181,31 @@ class AIAgent(models.Model):
                     'max_hops must be between 1 and 20 (got %s).'
                 ) % agent.max_hops)
 
+    @api.constrains('active')
+    def _check_single_active_on_tenant(self):
+        """Business rule:
+          * Tenant instance: at most ONE active agent at a time.
+          * Central (DBCLOUD): many active agents allowed.
+
+        We detect "central" by the presence of the ab_ai_gateway
+        service-class model — that module installs only on DBCLOUD.
+        Tenants ship ab_ai_client (gateway *consumer*) but never
+        `ai.gateway.service`."""
+        if 'ai.gateway.service' in self.env:
+            # Central — many agents allowed.
+            return
+        active_count = self.sudo().search_count([('active', '=', True)])
+        if active_count > 1:
+            others = self.sudo().search(
+                [('active', '=', True), ('id', 'not in', self.ids)],
+                limit=1,
+            )
+            other_name = others.name if others else 'another agent'
+            raise ValidationError(_(
+                "On a tenant instance only one agent can be active at a "
+                "time. Please archive %s before activating another."
+            ) % other_name)
+
     @api.ondelete(at_uninstall=False)
     def _unlink_system(self):
         if any(agent.is_system for agent in self):

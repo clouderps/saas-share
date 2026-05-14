@@ -93,6 +93,19 @@ export const aiAgentService = {
             }
         }
 
+        async function lookupRecordConversation({ recordModel, recordId, agentCode } = {}) {
+            if (!recordModel || !recordId) return { success: false };
+            try {
+                return await rpc("/ai_agent/conversation/lookup", {
+                    record_model: recordModel,
+                    record_id: recordId,
+                    agent_code: agentCode,
+                });
+            } catch (e) {
+                return { success: false, error: e.message };
+            }
+        }
+
         // ── Live meter ──────────────────────────────────────────
         async function refreshMeter(period = "today") {
             try {
@@ -144,6 +157,7 @@ export const aiAgentService = {
             runAgent,
             rateRun,
             refreshMeter,
+            lookupRecordConversation,
         };
     },
 };
