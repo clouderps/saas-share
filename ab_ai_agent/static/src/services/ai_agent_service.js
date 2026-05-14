@@ -2,6 +2,8 @@
 
 import { registry } from "@web/core/registry";
 import { reactive } from "@odoo/owl";
+import { rpc } from "@web/core/network/rpc";
+import { user } from "@web/core/user";
 
 /**
  * aiAgentService — frontend orchestrator for the Phase H agent runtime.
@@ -11,15 +13,18 @@ import { reactive } from "@odoo/owl";
  * every component (chat, chip, skill card, token meter) reads the
  * same data and updates in lockstep.
  *
+ * In Odoo 18, `rpc` and `user` are module imports rather than
+ * registered services — only bus + notification go through useService.
+ *
  * Lives in saas-share so it's available wherever ab_ai_agent is
  * installed (central + tenants). Components are surface-agnostic —
  * the chat shell, chatter button, composer wizard, and website
  * widget all consume this same service.
  */
 export const aiAgentService = {
-    dependencies: ["rpc", "bus_service", "notification", "user"],
+    dependencies: ["bus_service", "notification"],
 
-    start(env, { rpc, bus_service, notification, user }) {
+    start(env, { bus_service, notification }) {
         const state = reactive({
             agents: [],
             activeAgent: null,
