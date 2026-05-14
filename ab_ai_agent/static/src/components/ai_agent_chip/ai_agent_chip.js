@@ -50,11 +50,18 @@ export class AiAgentChip extends Component {
     }
 
     get initials() {
-        const name = this.props.agent?.name || "AI";
-        return name
+        return this.initialsOf(this.props.agent?.name);
+    }
+
+    // Exposed to the template — OWL can't tokenize regex literals
+    // inline (`/\s+/` breaks the expression compiler).
+    initialsOf(name) {
+        const safe = (name || "AI").trim();
+        if (!safe) return "AI";
+        return safe
             .split(/\s+/)
             .slice(0, 2)
-            .map((w) => w[0]?.toUpperCase())
+            .map((w) => (w[0] || "").toUpperCase())
             .join("");
     }
 

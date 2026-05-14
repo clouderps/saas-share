@@ -568,7 +568,41 @@
     .tool-duration { color: var(--ai-ghaima-muted); font-variant-numeric: tabular-nums; font-size: 0.75rem; }
 }
 
-// ─── 7. RTL adjustments ─────────────────────────────────────────────
+// ─── 7. Chatter Ask AI button ───────────────────────────────────────
+
+.o-mail-Chatter-askAI {
+    background: white !important;
+    color: var(--ai-ghaima-blue) !important;
+    border: 1px solid var(--ai-ghaima-line) !important;
+    font-weight: 600;
+    transition: all 0.15s ease;
+
+    &:hover {
+        background: var(--ai-ghaima-blue) !important;
+        color: white !important;
+        border-color: var(--ai-ghaima-blue) !important;
+    }
+
+    .fa-magic {
+        color: var(--ai-ghaima-cyan);
+        transition: color 0.15s ease;
+    }
+    &:hover .fa-magic { color: white; }
+}
+
+// Dialog wrapper sizing — chatter Ask AI dialog opens at size="lg"
+// but the chat shell needs more breathing room than the default modal.
+.o_dialog .o_ai_agent_chat {
+    border-radius: 0;          // dialog already has rounded corners
+    min-height: 560px;
+    max-height: 75vh;
+
+    .o_ai_agent_chat__body {
+        max-height: calc(75vh - 160px);
+    }
+}
+
+// ─── 8. RTL adjustments ─────────────────────────────────────────────
 
 [dir="rtl"] {
     .o_ai_agent_chat__textarea { text-align: start; }

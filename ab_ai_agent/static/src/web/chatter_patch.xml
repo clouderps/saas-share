@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <!-- Inject "Ask AI" button into the Chatter top bar. Positioned
+         right after the Activity button, before the flex-grow spacer
+         that pushes the follow / attach widgets to the right edge. -->
+    <t t-name="ab_ai_agent.ChatterAskAIButton" t-inherit="mail.Chatter" t-inherit-mode="extension">
+        <xpath expr="//span[hasclass('o-mail-Chatter-topbarGrow')]" position="before">
+            <button class="o-mail-Chatter-askAI btn btn-secondary text-nowrap me-1"
+                    t-att-class="{ 'my-2': !props.compactHeight }"
+                    t-on-click="onClickAskAI"
+                    title="Ask the AI agent about this record">
+                <i class="fa fa-magic me-1"/>
+                Ask AI
+            </button>
+        </xpath>
+    </t>
+
+    <!-- Dialog wrapper that mounts <AiAgentChat/> inside the standard
+         Odoo Dialog frame. -->
+    <t t-name="ab_ai_agent.AiAgentChatDialog">
+        <Dialog title="dialogTitle" size="'lg'" contentClass="'p-0'" footer="false">
+            <AiAgentChat surface="'chatter'"
+                         recordModel="props.recordModel"
+                         recordId="props.recordId"
+                         recordName="props.recordName || ''"
+                         hideSidebar="false"
+                         onClose="props.close"/>
+        </Dialog>
+    </t>
+
+</templates>

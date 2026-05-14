@@ -1,6 +1,6 @@
 {
     'name': 'AI Agent Runtime',
-    'version': '18.0.1.0.0',
+    'version': '18.0.1.1.0',
     'category': 'AI/Agents',
     'summary': 'Cross-instance AI agent runtime — personas, tools, RAG, metering. '
                'Gateway-independent: works on tenants and central DBCLOUD alike.',
@@ -66,6 +66,9 @@ agents, accounting agents) layer on top via data XML + Python tools.
             'ab_ai_agent/static/src/components/ai_agent_token_meter/ai_agent_token_meter.xml',
             'ab_ai_agent/static/src/components/ai_agent_run_trace/ai_agent_run_trace.js',
             'ab_ai_agent/static/src/components/ai_agent_run_trace/ai_agent_run_trace.xml',
+            # Chatter patch — drops "Ask AI" into every mail.thread form
+            'ab_ai_agent/static/src/web/chatter_patch.js',
+            'ab_ai_agent/static/src/web/chatter_patch.xml',
         ],
     },
     'installable': True,

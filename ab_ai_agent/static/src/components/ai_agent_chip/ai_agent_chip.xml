@@ -22,9 +22,9 @@
                          t-att-class="{ 'is-active': props.agent?.id === a.id }"
                          t-on-click="() => this.pick(a)">
                         <span class="o_ai_agent_chip__avatar"
-                              t-att-class="`o_accent-${a.accent || 'blue'}`">
+                              t-att-class="accentClass(a)">
                             <img t-if="a.avatar_url" t-att-src="a.avatar_url" alt=""/>
-                            <span t-else="" t-esc="a.name.split(/\s+/).map((w) => w[0]).slice(0,2).join('').toUpperCase()"/>
+                            <span t-else="" t-esc="initialsOf(a.name)"/>
                         </span>
                         <div>
                             <p class="o_ai_agent_chip_option__name" t-esc="a.name"/>

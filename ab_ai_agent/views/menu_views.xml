@@ -1,70 +1,87 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Standalone top-level menu. Cross-instance (lives in saas-share),
-         so it must NOT depend on the ab_ai_client "Ghaima AI" root.
-         The chatbot bridge module reparents these into Ghaima AI on
-         tenants — central keeps its own top-level. -->
+    <!-- The single root for every AI surface in the app.
+         Cross-instance: lives in saas-share, has no business-domain
+         dependency. Tenant modules (ab_ai_client, ab_ai_chatbot,
+         ab_scan_docs, …) reparent their menus into this root via
+         a bridge in ab_ai_chatbot — which is the only module that
+         depends on every layer involved. -->
 
-    <menuitem id="menu_ai_agent_root"
-              name="AI Agents"
+    <menuitem id="menu_ai_root"
+              name="AI"
               web_icon="ab_ai_agent,static/description/icon.png"
-              sequence="6"/>
+              sequence="5"/>
 
-    <!-- Primary surfaces -->
-    <menuitem id="menu_ai_agent_list"
+    <!-- ── Workspace ───────────────────────────────────── -->
+
+    <menuitem id="menu_ai_agents_section"
               name="Agents"
-              parent="menu_ai_agent_root"
+              parent="menu_ai_root"
+              sequence="10"/>
+
+    <menuitem id="menu_ai_agent_list"
+              name="All Agents"
+              parent="menu_ai_agents_section"
               action="action_ai_agent"
               sequence="10"/>
 
     <menuitem id="menu_ai_agent_run"
               name="Run History"
-              parent="menu_ai_agent_root"
+              parent="menu_ai_agents_section"
               action="action_ai_agent_run"
               sequence="20"/>
 
-    <menuitem id="menu_ai_cost_center"
-              name="Cost Center"
-              parent="menu_ai_agent_root"
-              action="action_ai_usage_local_log"
-              sequence="30"
+    <!-- ── Spend & Quality ─────────────────────────────── -->
+
+    <menuitem id="menu_ai_ops"
+              name="Operations"
+              parent="menu_ai_root"
+              sequence="40"
               groups="group_ai_agent_manager"/>
 
-    <!-- Configuration -->
-    <menuitem id="menu_ai_agent_config"
+    <menuitem id="menu_ai_cost_center"
+              name="Cost Center"
+              parent="menu_ai_ops"
+              action="action_ai_usage_local_log"
+              sequence="10"
+              groups="group_ai_agent_manager"/>
+
+    <!-- ── Configuration ───────────────────────────────── -->
+
+    <menuitem id="menu_ai_config"
               name="Configuration"
-              parent="menu_ai_agent_root"
+              parent="menu_ai_root"
               sequence="90"
               groups="group_ai_agent_designer"/>
 
     <menuitem id="menu_ai_agent_topics"
               name="Topics"
-              parent="menu_ai_agent_config"
+              parent="menu_ai_config"
               action="action_ai_agent_topic"
               sequence="10"/>
 
     <menuitem id="menu_ai_agent_tools"
               name="Tools"
-              parent="menu_ai_agent_config"
+              parent="menu_ai_config"
               action="action_ai_agent_tool"
               sequence="20"/>
 
     <menuitem id="menu_ai_agent_skills"
               name="Skills"
-              parent="menu_ai_agent_config"
+              parent="menu_ai_config"
               action="action_ai_agent_skill"
               sequence="30"/>
 
     <menuitem id="menu_ai_budgets"
               name="Budgets"
-              parent="menu_ai_agent_config"
+              parent="menu_ai_config"
               action="action_ai_usage_local_budget"
               sequence="40"
               groups="group_ai_agent_manager"/>
 
     <menuitem id="menu_ai_pricebook"
               name="Price Book"
-              parent="menu_ai_agent_config"
+              parent="menu_ai_config"
               action="action_ai_usage_price_book"
               sequence="50"
               groups="group_ai_agent_manager"/>
