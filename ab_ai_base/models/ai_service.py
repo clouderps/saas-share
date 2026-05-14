@@ -15,7 +15,7 @@ class AIProviderService(models.AbstractModel):
     _description = 'AI Provider Service'
 
     def call(self, prompt, config=None, system_prompt=None,
-             image_data=None, image_mimetype=None):
+             image_data=None, image_mimetype=None, model_override=None):
         """Call AI provider with a prompt, optionally with an image.
 
         Args:
@@ -56,9 +56,12 @@ class AIProviderService(models.AbstractModel):
         if image_data:
             response_text, usage = self._call_ai_api_with_image(
                 full_prompt, config, image_data, image_mimetype or 'image/png',
+                model_override=model_override,
             )
         else:
-            response_text, usage = self._call_ai_api(full_prompt, config)
+            response_text, usage = self._call_ai_api(
+                full_prompt, config, model_override=model_override,
+            )
         config.increment_usage(tokens=usage.get('total_tokens', 0))
         return response_text, usage
 
@@ -288,7 +291,8 @@ class AIProviderService(models.AbstractModel):
     # Phase 7 — tool calling (non-streaming variant).
     # ------------------------------------------------------------------
 
-    def call_with_tools(self, prompt, config=None, system_prompt=None, tools=None):
+    def call_with_tools(self, prompt, config=None, system_prompt=None, tools=None,
+                        model_override=None):
         """Non-streaming call that surfaces the model's tool_calls when
         the model decides to invoke a tool. Returns
             (response_text, usage_dict, tool_calls_list_or_None).
@@ -299,7 +303,10 @@ class AIProviderService(models.AbstractModel):
         and behave like plain call().
         """
         if self._is_simulation_mode() or not tools:
-            text, usage = self.call(prompt, config=config, system_prompt=system_prompt)
+            text, usage = self.call(
+                prompt, config=config, system_prompt=system_prompt,
+                model_override=model_override,
+            )
             return text, usage, None
 
         if not config:
@@ -316,18 +323,23 @@ class AIProviderService(models.AbstractModel):
             full_prompt = f"{config.system_prompt}\n\n{prompt}"
 
         if config.ai_provider == 'openai':
-            return self._call_openai_with_tools(full_prompt, config, tools)
+            return self._call_openai_with_tools(
+                full_prompt, config, tools, model_override=model_override,
+            )
 
         # Other providers: ignore tools for now.
         _logger.info(
             'call_with_tools: provider %s lacks tool-calling impl — '
             'ignoring tools and doing plain call', config.ai_provider)
-        text, usage = self._call_ai_api(full_prompt, config)
+        text, usage = self._call_ai_api(
+            full_prompt, config, model_override=model_override,
+        )
         config.increment_usage(tokens=usage.get('total_tokens', 0))
         return text, usage, None
 
-    def _call_openai_with_tools(self, prompt, config, tools):
+    def _call_openai_with_tools(self, prompt, config, tools, model_override=None):
         """OpenAI tool-calling. Returns (text, usage, tool_calls|None)."""
+        model = model_override or config.openai_model
         try:
             response = requests.post(
                 "https://api.openai.com/v1/chat/completions",
@@ -336,7 +348,7 @@ class AIProviderService(models.AbstractModel):
                     "Content-Type": "application/json",
                 },
                 json={
-                    "model": config.openai_model,
+                    "model": model,
                     "messages": [
                         {"role": "system",
                          "content": "You are a helpful assistant. Call tools when appropriate."},
@@ -358,7 +370,7 @@ class AIProviderService(models.AbstractModel):
                 'prompt_tokens': api_usage.get('prompt_tokens', 0),
                 'completion_tokens': api_usage.get('completion_tokens', 0),
                 'total_tokens': api_usage.get('total_tokens', 0),
-                'model': config.openai_model, 'provider': 'openai',
+                'model': model, 'provider': 'openai',
             }
             config.increment_usage(tokens=usage.get('total_tokens', 0))
             return text, usage, tool_calls
@@ -382,8 +394,13 @@ class AIProviderService(models.AbstractModel):
         except Exception as e:
             return {'success': False, 'message': str(e)}
 
-    def _call_ai_api(self, prompt, config):
+    def _call_ai_api(self, prompt, config, model_override=None):
         """Route to the appropriate provider API.
+
+        ``model_override`` (Phase G.2): when non-empty, overrides the
+        per-provider default model for this call only. Used by the
+        gateway's class→model routing — the underlying provider config
+        keeps its default for everything else.
 
         Returns:
             tuple: (response_text, usage_dict)
@@ -397,23 +414,31 @@ class AIProviderService(models.AbstractModel):
         handler = providers.get(config.ai_provider)
         if not handler:
             raise UserError(_('Unsupported AI provider: %s') % config.ai_provider)
-        return handler(prompt, config)
+        return handler(prompt, config, model_override=model_override)
 
-    def _call_ai_api_with_image(self, prompt, config, image_data, image_mimetype):
+    def _call_ai_api_with_image(self, prompt, config, image_data, image_mimetype,
+                                model_override=None):
         """Route to the appropriate provider with multimodal image support."""
         provider = config.ai_provider
         if provider == 'openai':
-            return self._call_openai_vision(prompt, config, image_data, image_mimetype)
+            return self._call_openai_vision(
+                prompt, config, image_data, image_mimetype,
+                model_override=model_override)
         elif provider == 'anthropic':
-            return self._call_claude_vision(prompt, config, image_data, image_mimetype)
+            return self._call_claude_vision(
+                prompt, config, image_data, image_mimetype,
+                model_override=model_override)
         elif provider == 'google':
-            return self._call_gemini_vision(prompt, config, image_data, image_mimetype)
+            return self._call_gemini_vision(
+                prompt, config, image_data, image_mimetype,
+                model_override=model_override)
         else:
             _logger.warning('Provider %s does not support vision, falling back to text', provider)
-            return self._call_ai_api(prompt, config)
+            return self._call_ai_api(prompt, config, model_override=model_override)
 
-    def _call_openai(self, prompt, config):
+    def _call_openai(self, prompt, config, model_override=None):
         """Call OpenAI API. Returns (text, usage_dict)."""
+        model = model_override or config.openai_model
         try:
             response = requests.post(
                 "https://api.openai.com/v1/chat/completions",
@@ -422,7 +447,7 @@ class AIProviderService(models.AbstractModel):
                     "Content-Type": "application/json",
                 },
                 json={
-                    "model": config.openai_model,
+                    "model": model,
                     "messages": [
                         {"role": "system", "content": "You are a helpful assistant that returns only valid JSON."},
                         {"role": "user", "content": prompt},
@@ -440,7 +465,7 @@ class AIProviderService(models.AbstractModel):
                 'prompt_tokens': api_usage.get('prompt_tokens', 0),
                 'completion_tokens': api_usage.get('completion_tokens', 0),
                 'total_tokens': api_usage.get('total_tokens', 0),
-                'model': config.openai_model,
+                'model': model,
                 'provider': 'openai',
             }
             return text, usage
@@ -448,11 +473,12 @@ class AIProviderService(models.AbstractModel):
             _logger.error("OpenAI API error: %s", e)
             raise UserError(_('OpenAI API Error: %s') % e)
 
-    def _call_gemini(self, prompt, config):
+    def _call_gemini(self, prompt, config, model_override=None):
         """Call Google Gemini API. Returns (text, usage_dict)."""
+        model = model_override or config.gemini_model
         try:
             url = "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s" % (
-                config.gemini_model, config.gemini_api_key
+                model, config.gemini_api_key
             )
             generation_config = {
                 "temperature": config.temperature,
@@ -462,7 +488,7 @@ class AIProviderService(models.AbstractModel):
             # eats most of maxOutputTokens before the visible reply starts.
             # Disable it for structured replies — we want the full budget on
             # the JSON envelope, not hidden chain-of-thought.
-            if (config.gemini_model or '').startswith('gemini-2.5'):
+            if (model or '').startswith('gemini-2.5'):
                 generation_config["thinkingConfig"] = {"thinkingBudget": 0}
             response = requests.post(
                 url,
@@ -481,7 +507,7 @@ class AIProviderService(models.AbstractModel):
                 'prompt_tokens': api_usage.get('promptTokenCount', 0),
                 'completion_tokens': api_usage.get('candidatesTokenCount', 0),
                 'total_tokens': api_usage.get('totalTokenCount', 0),
-                'model': config.gemini_model,
+                'model': model,
                 'provider': 'google',
             }
             return text, usage
@@ -489,8 +515,9 @@ class AIProviderService(models.AbstractModel):
             _logger.error("Gemini API error: %s", e)
             raise UserError(_('Gemini API Error: %s') % e)
 
-    def _call_claude(self, prompt, config):
+    def _call_claude(self, prompt, config, model_override=None):
         """Call Anthropic Claude API. Returns (text, usage_dict)."""
+        model = model_override or config.claude_model
         try:
             response = requests.post(
                 "https://api.anthropic.com/v1/messages",
@@ -500,7 +527,7 @@ class AIProviderService(models.AbstractModel):
                     "Content-Type": "application/json",
                 },
                 json={
-                    "model": config.claude_model,
+                    "model": model,
                     "max_tokens": config.max_tokens,
                     "temperature": config.temperature,
                     "messages": [{"role": "user", "content": prompt}],
@@ -515,7 +542,7 @@ class AIProviderService(models.AbstractModel):
                 'prompt_tokens': api_usage.get('input_tokens', 0),
                 'completion_tokens': api_usage.get('output_tokens', 0),
                 'total_tokens': api_usage.get('input_tokens', 0) + api_usage.get('output_tokens', 0),
-                'model': config.claude_model,
+                'model': model,
                 'provider': 'anthropic',
             }
             return text, usage
@@ -525,8 +552,10 @@ class AIProviderService(models.AbstractModel):
 
     # ── Vision / Multimodal methods ──
 
-    def _call_openai_vision(self, prompt, config, image_data, image_mimetype):
+    def _call_openai_vision(self, prompt, config, image_data, image_mimetype,
+                            model_override=None):
         """Call OpenAI with image (GPT-4o vision). Returns (text, usage_dict)."""
+        model = model_override or config.openai_model
         try:
             response = requests.post(
                 "https://api.openai.com/v1/chat/completions",
@@ -535,7 +564,7 @@ class AIProviderService(models.AbstractModel):
                     "Content-Type": "application/json",
                 },
                 json={
-                    "model": config.openai_model,
+                    "model": model,
                     "messages": [{"role": "user", "content": [
                         {"type": "text", "text": prompt},
                         {"type": "image_url", "image_url": {
@@ -555,14 +584,16 @@ class AIProviderService(models.AbstractModel):
                 'prompt_tokens': api_usage.get('prompt_tokens', 0),
                 'completion_tokens': api_usage.get('completion_tokens', 0),
                 'total_tokens': api_usage.get('total_tokens', 0),
-                'model': config.openai_model, 'provider': 'openai',
+                'model': model, 'provider': 'openai',
             }
         except requests.exceptions.RequestException as e:
             _logger.error("OpenAI Vision error: %s", e)
             raise UserError(_('OpenAI Vision Error: %s') % e)
 
-    def _call_claude_vision(self, prompt, config, image_data, image_mimetype):
+    def _call_claude_vision(self, prompt, config, image_data, image_mimetype,
+                            model_override=None):
         """Call Claude with image (multimodal). Returns (text, usage_dict)."""
+        model = model_override or config.claude_model
         media_type = image_mimetype
         if media_type == 'image/jpg':
             media_type = 'image/jpeg'
@@ -575,7 +606,7 @@ class AIProviderService(models.AbstractModel):
                     "Content-Type": "application/json",
                 },
                 json={
-                    "model": config.claude_model,
+                    "model": model,
                     "max_tokens": config.max_tokens,
                     "temperature": config.temperature,
                     "messages": [{"role": "user", "content": [
@@ -597,23 +628,25 @@ class AIProviderService(models.AbstractModel):
                 'prompt_tokens': api_usage.get('input_tokens', 0),
                 'completion_tokens': api_usage.get('output_tokens', 0),
                 'total_tokens': api_usage.get('input_tokens', 0) + api_usage.get('output_tokens', 0),
-                'model': config.claude_model, 'provider': 'anthropic',
+                'model': model, 'provider': 'anthropic',
             }
         except requests.exceptions.RequestException as e:
             _logger.error("Claude Vision error: %s", e)
             raise UserError(_('Claude Vision Error: %s') % e)
 
-    def _call_gemini_vision(self, prompt, config, image_data, image_mimetype):
+    def _call_gemini_vision(self, prompt, config, image_data, image_mimetype,
+                            model_override=None):
         """Call Gemini with image (multimodal). Returns (text, usage_dict)."""
+        model = model_override or config.gemini_model
         try:
             url = "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s" % (
-                config.gemini_model, config.gemini_api_key
+                model, config.gemini_api_key
             )
             generation_config = {
                 "temperature": config.temperature,
                 "maxOutputTokens": config.max_tokens,
             }
-            if (config.gemini_model or '').startswith('gemini-2.5'):
+            if (model or '').startswith('gemini-2.5'):
                 generation_config["thinkingConfig"] = {"thinkingBudget": 0}
             response = requests.post(
                 url,
@@ -638,7 +671,7 @@ class AIProviderService(models.AbstractModel):
                 'prompt_tokens': api_usage.get('promptTokenCount', 0),
                 'completion_tokens': api_usage.get('candidatesTokenCount', 0),
                 'total_tokens': api_usage.get('totalTokenCount', 0),
-                'model': config.gemini_model, 'provider': 'google',
+                'model': model, 'provider': 'google',
             }
         except requests.exceptions.RequestException as e:
             _logger.error("Gemini Vision error: %s", e)
@@ -743,13 +776,14 @@ class AIProviderService(models.AbstractModel):
             'count_ok': ok,
         }
 
-    def _call_local_llm(self, prompt, config):
+    def _call_local_llm(self, prompt, config, model_override=None):
         """Call local LLM (Ollama or similar). Returns (text, usage_dict)."""
+        model = model_override or config.local_llm_model
         try:
             response = requests.post(
                 config.local_llm_endpoint,
                 json={
-                    "model": config.local_llm_model,
+                    "model": model,
                     "prompt": prompt,
                     "stream": False,
                     "options": {"temperature": config.temperature},
@@ -766,7 +800,7 @@ class AIProviderService(models.AbstractModel):
                 'prompt_tokens': prompt_tokens,
                 'completion_tokens': completion_tokens,
                 'total_tokens': prompt_tokens + completion_tokens,
-                'model': config.local_llm_model,
+                'model': model,
                 'provider': 'local',
             }
             return text, usage

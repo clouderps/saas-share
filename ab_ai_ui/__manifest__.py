@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'AB AI UI — Shared response renderer',
-    'version': '18.0.1.0.1',
+    'version': '18.0.1.1.0',
     'category': 'Tools',
     'summary': 'OWL <AiResponse/> + block kit (KPI grid, highlight list, '
                'data table, callout, actions, tool trace, provenance) used by '

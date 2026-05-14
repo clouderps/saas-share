@@ -179,6 +179,13 @@ export class AiResponse extends Component {
                 completion: p.usage.completion_tokens,
                 total: p.usage.total_tokens,
             } : null,
+            // Phase G.4 — cost provenance carried through from the
+            // gateway (routed_model, budget remaining) and from the
+            // tenant cache (cache_hit, cache_similarity).
+            cache_hit: p.provenance?.cache_hit,
+            cache_similarity: p.provenance?.cache_similarity,
+            routed_model: p.provenance?.routed_model,
+            budget_remaining_pct: p.provenance?.budget_remaining_pct,
         };
     }
 

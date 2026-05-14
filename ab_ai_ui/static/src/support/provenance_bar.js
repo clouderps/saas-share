@@ -41,6 +41,18 @@ export class ProvenanceBar extends Component {
         if (p.tool_calls_count > 0) {
             chips.push({ kind: "brand", icon: "fa-wrench", text: p.tool_calls_count + " tool" + (p.tool_calls_count === 1 ? "" : "s") });
         }
+        // Phase G.4 — cost-side chips. Cache hits get a green badge
+        // so ops can tell why the call was free; tight budget shows
+        // a yellow chip below 20% remaining.
+        if (p.cache_hit) {
+            chips.push({ kind: "good", icon: "fa-bolt", text: "cached" });
+        }
+        if (typeof p.budget_remaining_pct === "number"
+                && p.budget_remaining_pct >= 0
+                && p.budget_remaining_pct < 0.2) {
+            const pct = Math.round(p.budget_remaining_pct * 100);
+            chips.push({ kind: "warn", icon: "fa-tachometer", text: pct + "% budget left" });
+        }
         // Stage 4 verdict chip — green / yellow / grey based on the
         // validator's verified / partial / unverified label. Hidden
         // when the envelope doesn't carry a verdict (legacy responses).
