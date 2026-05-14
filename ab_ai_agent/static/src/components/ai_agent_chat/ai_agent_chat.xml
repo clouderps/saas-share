@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="ab_ai_agent.AiAgentChat">
+        <section class="o_ai_agent_chat" role="region" aria-label="AI Agent Chat"
+                 t-att-dir="(props.locale || '').startsWith('ar') ? 'rtl' : 'auto'">
+
+            <!-- ── Header ─────────────────────────────────────────── -->
+            <header class="o_ai_agent_chat__header">
+                <AiAgentChip agent="activeAgent" agents="visibleAgents" onPick.bind="onAgentPick"/>
+                <div class="flex-grow-1" style="min-width: 0;">
+                    <p class="o_ai_agent_chat__title" t-esc="headerTitle"/>
+                    <p class="o_ai_agent_chat__subtitle text-truncate" t-esc="headerSubtitle"/>
+                </div>
+                <AiAgentTokenMeter compact="props.surface !== 'chat'"/>
+                <button t-if="props.onClose" class="o_ai_agent_chat__close" type="button"
+                        t-on-click="close" aria-label="Close">
+                    <i class="fa fa-times"/>
+                </button>
+            </header>
+
+            <!-- ── Body ───────────────────────────────────────────── -->
+            <div class="o_ai_agent_chat__body">
+                <div class="o_ai_agent_chat__stream" t-ref="stream">
+                    <t t-foreach="state.messages" t-as="msg" t-key="msg.id">
+
+                        <!-- User bubble -->
+                        <div t-if="msg.role === 'user'" class="o_ai_agent_msg o_ai_agent_msg--user">
+                            <div class="o_ai_agent_msg__avatar" style="background: var(--ai-ghaima-navy); color: white;">
+                                <i class="fa fa-user"/>
+                            </div>
+                            <div class="o_ai_agent_msg__bubble" t-esc="msg.text"/>
+                        </div>
+
+                        <!-- Assistant bubble -->
+                        <div t-elif="msg.role === 'assistant'"
+                             class="o_ai_agent_msg o_ai_agent_msg--assistant">
+                            <div class="o_ai_agent_msg__avatar"
+                                 t-attf-class="o_accent-{{msg.agentAccent || 'blue'}}">
+                                <img t-if="activeAgent?.avatar_url" t-att-src="activeAgent.avatar_url" alt=""/>
+                                <span t-else="" t-esc="(msg.agentName || 'AI').slice(0,1).toUpperCase()"/>
+                            </div>
+                            <div class="flex-grow-1" style="min-width: 0;">
+                                <div class="o_ai_agent_msg__bubble" t-out="msg.text"/>
+                                <AiAgentRunTrace t-if="msg.toolCalls and msg.toolCalls.length"
+                                                 toolCalls="msg.toolCalls"
+                                                 provenance="msg.provenance"/>
+                                <div t-if="msg.runId" class="o_ai_agent_msg__feedback">
+                                    <button t-att-class="{ 'is-active': msg.feedback === 'up' }"
+                                            t-on-click="() => this.rate(msg, 'up')"
+                                            aria-label="Mark as helpful">
+                                        <i class="fa fa-thumbs-up"/>
+                                    </button>
+                                    <button t-att-class="{ 'is-active': msg.feedback === 'down' }"
+                                            t-on-click="() => this.rate(msg, 'down')"
+                                            aria-label="Mark as unhelpful">
+                                        <i class="fa fa-thumbs-down"/>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+
+                    <!-- Typing indicator -->
+                    <div t-if="state.isThinking" class="o_ai_agent_msg o_ai_agent_msg--assistant">
+                        <div class="o_ai_agent_msg__avatar"
+                             t-attf-class="o_accent-{{activeAgent?.accent || 'blue'}}">
+                            <span t-esc="(activeAgent?.name || 'AI').slice(0,1).toUpperCase()"/>
+                        </div>
+                        <div class="o_ai_agent_msg__bubble">
+                            <span class="o_ai_agent_typing">
+                                <span/><span/><span/>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <aside t-if="!props.hideSidebar" class="o_ai_agent_chat__sidebar">
+                    <div t-if="skills.length" class="o_ai_agent_skill_panel">
+                        <p class="o_ai_agent_skill_panel__title">Quick skills</p>
+                        <AiAgentSkillCard t-foreach="skills" t-as="s" t-key="s.code"
+                                          skill="s" onPick.bind="onSkillPick"/>
+                    </div>
+                    <div t-else="" class="o_ai_agent_skill_panel">
+                        <p class="o_ai_agent_skill_panel__title">Tips</p>
+                        <div class="text-muted small" style="line-height: 1.6;">
+                            <p class="mb-2">Try asking:</p>
+                            <ul class="ps-3">
+                                <li>"How many sales today?"</li>
+                                <li>"Compare this month vs last month"</li>
+                                <li>"What should I do next?"</li>
+                            </ul>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+
+            <!-- ── Footer ─────────────────────────────────────────── -->
+            <footer class="o_ai_agent_chat__footer">
+                <form class="o_ai_agent_chat__form" t-on-submit.prevent="send">
+                    <textarea t-ref="textarea" class="o_ai_agent_chat__textarea"
+                              t-model="state.input"
+                              t-att-placeholder="placeholderText"
+                              t-on-keydown="onInputKeydown"
+                              rows="1"/>
+                    <button class="o_ai_agent_chat__send" type="submit"
+                            t-att-disabled="state.isThinking or !state.input.trim()">
+                        <span t-if="!state.isThinking">Send</span>
+                        <i t-if="state.isThinking" class="fa fa-spinner fa-spin"/>
+                    </button>
+                </form>
+            </footer>
+
+        </section>
+    </t>
+
+    <!-- Full-page wrapper for the client action. -->
+    <t t-name="ab_ai_agent.AiAgentChatPage">
+        <div class="o_ai_agent_chat_page p-3" style="height: 100%; background: var(--ai-ghaima-bg, #F7F8FC);">
+            <AiAgentChat agentCode="params.agent_code"
+                         surface="'chat'"/>
+        </div>
+    </t>
+
+</templates>

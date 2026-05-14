@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="ab_ai_agent.AiAgentRunTrace">
+        <details class="o_ai_agent_run_trace" t-if="props.toolCalls?.length">
+            <summary>
+                <i class="fa fa-cog"/>
+                <span>
+                    <t t-esc="props.toolCalls.length"/>
+                    tool call<t t-if="props.toolCalls.length > 1">s</t>
+                </span>
+                <t t-if="props.provenance?.routed_via">
+                    · via <t t-esc="props.provenance.routed_via"/>
+                </t>
+            </summary>
+            <ol>
+                <li t-foreach="props.toolCalls" t-as="c" t-key="c_index"
+                    t-att-class="callClass(c)">
+                    <span>
+                        <i t-att-class="c.ok ? 'fa fa-check' : 'fa fa-times'"/>
+                    </span>
+                    <div>
+                        <span class="tool-name" t-esc="c.tool"/>
+                        <t t-if="!c.ok and c.error">
+                            <span class="text-muted small"> — <t t-esc="c.error"/></span>
+                        </t>
+                    </div>
+                    <span class="tool-duration" t-esc="fmtDuration(c.duration_ms)"/>
+                </li>
+            </ol>
+        </details>
+    </t>
+
+</templates>

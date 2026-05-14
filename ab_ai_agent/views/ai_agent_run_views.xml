@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_ai_agent_run_list" model="ir.ui.view">
+        <field name="name">ai.agent.run.list</field>
+        <field name="model">ai.agent.run</field>
+        <field name="arch" type="xml">
+            <list string="Agent Runs" create="0"
+                  decoration-success="state == 'done'"
+                  decoration-warning="state in ('maxhops','cost_capped','budget')"
+                  decoration-danger="state == 'error'">
+                <field name="started_at"/>
+                <field name="agent_id"/>
+                <field name="user_id"/>
+                <field name="surface"/>
+                <field name="question"/>
+                <field name="state"/>
+                <field name="hops"/>
+                <field name="total_tokens"/>
+                <field name="cost_usd" widget="monetary"/>
+                <field name="latency_ms"/>
+                <field name="feedback"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_ai_agent_run_form" model="ir.ui.view">
+        <field name="name">ai.agent.run.form</field>
+        <field name="model">ai.agent.run</field>
+        <field name="arch" type="xml">
+            <form create="0">
+                <header>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="planning,tool,reflect,done"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="agent_id"/>
+                            <field name="skill_id"/>
+                            <field name="user_id"/>
+                            <field name="company_id"/>
+                            <field name="surface"/>
+                            <field name="record_ref"/>
+                        </group>
+                        <group string="Stats">
+                            <field name="hops"/>
+                            <field name="prompt_tokens"/>
+                            <field name="completion_tokens"/>
+                            <field name="cached_tokens"/>
+                            <field name="total_tokens"/>
+                            <field name="cost_usd" widget="monetary"/>
+                            <field name="cost_sar"/>
+                            <field name="latency_ms"/>
+                            <field name="model_used"/>
+                            <field name="provider_used"/>
+                            <field name="routed_via"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Question">
+                            <field name="question" readonly="1"/>
+                        </page>
+                        <page string="Response">
+                            <field name="response" readonly="1"/>
+                        </page>
+                        <page string="Tool calls">
+                            <field name="tool_calls_json" widget="ace"
+                                   options="{'mode': 'json'}" readonly="1"/>
+                        </page>
+                        <page string="Quality">
+                            <group>
+                                <field name="verdict"/>
+                                <field name="feedback"/>
+                                <field name="feedback_note"/>
+                                <field name="error_message"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_ai_agent_run_search" model="ir.ui.view">
+        <field name="name">ai.agent.run.search</field>
+        <field name="model">ai.agent.run</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="question"/>
+                <field name="agent_id"/>
+                <field name="user_id"/>
+                <filter name="state_done" string="Done" domain="[('state', '=', 'done')]"/>
+                <filter name="state_error" string="Errors" domain="[('state', '=', 'error')]"/>
+                <filter name="state_capped" string="Capped" domain="[('state', 'in', ('cost_capped', 'budget', 'maxhops'))]"/>
+                <filter name="thumbs_up" string="👍 Thumbs up" domain="[('feedback', '=', 'up')]"/>
+                <filter name="thumbs_down" string="👎 Thumbs down" domain="[('feedback', '=', 'down')]"/>
+                <filter name="today" string="Today" domain="[('started_at', '&gt;=', context_today().strftime('%Y-%m-%d 00:00:00'))]"/>
+                <group expand="0" string="Group By">
+                    <filter name="group_agent" string="Agent" context="{'group_by': 'agent_id'}"/>
+                    <filter name="group_state" string="State" context="{'group_by': 'state'}"/>
+                    <filter name="group_surface" string="Surface" context="{'group_by': 'surface'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_ai_agent_run" model="ir.actions.act_window">
+        <field name="name">Run History</field>
+        <field name="res_model">ai.agent.run</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_today': 1}</field>
+    </record>
+
+</odoo>

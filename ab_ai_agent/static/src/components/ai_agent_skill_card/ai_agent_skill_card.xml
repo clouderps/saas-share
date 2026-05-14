@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="ab_ai_agent.AiAgentSkillCard">
+        <button class="o_ai_agent_skill_card"
+                t-att-class="accentClass"
+                t-on-click="pick"
+                type="button">
+            <span class="o_ai_agent_skill_card__icon">
+                <i t-att-class="iconClass"/>
+            </span>
+            <div class="flex-grow-1">
+                <p class="o_ai_agent_skill_card__name" t-esc="props.skill.name"/>
+                <p t-if="props.skill.hint" class="o_ai_agent_skill_card__hint" t-esc="props.skill.hint"/>
+            </div>
+        </button>
+    </t>
+
+</templates>

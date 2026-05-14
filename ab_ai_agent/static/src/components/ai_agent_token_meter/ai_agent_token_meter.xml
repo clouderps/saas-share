@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="ab_ai_agent.AiAgentTokenMeter">
+        <div class="o_ai_agent_token_meter" t-att-class="stateClass" role="status">
+            <span class="o_ai_agent_token_meter__group">
+                <span class="o_ai_agent_token_meter__label">Today</span>
+            </span>
+            <span class="o_ai_agent_token_meter__divider"/>
+            <span class="o_ai_agent_token_meter__group">
+                <span class="o_ai_agent_token_meter__value" t-esc="tokensFmt"/>
+                <span class="o_ai_agent_token_meter__label">tokens</span>
+            </span>
+            <t t-if="!props.compact">
+                <span class="o_ai_agent_token_meter__divider"/>
+                <span class="o_ai_agent_token_meter__group">
+                    <span class="o_ai_agent_token_meter__label">ر.س</span>
+                    <span class="o_ai_agent_token_meter__value" t-esc="costFmt"/>
+                </span>
+                <t t-if="meter.today.cache_hits">
+                    <span class="o_ai_agent_token_meter__divider"/>
+                    <span class="o_ai_agent_token_meter__group" title="Cache hits today">
+                        <i class="fa fa-bolt" style="color: var(--ai-ghaima-cyan, #5DD8CA);"/>
+                        <span class="o_ai_agent_token_meter__value" t-esc="meter.today.cache_hits"/>
+                    </span>
+                </t>
+            </t>
+        </div>
+    </t>
+
+</templates>

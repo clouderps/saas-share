@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <!-- Built-in: date reference. Always available, no business deps. -->
+        <record id="tool_date_reference" model="ai.agent.tool">
+            <field name="name">Date Reference</field>
+            <field name="code">date_reference</field>
+            <field name="category">retrieval</field>
+            <field name="description">Returns a cheat-sheet of today's date plus common relative dates (yesterday, tomorrow, this week, last month, this quarter). Use this whenever the user mentions a relative timeframe — never compute relative dates yourself.</field>
+            <field name="schema">{"type": "object", "properties": {}, "required": []}</field>
+            <field name="dispatch_kind">python</field>
+        </record>
+
+        <!-- Built-in: echo (for golden-set tests). -->
+        <record id="tool_echo" model="ai.agent.tool">
+            <field name="name">Echo</field>
+            <field name="code">echo</field>
+            <field name="category">analysis</field>
+            <field name="description">Returns its input as-is. Diagnostic tool; do not use in production answers.</field>
+            <field name="schema">{"type": "object", "properties": {"input": {"type": "string"}}, "required": []}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="active" eval="False"/>
+        </record>
+
+    </data>
+</odoo>

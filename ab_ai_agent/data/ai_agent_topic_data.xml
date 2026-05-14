@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <record id="topic_general_conversation" model="ai.agent.topic">
+            <field name="name">General Conversation</field>
+            <field name="code">general</field>
+            <field name="description">Friendly back-and-forth, greetings, small clarifications. No tools.</field>
+            <field name="instructions">For greetings and casual exchanges, respond naturally and briefly. Stay on topic. If the user asks for data, switch to the appropriate topic.</field>
+        </record>
+
+        <record id="topic_date_math" model="ai.agent.topic">
+            <field name="name">Date &amp; Time Math</field>
+            <field name="code">date_math</field>
+            <field name="description">All date math goes through the date_reference tool. Never compute relative dates manually.</field>
+            <field name="instructions">When the user references a relative period ("today", "this month", "last quarter", "next week"), call the `date_reference` tool first to get the exact date ranges; then use those dates in any downstream query.</field>
+            <field name="tool_ids" eval="[(6, 0, [ref('tool_date_reference')])]"/>
+        </record>
+
+    </data>
+</odoo>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="ab_ai_agent.AiAgentChip">
+        <div class="o_ai_agent_chip_wrap position-relative" t-ref="root" t-att-dir="props.dir">
+            <button class="o_ai_agent_chip"
+                    t-att-class="{ 'is-active': state.open, [accentClass(props.agent)]: true }"
+                    t-on-click="toggle"
+                    type="button">
+                <span class="o_ai_agent_chip__avatar">
+                    <img t-if="props.agent?.avatar_url"
+                         t-att-src="props.agent.avatar_url" alt=""/>
+                    <span t-else="" t-esc="initials"/>
+                </span>
+                <span t-esc="props.agent?.name || 'AI Agent'"/>
+                <span class="o_ai_agent_chip__caret">▾</span>
+            </button>
+
+            <div t-if="state.open" class="o_ai_agent_chip_dropdown">
+                <t t-foreach="props.agents || []" t-as="a" t-key="a.id">
+                    <div class="o_ai_agent_chip_option"
+                         t-att-class="{ 'is-active': props.agent?.id === a.id }"
+                         t-on-click="() => this.pick(a)">
+                        <span class="o_ai_agent_chip__avatar"
+                              t-att-class="`o_accent-${a.accent || 'blue'}`">
+                            <img t-if="a.avatar_url" t-att-src="a.avatar_url" alt=""/>
+                            <span t-else="" t-esc="a.name.split(/\s+/).map((w) => w[0]).slice(0,2).join('').toUpperCase()"/>
+                        </span>
+                        <div>
+                            <p class="o_ai_agent_chip_option__name" t-esc="a.name"/>
+                            <p class="o_ai_agent_chip_option__desc" t-esc="a.description"/>
+                        </div>
+                    </div>
+                </t>
+            </div>
+        </div>
+    </t>
+
+</templates>

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <!-- Seed rates as of 2026-05. Numbers reflect public list prices
+             of the providers. Markup-tier example: 4× the input price,
+             3× the output price (typical SaaS reseller margin).
+             FX 3.75 SAR/USD is the peg.
+
+             Production: ops edits these on DBCLOUD; tenants sync nightly. -->
+
+        <record id="price_gemini_flash" model="ai.usage.price.book">
+            <field name="provider">google</field>
+            <field name="model_name">gemini-2.5-flash</field>
+            <field name="model_class">fast</field>
+            <field name="provider_input_per_1k_usd">0.000300</field>
+            <field name="provider_output_per_1k_usd">0.002500</field>
+            <field name="provider_cached_per_1k_usd">0.000075</field>
+            <field name="billed_input_per_1k_sar">0.0045</field>
+            <field name="billed_output_per_1k_sar">0.0281</field>
+            <field name="billed_cached_per_1k_sar">0.0011</field>
+            <field name="fx_usd_to_sar">3.75</field>
+            <field name="effective_from" eval="(DateTime.now() - timedelta(days=30)).strftime('%Y-%m-%d')"/>
+            <field name="notes">Default tenant pricing — 4× input, 3× output markup.</field>
+        </record>
+
+        <record id="price_gemini_flash_lite" model="ai.usage.price.book">
+            <field name="provider">google</field>
+            <field name="model_name">gemini-2.5-flash-lite</field>
+            <field name="model_class">cheap</field>
+            <field name="provider_input_per_1k_usd">0.000075</field>
+            <field name="provider_output_per_1k_usd">0.000300</field>
+            <field name="provider_cached_per_1k_usd">0.000019</field>
+            <field name="billed_input_per_1k_sar">0.0011</field>
+            <field name="billed_output_per_1k_sar">0.0034</field>
+            <field name="billed_cached_per_1k_sar">0.0003</field>
+            <field name="fx_usd_to_sar">3.75</field>
+            <field name="effective_from" eval="(DateTime.now() - timedelta(days=30)).strftime('%Y-%m-%d')"/>
+        </record>
+
+        <record id="price_gemini_pro" model="ai.usage.price.book">
+            <field name="provider">google</field>
+            <field name="model_name">gemini-2.5-pro</field>
+            <field name="model_class">balanced</field>
+            <field name="provider_input_per_1k_usd">0.001250</field>
+            <field name="provider_output_per_1k_usd">0.010000</field>
+            <field name="provider_cached_per_1k_usd">0.000312</field>
+            <field name="billed_input_per_1k_sar">0.0188</field>
+            <field name="billed_output_per_1k_sar">0.1125</field>
+            <field name="billed_cached_per_1k_sar">0.0047</field>
+            <field name="fx_usd_to_sar">3.75</field>
+            <field name="effective_from" eval="(DateTime.now() - timedelta(days=30)).strftime('%Y-%m-%d')"/>
+        </record>
+
+        <record id="price_simulation" model="ai.usage.price.book">
+            <field name="provider">local</field>
+            <field name="model_name">simulation</field>
+            <field name="model_class">cheap</field>
+            <field name="provider_input_per_1k_usd">0.0</field>
+            <field name="provider_output_per_1k_usd">0.0</field>
+            <field name="billed_input_per_1k_sar">0.0</field>
+            <field name="billed_output_per_1k_sar">0.0</field>
+            <field name="fx_usd_to_sar">3.75</field>
+            <field name="effective_from" eval="(DateTime.now() - timedelta(days=30)).strftime('%Y-%m-%d')"/>
+            <field name="notes">Zero-cost placeholder for simulation mode.</field>
+        </record>
+
+    </data>
+</odoo>

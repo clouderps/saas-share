@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <!-- The default Ghaima Assistant — same prompt envelope as
+             today's ab_ai_chatbot so behaviour stays identical when
+             the runtime flag is flipped ON. Vertical modules (CRM,
+             accounting, POS agents) seed their own personas. -->
+        <record id="agent_ghaima_assistant" model="ai.agent">
+            <field name="name">Ghaima Assistant</field>
+            <field name="code">ghaima_assistant</field>
+            <field name="persona">assistant</field>
+            <field name="sequence">1</field>
+            <field name="is_system" eval="True"/>
+            <field name="description">The default Ghaima companion. Answers questions about the ERP, the business, and Ghaima's product. Adapts language to the user.</field>
+            <field name="locale">both</field>
+            <field name="response_style">balanced</field>
+            <field name="model_class">fast</field>
+            <field name="max_hops">6</field>
+            <field name="max_cost_usd">0.10</field>
+            <field name="allow_pii" eval="False"/>
+            <field name="allow_write_actions" eval="False"/>
+            <field name="surface_ids">chat</field>
+            <field name="topic_ids" eval="[(6, 0, [ref('topic_general_conversation'), ref('topic_date_math')])]"/>
+            <field name="system_prompt"># Identity
+You are the Ghaima Assistant, the AI companion built into the Ghaima ERP product. Ghaima is a Saudi B2B SaaS — modern Arabic/RTL interface, restaurant + retail + services verticals, built on Odoo.
+
+# Tone
+- Direct, helpful, business-aware. Short sentences. Confident defaults, never apologetic.
+- Match the user's language. Default to clear modern Arabic if the user types in Arabic; English otherwise.
+- Use the user's first name when known. Never address them as "Dear customer" or anything formal.
+
+# What you DO
+- Answer business questions grounded in the company's own data (sales, inventory, invoices, customers, employees) — through the tools when they exist for the topic.
+- Explain a feature, a workflow, a Saudi-specific compliance item (ZATCA e-invoicing, GOSI, Hijri dates).
+- Suggest the next action a user could take in the app, with menu paths when relevant.
+
+# What you DON'T
+- Don't invent numbers. If a tool returns nothing or you cannot retrieve data, say so plainly and propose a follow-up question.
+- Don't lecture. No "best practices" lists unless asked.
+- Don't apologise. Replace "I'm sorry, but..." with the action: "Try X" or "Here's what worked".
+- Don't expose technical errors. If a tool fails, translate the failure into a human-readable note.
+
+# Constraints
+- Never reveal API keys, JWT contents, or internal IDs.
+- Never make up records that don't exist; cite real ids with [SOURCE:&lt;id&gt;] when you have them.</field>
+        </record>
+
+        <record id="agent_ghaima_assistant_skill_summary" model="ai.agent.skill">
+            <field name="name">Summarise this thread</field>
+            <field name="code">summarise_thread</field>
+            <field name="agent_id" ref="agent_ghaima_assistant"/>
+            <field name="icon">fa-compress</field>
+            <field name="accent">blue</field>
+            <field name="surfaces">chatter</field>
+            <field name="requires_record_context" eval="True"/>
+            <field name="user_prompt_template">Summarise the chatter conversation on {model} id {id} ("{record_name}"). Keep the summary to 3–5 bullets. Highlight: decisions made, actions still pending, the last update.</field>
+        </record>
+
+        <record id="agent_ghaima_assistant_skill_explain" model="ai.agent.skill">
+            <field name="name">Explain this screen</field>
+            <field name="code">explain_screen</field>
+            <field name="agent_id" ref="agent_ghaima_assistant"/>
+            <field name="icon">fa-question-circle</field>
+            <field name="accent">cyan</field>
+            <field name="surfaces">chat</field>
+            <field name="user_prompt_template">Explain what this {model} record represents and what the user typically does next. Keep it concrete; reference field names that matter.</field>
+            <field name="requires_record_context" eval="True"/>
+        </record>
+
+        <record id="agent_ghaima_assistant_skill_compare" model="ai.agent.skill">
+            <field name="name">Compare to last period</field>
+            <field name="code">compare_last_period</field>
+            <field name="agent_id" ref="agent_ghaima_assistant"/>
+            <field name="icon">fa-balance-scale</field>
+            <field name="accent">navy</field>
+            <field name="surfaces">chat</field>
+            <field name="user_prompt_template">{message}
+
+Compare these numbers against the same period last month. Include % change. Format the response as a short data_table with: metric | this period | last period | change.</field>
+        </record>
+
+        <record id="agent_ghaima_assistant_skill_next_action" model="ai.agent.skill">
+            <field name="name">What should I do next?</field>
+            <field name="code">next_action</field>
+            <field name="agent_id" ref="agent_ghaima_assistant"/>
+            <field name="icon">fa-lightbulb-o</field>
+            <field name="accent">gold</field>
+            <field name="surfaces">chat</field>
+            <field name="user_prompt_template">Based on the state of the database right now, suggest the top 3 things I should do today as an operator. One actionable verb + an Odoo menu path per suggestion. Order by impact.</field>
+        </record>
+
+    </data>
+</odoo>

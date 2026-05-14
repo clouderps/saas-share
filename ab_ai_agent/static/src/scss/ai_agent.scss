@@ -1,0 +1,577 @@
+// ───────────────────────────────────────────────────────────────────
+// Ghaima AI Agent — design system
+//
+// References: Ghaima brand tokens (--ghaima-blue, --ghaima-navy,
+// --ghaima-cyan, etc.), IBM Carbon spacing scale (4px base), Linear's
+// information density. Avoid the generic-AI aesthetic: no purple
+// gradients, no centered hero cards, no glass blur, no Inter on
+// everything. Vazirmatn (body) + Drystick (headings) per Ghaima.
+//
+// RTL-first: every directional rule uses logical properties
+// (margin-inline-start, padding-inline-end) so dir="rtl" Just Works.
+// ───────────────────────────────────────────────────────────────────
+
+// Fallbacks if Ghaima theme vars aren't loaded (e.g. on central).
+:root {
+    --ai-ghaima-blue:   var(--ghaima-blue,   #005FF6);
+    --ai-ghaima-navy:   var(--ghaima-navy,   #0D00A2);
+    --ai-ghaima-cyan:   var(--ghaima-cyan,   #5DD8CA);
+    --ai-ghaima-bg:     var(--ghaima-bg,     #F7F8FC);
+    --ai-ghaima-ink:    var(--ghaima-ink,    #1A1F36);
+    --ai-ghaima-muted:  var(--ghaima-muted,  #6B7280);
+    --ai-ghaima-line:   var(--ghaima-line,   #E5E7EB);
+    --ai-ghaima-gold:   #B98800;
+    --ai-ghaima-rose:   #B91C1C;
+    --ai-ghaima-green:  #047857;
+
+    --ai-radius-sm:     6px;
+    --ai-radius-md:     10px;
+    --ai-radius-lg:     16px;
+
+    --ai-shadow-sm:     0 1px 2px rgba(13, 0, 162, 0.06);
+    --ai-shadow-md:     0 4px 12px rgba(13, 0, 162, 0.08);
+    --ai-shadow-lg:     0 12px 32px rgba(13, 0, 162, 0.10);
+
+    --ai-step-1:        4px;
+    --ai-step-2:        8px;
+    --ai-step-3:        12px;
+    --ai-step-4:        16px;
+    --ai-step-5:        24px;
+    --ai-step-6:        32px;
+
+    --ai-font-body:     var(--ghaima-font-body, "Vazirmatn", system-ui, sans-serif);
+    --ai-font-heading:  var(--ghaima-font-heading, "Drystick", "Vazirmatn", sans-serif);
+}
+
+// ─── 1. Backend chat shell ──────────────────────────────────────────
+
+.o_ai_agent_chat {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 480px;
+    background: var(--ai-ghaima-bg);
+    font-family: var(--ai-font-body);
+    color: var(--ai-ghaima-ink);
+    border-radius: var(--ai-radius-lg);
+    overflow: hidden;
+    position: relative;
+
+    // Subtle texture — a single SVG noise overlay, NOT a gradient.
+    &::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(circle at 20% 0%,
+            rgba(0, 95, 246, 0.04), transparent 50%);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    > * { position: relative; z-index: 1; }
+}
+
+.o_ai_agent_chat__header {
+    display: flex;
+    align-items: center;
+    gap: var(--ai-step-3);
+    padding: var(--ai-step-4) var(--ai-step-5);
+    background: white;
+    border-block-end: 1px solid var(--ai-ghaima-line);
+
+    .o_ai_agent_chat__title {
+        font-family: var(--ai-font-heading);
+        font-size: 1.1rem;
+        font-weight: 600;
+        line-height: 1.2;
+        margin: 0;
+        flex: 1;
+    }
+
+    .o_ai_agent_chat__subtitle {
+        font-size: 0.825rem;
+        color: var(--ai-ghaima-muted);
+        margin: 0;
+    }
+
+    .o_ai_agent_chat__close {
+        appearance: none;
+        background: transparent;
+        border: none;
+        font-size: 1.1rem;
+        color: var(--ai-ghaima-muted);
+        cursor: pointer;
+        padding: var(--ai-step-2);
+        border-radius: var(--ai-radius-sm);
+        line-height: 1;
+
+        &:hover { background: var(--ai-ghaima-bg); color: var(--ai-ghaima-ink); }
+    }
+}
+
+.o_ai_agent_chat__body {
+    flex: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 280px;
+    gap: var(--ai-step-5);
+    padding: var(--ai-step-5);
+    overflow: auto;
+
+    @media (max-width: 840px) {
+        grid-template-columns: 1fr;
+        gap: var(--ai-step-4);
+    }
+}
+
+.o_ai_agent_chat__stream {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ai-step-4);
+}
+
+.o_ai_agent_chat__sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ai-step-4);
+
+    @media (max-width: 840px) {
+        order: -1;
+    }
+}
+
+.o_ai_agent_chat__footer {
+    padding: var(--ai-step-4) var(--ai-step-5);
+    background: white;
+    border-block-start: 1px solid var(--ai-ghaima-line);
+}
+
+.o_ai_agent_chat__form {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--ai-step-3);
+}
+
+.o_ai_agent_chat__textarea {
+    flex: 1;
+    min-height: 44px;
+    max-height: 200px;
+    resize: vertical;
+    padding: var(--ai-step-3) var(--ai-step-4);
+    border: 1px solid var(--ai-ghaima-line);
+    border-radius: var(--ai-radius-md);
+    background: white;
+    font-family: inherit;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--ai-ghaima-ink);
+    transition: border-color 0.15s, box-shadow 0.15s;
+
+    &:focus {
+        outline: none;
+        border-color: var(--ai-ghaima-blue);
+        box-shadow: 0 0 0 3px rgba(0, 95, 246, 0.12);
+    }
+
+    &::placeholder {
+        color: var(--ai-ghaima-muted);
+    }
+}
+
+.o_ai_agent_chat__send {
+    appearance: none;
+    background: var(--ai-ghaima-blue);
+    color: white;
+    border: none;
+    padding: 0 var(--ai-step-5);
+    height: 44px;
+    border-radius: var(--ai-radius-md);
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.05s;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ai-step-2);
+
+    &:hover { background: var(--ai-ghaima-navy); }
+    &:active { transform: translateY(1px); }
+    &:disabled {
+        background: var(--ai-ghaima-line);
+        color: var(--ai-ghaima-muted);
+        cursor: not-allowed;
+    }
+}
+
+// ─── 2. Message bubbles ─────────────────────────────────────────────
+
+.o_ai_agent_msg {
+    display: flex;
+    gap: var(--ai-step-3);
+    max-width: 100%;
+
+    &--user {
+        flex-direction: row-reverse;
+        .o_ai_agent_msg__bubble {
+            background: var(--ai-ghaima-blue);
+            color: white;
+            border-radius: var(--ai-radius-md) var(--ai-radius-md) var(--ai-step-1) var(--ai-radius-md);
+        }
+    }
+
+    &--assistant {
+        .o_ai_agent_msg__bubble {
+            background: white;
+            color: var(--ai-ghaima-ink);
+            border: 1px solid var(--ai-ghaima-line);
+            border-radius: var(--ai-radius-md) var(--ai-radius-md) var(--ai-radius-md) var(--ai-step-1);
+            box-shadow: var(--ai-shadow-sm);
+        }
+    }
+}
+
+.o_ai_agent_msg__avatar {
+    flex-shrink: 0;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--ai-ghaima-cyan);
+    color: var(--ai-ghaima-navy);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+    overflow: hidden;
+
+    img { width: 100%; height: 100%; object-fit: cover; }
+}
+
+.o_ai_agent_msg__bubble {
+    flex: 1;
+    padding: var(--ai-step-3) var(--ai-step-4);
+    font-size: 0.925rem;
+    line-height: 1.55;
+
+    p:last-child { margin-bottom: 0; }
+    code {
+        background: rgba(13, 0, 162, 0.05);
+        padding: 0.1em 0.35em;
+        border-radius: 4px;
+        font-size: 0.85em;
+    }
+}
+
+.o_ai_agent_msg__feedback {
+    display: flex;
+    gap: var(--ai-step-2);
+    margin-block-start: var(--ai-step-2);
+
+    button {
+        appearance: none;
+        background: transparent;
+        border: 1px solid var(--ai-ghaima-line);
+        color: var(--ai-ghaima-muted);
+        padding: 4px var(--ai-step-2);
+        border-radius: var(--ai-radius-sm);
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.15s;
+
+        &:hover { color: var(--ai-ghaima-ink); border-color: var(--ai-ghaima-ink); }
+        &.is-active { background: var(--ai-ghaima-blue); color: white; border-color: transparent; }
+    }
+}
+
+// Typing indicator
+.o_ai_agent_typing {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    span {
+        width: 6px; height: 6px;
+        background: var(--ai-ghaima-blue);
+        border-radius: 50%;
+        animation: o-ai-typing 1.2s infinite ease-in-out;
+        &:nth-child(2) { animation-delay: 0.2s; }
+        &:nth-child(3) { animation-delay: 0.4s; }
+    }
+}
+@keyframes o-ai-typing {
+    0%, 80%, 100% { opacity: 0.3; transform: translateY(0); }
+    40% { opacity: 1; transform: translateY(-3px); }
+}
+
+// ─── 3. Agent chip (persona picker) ─────────────────────────────────
+
+.o_ai_agent_chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ai-step-2);
+    padding: 6px var(--ai-step-3) 6px var(--ai-step-2);
+    background: white;
+    border: 1px solid var(--ai-ghaima-line);
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--ai-ghaima-ink);
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+    user-select: none;
+
+    &:hover {
+        border-color: var(--ai-ghaima-blue);
+        box-shadow: var(--ai-shadow-sm);
+    }
+
+    &.is-active {
+        background: rgba(0, 95, 246, 0.08);
+        border-color: var(--ai-ghaima-blue);
+    }
+
+    .o_ai_agent_chip__avatar {
+        width: 22px; height: 22px;
+        border-radius: 50%;
+        background: var(--ai-ghaima-cyan);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: var(--ai-ghaima-navy);
+        overflow: hidden;
+
+        img { width: 100%; height: 100%; object-fit: cover; }
+    }
+
+    .o_ai_agent_chip__caret {
+        margin-inline-start: 2px;
+        font-size: 0.7rem;
+        color: var(--ai-ghaima-muted);
+    }
+
+    // Accent variants — set the inline pill colour
+    &.o_accent-blue   { --chip-accent: var(--ai-ghaima-blue); }
+    &.o_accent-navy   { --chip-accent: var(--ai-ghaima-navy); }
+    &.o_accent-cyan   { --chip-accent: var(--ai-ghaima-cyan); }
+    &.o_accent-gold   { --chip-accent: var(--ai-ghaima-gold); }
+    &.o_accent-green  { --chip-accent: var(--ai-ghaima-green); }
+
+    &.is-active .o_ai_agent_chip__avatar {
+        background: var(--chip-accent, var(--ai-ghaima-cyan));
+        color: white;
+    }
+}
+
+.o_ai_agent_chip_dropdown {
+    position: absolute;
+    inset-block-start: calc(100% + var(--ai-step-2));
+    inset-inline-start: 0;
+    min-width: 280px;
+    max-width: 360px;
+    background: white;
+    border: 1px solid var(--ai-ghaima-line);
+    border-radius: var(--ai-radius-md);
+    box-shadow: var(--ai-shadow-lg);
+    overflow: hidden;
+    z-index: 100;
+}
+
+.o_ai_agent_chip_option {
+    display: flex;
+    gap: var(--ai-step-3);
+    padding: var(--ai-step-3) var(--ai-step-4);
+    cursor: pointer;
+    border-block-end: 1px solid var(--ai-ghaima-line);
+    transition: background 0.1s;
+
+    &:last-child { border-block-end: none; }
+    &:hover { background: var(--ai-ghaima-bg); }
+    &.is-active { background: rgba(0, 95, 246, 0.06); }
+
+    .o_ai_agent_chip_option__name {
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+    .o_ai_agent_chip_option__desc {
+        margin: 2px 0 0 0;
+        font-size: 0.8rem;
+        color: var(--ai-ghaima-muted);
+        line-height: 1.4;
+    }
+}
+
+// ─── 4. Skill card ──────────────────────────────────────────────────
+
+.o_ai_agent_skill_panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ai-step-2);
+
+    > .o_ai_agent_skill_panel__title {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--ai-ghaima-muted);
+        margin-block-end: var(--ai-step-1);
+    }
+}
+
+.o_ai_agent_skill_card {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--ai-step-3);
+    padding: var(--ai-step-3) var(--ai-step-4);
+    background: white;
+    border: 1px solid var(--ai-ghaima-line);
+    border-radius: var(--ai-radius-md);
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.05s, box-shadow 0.15s;
+    text-align: start;
+
+    &:hover {
+        border-color: var(--skill-accent, var(--ai-ghaima-blue));
+        box-shadow: var(--ai-shadow-sm);
+    }
+    &:active { transform: translateY(1px); }
+
+    // accent variants
+    &.o_accent-blue   { --skill-accent: var(--ai-ghaima-blue); }
+    &.o_accent-navy   { --skill-accent: var(--ai-ghaima-navy); }
+    &.o_accent-cyan   { --skill-accent: var(--ai-ghaima-cyan); }
+    &.o_accent-gold   { --skill-accent: var(--ai-ghaima-gold); }
+    &.o_accent-green  { --skill-accent: var(--ai-ghaima-green); }
+    &.o_accent-rose   { --skill-accent: var(--ai-ghaima-rose); }
+
+    .o_ai_agent_skill_card__icon {
+        flex-shrink: 0;
+        width: 36px; height: 36px;
+        border-radius: var(--ai-radius-sm);
+        background: rgba(0, 95, 246, 0.08);
+        color: var(--skill-accent, var(--ai-ghaima-blue));
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+    }
+
+    .o_ai_agent_skill_card__name {
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin: 0;
+        line-height: 1.3;
+    }
+    .o_ai_agent_skill_card__hint {
+        margin: 4px 0 0 0;
+        font-size: 0.78rem;
+        color: var(--ai-ghaima-muted);
+        line-height: 1.4;
+    }
+}
+
+// ─── 5. Token meter chip ────────────────────────────────────────────
+
+.o_ai_agent_token_meter {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ai-step-3);
+    padding: var(--ai-step-2) var(--ai-step-3);
+    background: white;
+    border: 1px solid var(--ai-ghaima-line);
+    border-radius: 999px;
+    font-size: 0.75rem;
+    color: var(--ai-ghaima-muted);
+    font-variant-numeric: tabular-nums;
+
+    .o_ai_agent_token_meter__group {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .o_ai_agent_token_meter__label {
+        opacity: 0.65;
+    }
+    .o_ai_agent_token_meter__value {
+        font-weight: 600;
+        color: var(--ai-ghaima-ink);
+    }
+    .o_ai_agent_token_meter__divider {
+        width: 1px; height: 12px;
+        background: var(--ai-ghaima-line);
+    }
+
+    &.o_state-warn {
+        border-color: var(--ai-ghaima-gold);
+        background: rgba(185, 136, 0, 0.06);
+    }
+    &.o_state-blocked {
+        border-color: var(--ai-ghaima-rose);
+        background: rgba(185, 28, 28, 0.06);
+        color: var(--ai-ghaima-rose);
+    }
+}
+
+// ─── 6. Run trace panel ─────────────────────────────────────────────
+
+.o_ai_agent_run_trace {
+    border: 1px solid var(--ai-ghaima-line);
+    border-radius: var(--ai-radius-md);
+    background: white;
+    font-size: 0.825rem;
+    overflow: hidden;
+
+    summary {
+        list-style: none;
+        cursor: pointer;
+        padding: var(--ai-step-2) var(--ai-step-3);
+        display: flex;
+        align-items: center;
+        gap: var(--ai-step-2);
+        color: var(--ai-ghaima-muted);
+        user-select: none;
+
+        &::-webkit-details-marker { display: none; }
+        &::after {
+            content: "▾";
+            margin-inline-start: auto;
+            transition: transform 0.15s;
+        }
+    }
+
+    &[open] summary::after { transform: rotate(180deg); }
+
+    ol {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        border-block-start: 1px solid var(--ai-ghaima-line);
+    }
+
+    li {
+        display: grid;
+        grid-template-columns: 16px 1fr auto;
+        gap: var(--ai-step-2);
+        padding: var(--ai-step-2) var(--ai-step-3);
+        border-block-end: 1px solid var(--ai-ghaima-line);
+        font-family: var(--ai-font-body);
+
+        &:last-child { border-block-end: none; }
+        &.is-error {
+            background: rgba(185, 28, 28, 0.04);
+            color: var(--ai-ghaima-rose);
+        }
+        &.is-ok {
+            color: var(--ai-ghaima-ink);
+        }
+    }
+
+    .tool-name { font-weight: 600; font-family: ui-monospace, monospace; font-size: 0.8rem; }
+    .tool-duration { color: var(--ai-ghaima-muted); font-variant-numeric: tabular-nums; font-size: 0.75rem; }
+}
+
+// ─── 7. RTL adjustments ─────────────────────────────────────────────
+
+[dir="rtl"] {
+    .o_ai_agent_chat__textarea { text-align: start; }
+    .o_ai_agent_msg__bubble code { font-family: ui-monospace, monospace; }
+    // logical properties handle the rest automatically — no flips needed
+}

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Standalone top-level menu. Cross-instance (lives in saas-share),
+         so it must NOT depend on the ab_ai_client "Ghaima AI" root.
+         The chatbot bridge module reparents these into Ghaima AI on
+         tenants — central keeps its own top-level. -->
+
+    <menuitem id="menu_ai_agent_root"
+              name="AI Agents"
+              web_icon="ab_ai_agent,static/description/icon.png"
+              sequence="6"/>
+
+    <!-- Primary surfaces -->
+    <menuitem id="menu_ai_agent_list"
+              name="Agents"
+              parent="menu_ai_agent_root"
+              action="action_ai_agent"
+              sequence="10"/>
+
+    <menuitem id="menu_ai_agent_run"
+              name="Run History"
+              parent="menu_ai_agent_root"
+              action="action_ai_agent_run"
+              sequence="20"/>
+
+    <menuitem id="menu_ai_cost_center"
+              name="Cost Center"
+              parent="menu_ai_agent_root"
+              action="action_ai_usage_local_log"
+              sequence="30"
+              groups="group_ai_agent_manager"/>
+
+    <!-- Configuration -->
+    <menuitem id="menu_ai_agent_config"
+              name="Configuration"
+              parent="menu_ai_agent_root"
+              sequence="90"
+              groups="group_ai_agent_designer"/>
+
+    <menuitem id="menu_ai_agent_topics"
+              name="Topics"
+              parent="menu_ai_agent_config"
+              action="action_ai_agent_topic"
+              sequence="10"/>
+
+    <menuitem id="menu_ai_agent_tools"
+              name="Tools"
+              parent="menu_ai_agent_config"
+              action="action_ai_agent_tool"
+              sequence="20"/>
+
+    <menuitem id="menu_ai_agent_skills"
+              name="Skills"
+              parent="menu_ai_agent_config"
+              action="action_ai_agent_skill"
+              sequence="30"/>
+
+    <menuitem id="menu_ai_budgets"
+              name="Budgets"
+              parent="menu_ai_agent_config"
+              action="action_ai_usage_local_budget"
+              sequence="40"
+              groups="group_ai_agent_manager"/>
+
+    <menuitem id="menu_ai_pricebook"
+              name="Price Book"
+              parent="menu_ai_agent_config"
+              action="action_ai_usage_price_book"
+              sequence="50"
+              groups="group_ai_agent_manager"/>
+
+</odoo>

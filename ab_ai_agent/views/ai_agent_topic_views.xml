@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_ai_agent_topic_list" model="ir.ui.view">
+        <field name="name">ai.agent.topic.list</field>
+        <field name="model">ai.agent.topic</field>
+        <field name="arch" type="xml">
+            <list string="Agent Topics">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="description"/>
+                <field name="agent_count" string="Used by"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_ai_agent_topic_form" model="ir.ui.view">
+        <field name="name">ai.agent.topic.form</field>
+        <field name="model">ai.agent.topic</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="e.g. Information Retrieval"/></h1>
+                        <h3><field name="code" placeholder="retrieval"/></h3>
+                    </div>
+                    <group>
+                        <field name="description"/>
+                        <field name="active"/>
+                    </group>
+                    <separator string="Instructions"/>
+                    <field name="instructions" placeholder="When the user asks about X, call tool Y..."/>
+                    <separator string="Tools in this topic"/>
+                    <field name="tool_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_ai_agent_topic" model="ir.actions.act_window">
+        <field name="name">Agent Topics</field>
+        <field name="res_model">ai.agent.topic</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Tools -->
+    <record id="view_ai_agent_tool_list" model="ir.ui.view">
+        <field name="name">ai.agent.tool.list</field>
+        <field name="model">ai.agent.tool</field>
+        <field name="arch" type="xml">
+            <list string="Agent Tools">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="category"/>
+                <field name="is_write_action" widget="boolean_toggle"/>
+                <field name="allow_end_message" widget="boolean_toggle"/>
+                <field name="dispatch_kind"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_ai_agent_tool_form" model="ir.ui.view">
+        <field name="name">ai.agent.tool.form</field>
+        <field name="model">ai.agent.tool</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                        <h3><field name="code"/></h3>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="category"/>
+                            <field name="dispatch_kind"/>
+                            <field name="server_action_id" invisible="dispatch_kind != 'server_action'"/>
+                            <field name="active"/>
+                        </group>
+                        <group>
+                            <field name="is_write_action"/>
+                            <field name="allow_end_message"/>
+                            <field name="requires_pii"/>
+                        </group>
+                    </group>
+                    <separator string="Description (shown to the LLM)"/>
+                    <field name="description"/>
+                    <separator string="JSON Schema (parameters)"/>
+                    <field name="schema" widget="ace" options="{'mode': 'json'}"/>
+                    <separator string="Access control"/>
+                    <field name="group_ids" widget="many2many_tags"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_ai_agent_tool" model="ir.actions.act_window">
+        <field name="name">Agent Tools</field>
+        <field name="res_model">ai.agent.tool</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>
