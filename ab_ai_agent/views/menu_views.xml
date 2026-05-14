@@ -12,24 +12,31 @@
               web_icon="ab_ai_agent,static/description/icon.png"
               sequence="5"/>
 
-    <!-- ── Workspace ───────────────────────────────────── -->
+    <!-- ── Workspace ─────────────────────────────────────
+         "Agents" section is the power-user surface: full
+         <AiAgentChat/> + Run History audit. Gated to designers
+         and above. Regular users see only "Ask AI" (rendered by
+         the legacy chatbot UI in ab_ai_chatbot.menu_ai_chat). -->
 
     <menuitem id="menu_ai_agents_section"
               name="Agents"
               parent="menu_ai_root"
-              sequence="10"/>
+              sequence="10"
+              groups="group_ai_agent_designer"/>
 
     <menuitem id="menu_ai_agent_list"
               name="All Agents"
               parent="menu_ai_agents_section"
               action="action_ai_agent"
-              sequence="10"/>
+              sequence="10"
+              groups="group_ai_agent_designer"/>
 
     <menuitem id="menu_ai_agent_run"
               name="Run History"
               parent="menu_ai_agents_section"
               action="action_ai_agent_run"
-              sequence="20"/>
+              sequence="20"
+              groups="group_ai_agent_designer"/>
 
     <!-- ── Spend & Quality ─────────────────────────────── -->
 
