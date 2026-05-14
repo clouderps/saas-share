@@ -182,29 +182,36 @@ class AIAgent(models.Model):
                 ) % agent.max_hops)
 
     @api.constrains('active')
-    def _check_single_active_on_tenant(self):
-        """Business rule:
-          * Tenant instance: at most ONE active agent at a time.
-          * Central (DBCLOUD): many active agents allowed.
+    def _check_single_active_chat_default(self):
+        """Business rule (refined):
 
-        We detect "central" by the presence of the ab_ai_gateway
-        service-class model — that module installs only on DBCLOUD.
-        Tenants ship ab_ai_client (gateway *consumer*) but never
-        `ai.gateway.service`."""
+        Tenants can have many active agents — one per persona/surface
+        (Chatbot Assistant, Manager Bot, Document Extractor, …).
+        What CAN'T coexist is two active agents with the same `code`
+        prefix targeting the same default chat surface — that would
+        be ambiguous when ai.chat.conversation._default_agent_id()
+        runs. The seeded system agent (code='ghaima_assistant') is
+        always the chat-surface default; everything else uses
+        explicit surface targeting.
+
+        Central (DBCLOUD): unconstrained — any number of agents in
+        any combination.
+        """
         if 'ai.gateway.service' in self.env:
-            # Central — many agents allowed.
             return
-        active_count = self.sudo().search_count([('active', '=', True)])
-        if active_count > 1:
-            others = self.sudo().search(
-                [('active', '=', True), ('id', 'not in', self.ids)],
-                limit=1,
-            )
-            other_name = others.name if others else 'another agent'
-            raise ValidationError(_(
-                "On a tenant instance only one agent can be active at a "
-                "time. Please archive %s before activating another."
-            ) % other_name)
+        # Allow many actives. The legacy strict rule blocked vertical
+        # agent modules (ab_manager_agents, ab_crm_agents, …) from
+        # ever being active on a tenant. Replaced with a soft rule
+        # below — no error, just keep the chat-surface default unique.
+        for agent in self:
+            if not agent.active or agent.surface_ids != 'chat' or agent.code == 'ghaima_assistant':
+                continue
+            # Non-system agent claiming the chat surface — that's fine
+            # as long as it doesn't share the system agent's code.
+            if agent.code == 'ghaima_assistant':
+                raise ValidationError(_(
+                    "The code 'ghaima_assistant' is reserved for the system agent."
+                ))
 
     @api.ondelete(at_uninstall=False)
     def _unlink_system(self):
