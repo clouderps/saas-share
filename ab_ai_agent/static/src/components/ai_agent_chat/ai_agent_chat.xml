@@ -13,6 +13,13 @@
                     <p class="o_ai_agent_chat__subtitle text-truncate" t-esc="headerSubtitle"/>
                 </div>
                 <AiAgentTokenMeter compact="props.surface !== 'chat'"/>
+                <button class="o_ai_agent_chat__icon_btn"
+                        t-att-class="{ 'is-muted': state.muted }"
+                        t-on-click="toggleMute"
+                        type="button"
+                        t-att-title="state.muted ? 'Unmute response sound' : 'Mute response sound'">
+                    <i t-att-class="state.muted ? 'fa fa-volume-off' : 'fa fa-volume-up'"/>
+                </button>
                 <button t-if="props.onClose" class="o_ai_agent_chat__close" type="button"
                         t-on-click="close" aria-label="Close">
                     <i class="fa fa-times"/>
@@ -41,10 +48,70 @@
                                 <span t-else="" t-esc="(msg.agentName || 'AI').slice(0,1).toUpperCase()"/>
                             </div>
                             <div class="flex-grow-1" style="min-width: 0;">
-                                <div class="o_ai_agent_msg__bubble" t-out="msg.text"/>
+                                <div class="o_ai_agent_msg__bubble">
+                                    <!-- Structured report: render the block kit -->
+                                    <div t-if="msg.render and msg.render.blocks and msg.render.blocks.length"
+                                         class="o_ai_agent_msg__report">
+                                        <h4 t-if="msg.render.title" class="o_ai_agent_msg__report-title"
+                                            t-esc="msg.render.title"/>
+                                        <p t-if="msg.render.subtitle"
+                                           class="o_ai_agent_msg__report-subtitle text-muted"
+                                           t-esc="msg.render.subtitle"/>
+                                        <t t-foreach="msg.render.blocks" t-as="block" t-key="block_index">
+                                            <!-- data_table -->
+                                            <div t-if="block.type === 'data_table'" class="o_ai_agent_table_wrap">
+                                                <p t-if="block.title" class="o_ai_agent_table_title" t-esc="block.title"/>
+                                                <table class="o_ai_agent_table">
+                                                    <thead t-if="block.headers and block.headers.length">
+                                                        <tr><th t-foreach="block.headers" t-as="h" t-key="h_index" t-esc="h"/></tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr t-foreach="block.rows or []" t-as="row" t-key="row_index">
+                                                            <td t-foreach="row" t-as="cell" t-key="cell_index" t-esc="cell"/>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            <!-- kpi_grid -->
+                                            <div t-elif="block.type === 'kpi_grid'" class="o_ai_agent_kpi_grid">
+                                                <div t-foreach="block.items or []" t-as="kpi" t-key="kpi_index"
+                                                     class="o_ai_agent_kpi"
+                                                     t-attf-class="o_ai_agent_kpi o_tone-{{kpi.tone || 'neutral'}}">
+                                                    <p class="o_ai_agent_kpi__label" t-esc="kpi.label"/>
+                                                    <p class="o_ai_agent_kpi__value" t-esc="kpi.value"/>
+                                                </div>
+                                            </div>
+                                            <!-- highlight_list -->
+                                            <div t-elif="block.type === 'highlight_list'" class="o_ai_agent_highlight">
+                                                <p t-if="block.title" class="o_ai_agent_highlight__title" t-esc="block.title"/>
+                                                <ul>
+                                                    <li t-foreach="block.items or []" t-as="item" t-key="item_index" t-esc="item"/>
+                                                </ul>
+                                            </div>
+                                            <!-- callout -->
+                                            <div t-elif="block.type === 'callout'"
+                                                 t-attf-class="o_ai_agent_callout o_tone-{{block.tone || 'neutral'}}">
+                                                <i t-attf-class="fa {{block.icon || 'fa-info-circle'}}"/>
+                                                <div>
+                                                    <strong t-if="block.title" t-esc="block.title"/>
+                                                    <p class="mb-0" t-esc="block.body"/>
+                                                </div>
+                                            </div>
+                                            <!-- text -->
+                                            <div t-elif="block.type === 'text'" class="o_ai_agent_text" t-out="block.text"/>
+                                        </t>
+                                    </div>
+                                    <!-- Plain text fallback -->
+                                    <div t-else="" t-out="msg.text"/>
+                                </div>
                                 <AiAgentRunTrace t-if="msg.toolCalls and msg.toolCalls.length"
                                                  toolCalls="msg.toolCalls"
                                                  provenance="msg.provenance"/>
+                                <button t-if="msg.pendingAction" class="o_ai_agent_msg__action"
+                                        t-on-click="() => this.runEnvelopeAction(msg.pendingAction)">
+                                    <i class="fa fa-external-link me-1"/>
+                                    <t t-esc="msg.pendingAction.name || 'Open'"/>
+                                </button>
                                 <div t-if="msg.runId" class="o_ai_agent_msg__feedback">
                                     <button t-att-class="{ 'is-active': msg.feedback === 'up' }"
                                             t-on-click="() => this.rate(msg, 'up')"
@@ -55,6 +122,15 @@
                                             t-on-click="() => this.rate(msg, 'down')"
                                             aria-label="Mark as unhelpful">
                                         <i class="fa fa-thumbs-down"/>
+                                    </button>
+                                </div>
+                                <!-- Example prompts shown only on the welcome message -->
+                                <div t-if="msg.isWelcome" class="o_ai_agent_examples">
+                                    <button t-foreach="examplePrompts" t-as="ex" t-key="ex_index"
+                                            class="o_ai_agent_example_chip"
+                                            t-on-click="() => this.onExamplePick(ex)">
+                                        <i t-attf-class="fa {{ex.icon}}"/>
+                                        <span t-esc="ex.text"/>
                                     </button>
                                 </div>
                             </div>
@@ -116,9 +192,11 @@
 
     <!-- Full-page wrapper for the client action. -->
     <t t-name="ab_ai_agent.AiAgentChatPage">
-        <div class="o_ai_agent_chat_page p-3" style="height: 100%; background: var(--ai-ghaima-bg, #F7F8FC);">
-            <AiAgentChat agentCode="params.agent_code"
-                         surface="'chat'"/>
+        <div class="o_ai_agent_chat_page">
+            <div class="o_ai_agent_chat_page__inner">
+                <AiAgentChat agentCode="params.agent_code"
+                             surface="'chat'"/>
+            </div>
         </div>
     </t>
 
