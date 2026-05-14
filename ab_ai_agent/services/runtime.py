@@ -306,7 +306,14 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
 # ───────────────────────── helpers ──────────────────────────
 
 def _compose_system_prompt(env, agent, *, locale='en', skill=None, record_ref=None):
-    """Compose the system prompt = persona + topics + date reference."""
+    """Compose the system prompt = persona + topics + date reference
+    + live business snapshot + user context + record context.
+
+    The aim is comprehensive data knowledge BEFORE the LLM picks a
+    tool: counts of every key entity (orders, invoices, POS sessions,
+    customers, employees) injected up front so the model can answer
+    overview questions without round-trips, and can spot what tool
+    to call for deeper figures."""
     parts = [agent.system_prompt or '']
 
     # Today + date math (§3.8 borrowed pattern).
@@ -320,6 +327,18 @@ def _compose_system_prompt(env, agent, *, locale='en', skill=None, record_ref=No
         f'- This quarter starts: {date_block["this_quarter_start"]}\n'
         f'Use these dates for relative-date math; never compute them yourself.'
     )
+
+    # Live business snapshot — comprehensive counts + open items so
+    # the agent can answer overview questions without a tool round-trip.
+    snapshot = _business_snapshot_block(env)
+    if snapshot:
+        parts.append(snapshot)
+
+    # Caller context — who is asking, from where.
+    parts.append(_user_context_block(env))
+
+    # How to render reports (P&L, sales summary, etc.) as data_table.
+    parts.append(_report_rendering_block())
 
     # Topic instructions.
     if agent.topic_ids:
@@ -367,6 +386,191 @@ def _compose_system_prompt(env, agent, *, locale='en', skill=None, record_ref=No
         parts.append('## Locale\nRespond in clear, concise English.')
 
     return '\n\n'.join(p for p in parts if p)
+
+
+def _business_snapshot_block(env):
+    """Pre-fetch comprehensive counts + open-item summaries so the
+    LLM has business-wide context before its first tool call.
+
+    Each probe is wrapped in a savepoint — missing models/tables
+    on this tenant just produce a "—" placeholder, never crash.
+
+    Output is markdown CSV-style for token efficiency (§3.7 pattern)."""
+    snippets = []
+
+    def _safe_count(model, domain=None):
+        try:
+            with env.cr.savepoint(flush=False):
+                if model not in env:
+                    return None
+                return env[model].sudo().search_count(domain or [])
+        except Exception:
+            return None
+
+    def _safe_sum(model, field, domain=None):
+        try:
+            with env.cr.savepoint(flush=False):
+                if model not in env:
+                    return None
+                groups = env[model].sudo().read_group(
+                    domain or [], [field], [],
+                )
+                return groups[0].get(field) if groups else None
+        except Exception:
+            return None
+
+    today_iso = env.cr.mogrify("%s", (env['ir.fields.converter']._cached_today() if False else None,)) if False else ''
+    from odoo import fields as _odoo_fields
+    today = _odoo_fields.Date.context_today(env['res.users'])
+    month_start = today.replace(day=1)
+
+    # ── Sales ───────────────────────────────────────────────────
+    rows = []
+    n_so_today = _safe_count('sale.order', [
+        ('date_order', '>=', str(today)),
+        ('state', 'in', ('sale', 'done')),
+    ])
+    n_so_month = _safe_count('sale.order', [
+        ('date_order', '>=', str(month_start)),
+        ('state', 'in', ('sale', 'done')),
+    ])
+    n_so_draft = _safe_count('sale.order', [('state', '=', 'draft')])
+    amt_so_today = _safe_sum('sale.order', 'amount_total', [
+        ('date_order', '>=', str(today)),
+        ('state', 'in', ('sale', 'done')),
+    ])
+    amt_so_month = _safe_sum('sale.order', 'amount_total', [
+        ('date_order', '>=', str(month_start)),
+        ('state', 'in', ('sale', 'done')),
+    ])
+    if any(v is not None for v in (n_so_today, n_so_month)):
+        rows.append(f'- Sale orders confirmed today: {_fmt_count(n_so_today)} (total: {_fmt_money(amt_so_today)})')
+        rows.append(f'- Sale orders confirmed this month: {_fmt_count(n_so_month)} (total: {_fmt_money(amt_so_month)})')
+        rows.append(f'- Sale orders still in draft: {_fmt_count(n_so_draft)}')
+
+    # ── POS ─────────────────────────────────────────────────────
+    n_pos_today = _safe_count('pos.order', [('date_order', '>=', str(today))])
+    amt_pos_today = _safe_sum('pos.order', 'amount_total', [('date_order', '>=', str(today))])
+    n_pos_sessions = _safe_count('pos.session', [('state', '=', 'opened')])
+    if any(v is not None for v in (n_pos_today, n_pos_sessions)):
+        rows.append(f'- POS orders today: {_fmt_count(n_pos_today)} (total: {_fmt_money(amt_pos_today)})')
+        rows.append(f'- POS sessions currently open: {_fmt_count(n_pos_sessions)}')
+
+    # ── Invoices / AR ──────────────────────────────────────────
+    n_inv_draft = _safe_count('account.move', [
+        ('move_type', '=', 'out_invoice'), ('state', '=', 'draft'),
+    ])
+    n_inv_overdue = _safe_count('account.move', [
+        ('move_type', '=', 'out_invoice'),
+        ('state', '=', 'posted'),
+        ('payment_state', 'in', ('not_paid', 'partial')),
+        ('invoice_date_due', '<', str(today)),
+    ])
+    amt_inv_overdue = _safe_sum('account.move', 'amount_residual', [
+        ('move_type', '=', 'out_invoice'),
+        ('state', '=', 'posted'),
+        ('payment_state', 'in', ('not_paid', 'partial')),
+        ('invoice_date_due', '<', str(today)),
+    ])
+    if any(v is not None for v in (n_inv_draft, n_inv_overdue)):
+        rows.append(f'- Customer invoices in draft: {_fmt_count(n_inv_draft)}')
+        rows.append(f'- Customer invoices overdue: {_fmt_count(n_inv_overdue)} (open balance: {_fmt_money(amt_inv_overdue)})')
+
+    # ── Inventory ──────────────────────────────────────────────
+    n_picking_todo = _safe_count('stock.picking', [
+        ('state', 'in', ('assigned', 'confirmed')),
+    ])
+    if n_picking_todo is not None:
+        rows.append(f'- Stock pickings pending: {_fmt_count(n_picking_todo)}')
+
+    # ── HR ──────────────────────────────────────────────────────
+    n_emp = _safe_count('hr.employee', [('active', '=', True)])
+    n_leave_pending = _safe_count('hr.leave', [('state', '=', 'confirm')])
+    if n_emp is not None:
+        rows.append(f'- Active employees: {_fmt_count(n_emp)}'
+                    + (f' · pending leave requests: {_fmt_count(n_leave_pending)}' if n_leave_pending is not None else ''))
+
+    # ── CRM ────────────────────────────────────────────────────
+    n_lead_open = _safe_count('crm.lead', [('active', '=', True), ('type', '=', 'opportunity')])
+    if n_lead_open is not None:
+        rows.append(f'- Open CRM opportunities: {_fmt_count(n_lead_open)}')
+
+    # ── Customers ─────────────────────────────────────────────
+    n_partner = _safe_count('res.partner', [('customer_rank', '>', 0)])
+    if n_partner is not None:
+        rows.append(f'- Customers on file: {_fmt_count(n_partner)}')
+
+    if not rows:
+        return ''
+    return (
+        '## Live business snapshot\n'
+        + '\n'.join(rows)
+        + '\n\nUse these counts to ground overview answers. For exact '
+          'amounts or breakdowns by period/branch/product, call the '
+          'matching tool (`sales_totals`, `pl_summary`, `top_customers`, …).'
+    )
+
+
+def _user_context_block(env):
+    """Who's asking + which company + which surface."""
+    user = env.user
+    company = env.company
+    parts = ['## Caller']
+    parts.append(f'- User: {user.name} (id {user.id}, login {user.login})')
+    if user.lang:
+        parts.append(f'- User locale: {user.lang}')
+    parts.append(f'- Company: {company.name} (id {company.id})')
+    if getattr(company, 'currency_id', False):
+        parts.append(f'- Currency: {company.currency_id.name}')
+    if getattr(company, 'country_id', False):
+        parts.append(f'- Country: {company.country_id.name}')
+    if user.tz:
+        parts.append(f'- Timezone: {user.tz}')
+    return '\n'.join(parts)
+
+
+def _report_rendering_block():
+    """Tell the LLM how to format report-style answers using the
+    block kit the <AiResponse/> renderer understands."""
+    return (
+        '## How to render a report\n'
+        'When the user asks for a structured view — P&L, sales summary, '
+        'top customers, AR aging — your final answer should be a JSON '
+        '`final` action whose `text` is a JSON object with a top-level '
+        '`render` block. The renderer paints `kpi_grid`, `data_table`, '
+        '`highlight_list`, and `callout` blocks natively.\n\n'
+        'Example for P&L:\n'
+        '```json\n'
+        '{"action": "final", "text": "{\\"render\\": {\\"layout\\": \\"report\\", '
+        '\\"title\\": \\"Profit & Loss — Oct 2026\\", \\"blocks\\": ['
+        '{\\"type\\": \\"kpi_grid\\", \\"items\\": ['
+        '{\\"label\\": \\"Revenue\\", \\"value\\": \\"125,400 SAR\\"}, '
+        '{\\"label\\": \\"COGS\\", \\"value\\": \\"68,200 SAR\\"}, '
+        '{\\"label\\": \\"Gross margin\\", \\"value\\": \\"45.6 %\\", \\"tone\\": \\"good\\"}]}, '
+        '{\\"type\\": \\"data_table\\", \\"title\\": \\"By account\\", '
+        '\\"headers\\": [\\"Account\\", \\"Amount\\"], \\"rows\\": [[\\"Sales\\", \\"125,400\\"], [\\"COGS\\", \\"-68,200\\"]]}]}}"}\n'
+        '```\n'
+        'Plain prose answers stay plain strings — use the render block '
+        'only when the data benefits from a table or KPI tiles.'
+    )
+
+
+def _fmt_count(n):
+    if n is None:
+        return '—'
+    try:
+        return f'{int(n):,}'
+    except Exception:
+        return str(n)
+
+
+def _fmt_money(amt):
+    if amt is None:
+        return '—'
+    try:
+        return f'{float(amt):,.2f}'
+    except Exception:
+        return str(amt)
 
 
 def _record_context_block(env, record):
