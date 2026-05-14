@@ -174,5 +174,271 @@ def _builtin_echo(env, agent=None, **kwargs):
     return {'echo': kwargs}
 
 
+# ─── Navigation tools ─────────────────────────────────────────────────
+# Each returns an action descriptor in `action` — the runtime lifts that
+# onto envelope.action and the chat surface paints an "Open" button.
+
+def _builtin_open_record(env, agent=None, model=None, id=None,
+                        view_type='form', **_kw):
+    """Open a specific record in its default form view.
+
+    Args:
+      model: technical model name (e.g. 'sale.order', 'account.move')
+      id:    record id
+      view_type: 'form' (default) | 'kanban' | 'list'
+    """
+    if not model or not id:
+        return {'error': 'model + id are required'}
+    if model not in env:
+        return {'error': f'unknown model: {model}'}
+    try:
+        rec = env[model].browse(int(id))
+        if not rec.exists():
+            return {'error': f'{model} id={id} not found'}
+        rec.check_access('read')
+        display = rec.display_name
+    except Exception as e:
+        return {'error': str(e)}
+    return {
+        'message': f'Opening {display}',
+        'action': {
+            'type': 'ir.actions.act_window',
+            'name': display,
+            'res_model': model,
+            'res_id': int(id),
+            'view_mode': view_type,
+            'views': [[False, view_type]],
+            'target': 'current',
+        },
+    }
+
+
+def _builtin_open_list(env, agent=None, model=None, domain=None,
+                     group_by=None, name=None, **_kw):
+    """Open a filtered list view of a model.
+
+    Args:
+      model:    technical model name
+      domain:   Odoo domain (list of tuples) or empty for all records
+      group_by: list of field names to group by
+      name:     optional display label for the list
+    """
+    if not model:
+        return {'error': 'model is required'}
+    if model not in env:
+        return {'error': f'unknown model: {model}'}
+    safe_domain = []
+    if domain:
+        try:
+            from ast import literal_eval
+            safe_domain = literal_eval(domain) if isinstance(domain, str) else list(domain)
+        except Exception:
+            safe_domain = []
+    ctx = {}
+    if group_by:
+        if isinstance(group_by, str):
+            group_by = [group_by]
+        ctx['group_by'] = group_by
+    return {
+        'message': f'Opening {name or model} list ({len(safe_domain)} filter(s))',
+        'action': {
+            'type': 'ir.actions.act_window',
+            'name': name or env[model]._description or model,
+            'res_model': model,
+            'view_mode': 'list,form',
+            'views': [[False, 'list'], [False, 'form']],
+            'domain': safe_domain,
+            'context': ctx,
+            'target': 'current',
+        },
+    }
+
+
+def _builtin_open_pivot(env, agent=None, model=None, measures=None,
+                       row_groupbys=None, col_groupbys=None,
+                       domain=None, name=None, **_kw):
+    """Open a pivot analytics view."""
+    if not model or model not in env:
+        return {'error': f'unknown model: {model}'}
+    safe_domain = []
+    if domain:
+        try:
+            from ast import literal_eval
+            safe_domain = literal_eval(domain) if isinstance(domain, str) else list(domain)
+        except Exception:
+            safe_domain = []
+    ctx = {
+        'pivot_measures': measures or [],
+        'pivot_row_groupby': row_groupbys or [],
+        'pivot_column_groupby': col_groupbys or [],
+    }
+    return {
+        'message': f'Opening pivot of {model}',
+        'action': {
+            'type': 'ir.actions.act_window',
+            'name': name or f'{env[model]._description or model} — Pivot',
+            'res_model': model,
+            'view_mode': 'pivot,list',
+            'views': [[False, 'pivot'], [False, 'list']],
+            'domain': safe_domain,
+            'context': ctx,
+            'target': 'current',
+        },
+    }
+
+
+def _builtin_open_graph(env, agent=None, model=None, measure=None,
+                       mode='bar', group_by=None, domain=None,
+                       name=None, **_kw):
+    """Open a graph view (bar / line / pie)."""
+    if not model or model not in env:
+        return {'error': f'unknown model: {model}'}
+    if mode not in ('bar', 'line', 'pie'):
+        mode = 'bar'
+    safe_domain = []
+    if domain:
+        try:
+            from ast import literal_eval
+            safe_domain = literal_eval(domain) if isinstance(domain, str) else list(domain)
+        except Exception:
+            safe_domain = []
+    ctx = {'graph_mode': mode}
+    if measure:
+        ctx['graph_measure'] = measure
+    if group_by:
+        if isinstance(group_by, str):
+            group_by = [group_by]
+        ctx['graph_groupbys'] = group_by
+    return {
+        'message': f'Opening {mode} chart of {model}',
+        'action': {
+            'type': 'ir.actions.act_window',
+            'name': name or f'{env[model]._description or model} — {mode.title()}',
+            'res_model': model,
+            'view_mode': 'graph,list',
+            'views': [[False, 'graph'], [False, 'list']],
+            'domain': safe_domain,
+            'context': ctx,
+            'target': 'current',
+        },
+    }
+
+
+def _builtin_open_action(env, agent=None, xmlid=None, **_kw):
+    """Open a server-registered action by xmlid.
+
+    Useful for built-in reports: 'account.action_account_pl_report',
+    'account.action_account_balance_report', 'sale.action_orders', etc.
+    """
+    if not xmlid:
+        return {'error': 'xmlid required'}
+    try:
+        action = env.ref(xmlid, raise_if_not_found=False)
+        if not action:
+            return {'error': f'action {xmlid} not found'}
+        if not hasattr(action, 'read'):
+            return {'error': f'{xmlid} is not an action'}
+        action_dict = action.sudo().read()[0]
+        # Strip sentinel keys that aren't part of the act_window contract.
+        for k in ('create_uid', 'write_uid', 'create_date', 'write_date'):
+            action_dict.pop(k, None)
+        return {
+            'message': f'Opening {action.name}',
+            'action': action_dict,
+        }
+    except Exception as e:
+        return {'error': str(e)}
+
+
+# ─── HR domain tools ─────────────────────────────────────────────────
+# Defensive: skipped when hr / hr.attendance modules aren't installed.
+
+def _builtin_hr_attendance_missing_today(env, agent=None, limit=50, **_kw):
+    """Employees with no check-in for today. The "morning roll call"."""
+    Emp = env.get('hr.employee')
+    Att = env.get('hr.attendance')
+    if Emp is None or Att is None:
+        return {'error': 'hr.attendance not installed on this instance'}
+    from odoo import fields as _fields
+    today = _fields.Date.context_today(env['res.users'])
+    today_start = f'{today} 00:00:00'
+    try:
+        with env.cr.savepoint(flush=False):
+            attended_ids = Att.sudo().search([
+                ('check_in', '>=', today_start),
+            ]).mapped('employee_id').ids
+            missing = Emp.sudo().search([
+                ('active', '=', True),
+                ('id', 'not in', attended_ids),
+            ], limit=int(limit))
+    except Exception as e:
+        return {'error': str(e)}
+    rows = [{
+        'id': e.id,
+        'name': e.name,
+        'department': e.department_id.name if e.department_id else '',
+        'job': e.job_title or '',
+    } for e in missing]
+    return {
+        'count': len(rows),
+        'date': str(today),
+        'employees': rows,
+    }
+
+
+def _builtin_hr_leave_pending(env, agent=None, limit=50, **_kw):
+    """Leave requests awaiting approval."""
+    Leave = env.get('hr.leave')
+    if Leave is None:
+        return {'error': 'hr.leave not installed'}
+    try:
+        with env.cr.savepoint(flush=False):
+            rows = Leave.sudo().search([('state', '=', 'confirm')],
+                                       limit=int(limit), order='date_from')
+    except Exception as e:
+        return {'error': str(e)}
+    return {
+        'count': len(rows),
+        'leaves': [{
+            'id': l.id,
+            'employee': l.employee_id.name if l.employee_id else '',
+            'type': l.holiday_status_id.name if l.holiday_status_id else '',
+            'date_from': str(l.date_from) if l.date_from else '',
+            'date_to': str(l.date_to) if l.date_to else '',
+            'days': l.number_of_days,
+        } for l in rows],
+    }
+
+
+def _builtin_hr_attendance_open_shifts(env, agent=None, **_kw):
+    """Currently clocked-in employees who haven't clocked out yet."""
+    Att = env.get('hr.attendance')
+    if Att is None:
+        return {'error': 'hr.attendance not installed'}
+    try:
+        with env.cr.savepoint(flush=False):
+            rows = Att.sudo().search([('check_out', '=', False)],
+                                     order='check_in desc', limit=100)
+    except Exception as e:
+        return {'error': str(e)}
+    return {
+        'count': len(rows),
+        'open_attendances': [{
+            'id': a.id,
+            'employee': a.employee_id.name if a.employee_id else '',
+            'check_in': str(a.check_in) if a.check_in else '',
+            'department': a.employee_id.department_id.name if a.employee_id and a.employee_id.department_id else '',
+        } for a in rows],
+    }
+
+
 register('date_reference', _builtin_date_reference)
 register('echo', _builtin_echo)
+register('open_record', _builtin_open_record)
+register('open_list', _builtin_open_list)
+register('open_pivot', _builtin_open_pivot)
+register('open_graph', _builtin_open_graph)
+register('open_action', _builtin_open_action)
+register('hr_attendance_missing_today', _builtin_hr_attendance_missing_today)
+register('hr_leave_pending', _builtin_hr_leave_pending)
+register('hr_attendance_open_shifts', _builtin_hr_attendance_open_shifts)

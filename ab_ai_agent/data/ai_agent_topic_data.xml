@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <data noupdate="1">
+    <data noupdate="0">
 
         <record id="topic_general_conversation" model="ai.agent.topic">
             <field name="name">General Conversation</field>
@@ -15,6 +15,41 @@
             <field name="description">All date math goes through the date_reference tool. Never compute relative dates manually.</field>
             <field name="instructions">When the user references a relative period ("today", "this month", "last quarter", "next week"), call the `date_reference` tool first to get the exact date ranges; then use those dates in any downstream query.</field>
             <field name="tool_ids" eval="[(6, 0, [ref('tool_date_reference')])]"/>
+        </record>
+
+        <!-- Navigation — UI-level "open this" actions. -->
+        <record id="topic_navigation" model="ai.agent.topic">
+            <field name="name">Navigation</field>
+            <field name="code">navigation</field>
+            <field name="description">Open records, lists, pivots, graphs, reports — let the user navigate the app by voice or chat.</field>
+            <field name="instructions">When the user wants to **see** something — not just a number, but the actual view in Odoo — call one of:
+- `open_action` for built-in reports: P&amp;L (xmlid `account.action_account_pl_report`), Balance Sheet (`account.action_account_balance_report`), or any module action.
+- `open_record` to land on a specific record's form view ("open SO 42", "show invoice INV/2026/00045").
+- `open_list` for filtered list views ("show overdue invoices" → model=account.move with the matching domain).
+- `open_pivot` for cross-tab analysis ("pivot sales by product and month").
+- `open_graph` for charts ("pie chart of customers by country", "bar chart of sales by branch").
+
+Always end with `__end_message` summarising what you opened (e.g. "Opening the P&amp;L for this month — the report should appear shortly.").</field>
+            <field name="tool_ids" eval="[(6, 0, [
+                ref('tool_open_record'),
+                ref('tool_open_list'),
+                ref('tool_open_pivot'),
+                ref('tool_open_graph'),
+                ref('tool_open_action'),
+            ])]"/>
+        </record>
+
+        <!-- HR — attendance + leave roll-call. Gated to PII-allowed agents. -->
+        <record id="topic_hr_roll_call" model="ai.agent.topic">
+            <field name="name">HR Roll Call</field>
+            <field name="code">hr_roll_call</field>
+            <field name="description">Who's at work, who's on leave, who's still clocked in.</field>
+            <field name="instructions">For HR-attendance questions ("who didn't check in today", "show pending leave requests", "who's still at the office"), call the matching tool. Render results as a data_table with columns Name / Department / Job (or Name / Type / Dates for leaves). Do NOT call these tools if the agent isn't PII-allowed.</field>
+            <field name="tool_ids" eval="[(6, 0, [
+                ref('tool_hr_attendance_missing_today'),
+                ref('tool_hr_leave_pending'),
+                ref('tool_hr_attendance_open_shifts'),
+            ])]"/>
         </record>
 
     </data>

@@ -261,11 +261,25 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
     rendered_text, sources = citation_svc.apply_numeric_citations(
         extracted_text, source_lookup or {})
 
+    # ── 6b. Lift `action` from the most recent successful tool ─
+    # Navigation tools (open_record / open_list / open_action / …)
+    # return {'action': {…}} — the chat's "Open" button reads
+    # envelope.action so the user lands on the view with one click.
+    pending_action = None
+    for call in reversed(tool_calls_audit):
+        if not call.get('ok'):
+            continue
+        result = call.get('result') or {}
+        if isinstance(result, dict) and result.get('action'):
+            pending_action = result['action']
+            break
+
     # ── 7. Build the final envelope ───────────────────────────
     latency_ms = int((time.perf_counter() - started_perf) * 1000)
     envelope = {
         'response': rendered_text,
         'render': extracted_render,
+        'action': pending_action,
         'agent_id': agent.id,
         'agent_code': agent.code,
         'usage': {

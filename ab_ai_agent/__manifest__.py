@@ -1,6 +1,6 @@
 {
     'name': 'AI Agent Runtime',
-    'version': '18.0.1.6.0',
+    'version': '18.0.1.7.0',
     'category': 'AI/Agents',
     'summary': 'Cross-instance AI agent runtime — personas, tools, RAG, metering. '
                'Gateway-independent: works on tenants and central DBCLOUD alike.',

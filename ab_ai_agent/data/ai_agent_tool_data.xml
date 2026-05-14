@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <data noupdate="1">
+    <data noupdate="0">
 
         <!-- Built-in: date reference. Always available, no business deps. -->
         <record id="tool_date_reference" model="ai.agent.tool">
@@ -21,6 +21,90 @@
             <field name="schema">{"type": "object", "properties": {"input": {"type": "string"}}, "required": []}</field>
             <field name="dispatch_kind">python</field>
             <field name="active" eval="False"/>
+        </record>
+
+        <!-- ── Navigation tools ─────────────────────────────────── -->
+
+        <record id="tool_open_record" model="ai.agent.tool">
+            <field name="name">Open Record</field>
+            <field name="code">open_record</field>
+            <field name="category">navigation</field>
+            <field name="description">Open a specific record in its form view. Use when the user names a specific entity — "open sale order 42", "show me invoice INV/2026/00045". Returns an action that paints an "Open" chip the user clicks to navigate.</field>
+            <field name="schema">{"type": "object", "properties": {"model": {"type": "string", "description": "Technical model name (sale.order, account.move, crm.lead, ...)"}, "id": {"type": "number", "description": "Record id"}, "view_type": {"type": "string", "enum": ["form", "kanban", "list"], "default": "form"}}, "required": ["model", "id"]}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="allow_end_message" eval="True"/>
+        </record>
+
+        <record id="tool_open_list" model="ai.agent.tool">
+            <field name="name">Open List View</field>
+            <field name="code">open_list</field>
+            <field name="category">navigation</field>
+            <field name="description">Open a filtered list view of a model. Use for "show me all overdue invoices", "list draft sale orders". Supports domain filters and group-by.</field>
+            <field name="schema">{"type": "object", "properties": {"model": {"type": "string"}, "domain": {"type": "string", "description": "Odoo domain as a string, e.g. \"[('state','=','draft')]\""}, "group_by": {"type": "array", "items": {"type": "string"}}, "name": {"type": "string", "description": "Optional display label"}}, "required": ["model"]}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="allow_end_message" eval="True"/>
+        </record>
+
+        <record id="tool_open_pivot" model="ai.agent.tool">
+            <field name="name">Open Pivot View</field>
+            <field name="code">open_pivot</field>
+            <field name="category">navigation</field>
+            <field name="description">Open an analytical pivot view. Use for "pivot sales by product and month", "breakdown of expenses by department". Specify measures + row/column groupbys.</field>
+            <field name="schema">{"type": "object", "properties": {"model": {"type": "string"}, "measures": {"type": "array", "items": {"type": "string"}}, "row_groupbys": {"type": "array", "items": {"type": "string"}}, "col_groupbys": {"type": "array", "items": {"type": "string"}}, "domain": {"type": "string"}, "name": {"type": "string"}}, "required": ["model"]}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="allow_end_message" eval="True"/>
+        </record>
+
+        <record id="tool_open_graph" model="ai.agent.tool">
+            <field name="name">Open Graph View</field>
+            <field name="code">open_graph</field>
+            <field name="category">navigation</field>
+            <field name="description">Open a chart view — bar / line / pie. Use for "chart sales by month", "pie chart of customers by country". One measure + group-by field, plus mode.</field>
+            <field name="schema">{"type": "object", "properties": {"model": {"type": "string"}, "measure": {"type": "string"}, "mode": {"type": "string", "enum": ["bar", "line", "pie"], "default": "bar"}, "group_by": {"type": "array", "items": {"type": "string"}}, "domain": {"type": "string"}, "name": {"type": "string"}}, "required": ["model"]}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="allow_end_message" eval="True"/>
+        </record>
+
+        <record id="tool_open_action" model="ai.agent.tool">
+            <field name="name">Open Action by XMLID</field>
+            <field name="code">open_action</field>
+            <field name="category">navigation</field>
+            <field name="description">Open any server-registered action by its xmlid. Use for built-in reports: 'account.action_account_pl_report' for P&amp;L, 'account.action_account_balance_report' for balance sheet, 'sale.action_orders' for sales list. Also works for any module-defined action.</field>
+            <field name="schema">{"type": "object", "properties": {"xmlid": {"type": "string", "description": "Full xmlid like 'account.action_account_pl_report'"}}, "required": ["xmlid"]}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="allow_end_message" eval="True"/>
+        </record>
+
+        <!-- ── HR domain tools (gated by hr / hr.attendance presence) ── -->
+
+        <record id="tool_hr_attendance_missing_today" model="ai.agent.tool">
+            <field name="name">HR: Missing Check-ins Today</field>
+            <field name="code">hr_attendance_missing_today</field>
+            <field name="category">retrieval</field>
+            <field name="description">List of active employees who have NOT checked in for the day yet — the "who's not at work today" roll call. Returns count + per-employee rows with department and job title.</field>
+            <field name="schema">{"type": "object", "properties": {"limit": {"type": "number", "default": 50}}, "required": []}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="requires_pii" eval="True"/>
+        </record>
+
+        <record id="tool_hr_leave_pending" model="ai.agent.tool">
+            <field name="name">HR: Pending Leave Requests</field>
+            <field name="code">hr_leave_pending</field>
+            <field name="category">retrieval</field>
+            <field name="description">List leave requests awaiting approval. Returns count + per-request rows with employee, type, date range, day count.</field>
+            <field name="schema">{"type": "object", "properties": {"limit": {"type": "number", "default": 50}}, "required": []}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="requires_pii" eval="True"/>
+        </record>
+
+        <record id="tool_hr_attendance_open_shifts" model="ai.agent.tool">
+            <field name="name">HR: Currently Clocked-In</field>
+            <field name="code">hr_attendance_open_shifts</field>
+            <field name="category">retrieval</field>
+            <field name="description">Employees who clocked in but haven't clocked out yet. Useful for end-of-day exit reminders.</field>
+            <field name="schema">{"type": "object", "properties": {}, "required": []}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="requires_pii" eval="True"/>
         </record>
 
     </data>

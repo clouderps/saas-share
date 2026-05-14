@@ -24,7 +24,11 @@
             <field name="allow_pii" eval="False"/>
             <field name="allow_write_actions" eval="False"/>
             <field name="surface_ids">chat</field>
-            <field name="topic_ids" eval="[(6, 0, [ref('topic_general_conversation'), ref('topic_date_math')])]"/>
+            <field name="topic_ids" eval="[(6, 0, [
+                ref('topic_general_conversation'),
+                ref('topic_date_math'),
+                ref('topic_navigation'),
+            ])]"/>
             <field name="system_prompt"># Identity
 You are the Ghaima Assistant, the AI companion built into the Ghaima ERP product. Ghaima is a Saudi B2B SaaS — modern Arabic/RTL interface, restaurant + retail + services verticals, built on Odoo.
 
