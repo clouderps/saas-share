@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Printer Driver app icon (140 x 140 Odoo web_icon size).
+  Tokens: ghaima-blue #005FF6, ghaima-navy #0D00A2, ghaima-cyan #5DD8CA.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140" width="140" height="140">
+
+  <!-- App tile -->
+  <rect width="140" height="140" rx="28" ry="28" fill="#0D00A2"/>
+  <rect width="140" height="140" rx="28" ry="28"
+        fill="url(#tile-grad)" opacity="0.85"/>
+
+  <defs>
+    <linearGradient id="tile-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#005FF6"/>
+      <stop offset="1" stop-color="#0D00A2"/>
+    </linearGradient>
+    <linearGradient id="slip-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"   stop-color="#FFFFFF"/>
+      <stop offset="1"   stop-color="#E7ECF5"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Wi-Fi arcs (top right) — signals networked dispatch.
+       Three arcs, equal stroke. Stroke-linecap rounded for a soft mark. -->
+  <g id="signal" fill="none" stroke="#5DD8CA"
+     stroke-width="2.6" stroke-linecap="round">
+    <path d="M101 38 q5 -5 10 0"/>
+    <path d="M97 32  q9 -9 18 0"/>
+    <path d="M93 26  q13 -13 26 0"/>
+    <circle cx="106" cy="42" r="1.6" fill="#5DD8CA" stroke="none"/>
+  </g>
+
+  <!-- Receipt slip emerging — curls slightly so it reads as paper. -->
+  <g id="slip">
+    <path d="M44 36
+             L96 36
+             L96 78
+             Q96 86 88 88
+             L52 92
+             Q44 93 44 85 Z"
+          fill="url(#slip-grad)"/>
+    <!-- Slip text lines -->
+    <g stroke="#0D00A2" stroke-width="2" stroke-linecap="round">
+      <line x1="52" y1="50" x2="86" y2="50"/>
+      <line x1="52" y1="58" x2="78" y2="58"/>
+      <line x1="52" y1="66" x2="82" y2="66"/>
+      <line x1="52" y1="74" x2="68" y2="74"/>
+    </g>
+  </g>
+
+  <!-- Printer body — sits below the slip. Two-tone chrome. -->
+  <g id="printer">
+    <!-- Back panel (slightly darker) -->
+    <rect x="30" y="80" width="80" height="38" rx="6" ry="6" fill="#0A0089"/>
+    <!-- Front panel -->
+    <rect x="30" y="86" width="80" height="32" rx="6" ry="6" fill="#1B3DDB"/>
+    <!-- Paper slot (where the slip exits) -->
+    <rect x="38" y="84" width="64" height="4" rx="1.5" ry="1.5" fill="#040052"/>
+    <!-- Status LEDs -->
+    <circle cx="42" cy="106" r="3" fill="#5DD8CA"/>
+    <circle cx="52" cy="106" r="3" fill="#5DD8CA" opacity="0.4"/>
+    <!-- Brand bar across the front -->
+    <rect x="62" y="103" width="42" height="6" rx="1.5" ry="1.5"
+          fill="#0D00A2"/>
+  </g>
+
+</svg>

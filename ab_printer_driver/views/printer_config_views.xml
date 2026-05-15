@@ -87,7 +87,7 @@
                             <field name="bluetooth_device_name"
                                    invisible="printer_mode != 'bluetooth'"/>
                         </group>
-                        <group string="Reliability">
+                        <group string="Reliability" name="reliability">
                             <field name="enable_fallback"/>
                             <field name="retry_count"/>
                             <field name="timeout"/>
