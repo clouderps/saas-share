@@ -51,6 +51,13 @@ No business-domain dependencies.
             'ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml',
             'ab_printer_driver/static/src/js/live_monitor/live_monitor.js',
             'ab_printer_driver/static/src/js/live_monitor/live_monitor.xml',
+            'ab_printer_driver/static/src/js/epos_printer/epos_printer.js',
+            'ab_printer_driver/static/src/js/epos_printer/test_epos_action.js',
+        ],
+        # Also expose the ePOS client to the POS bundle so
+        # ab_pos_printer_manager can import it without duplication.
+        'point_of_sale._assets_pos': [
+            'ab_printer_driver/static/src/js/epos_printer/epos_printer.js',
         ],
     },
     'installable': True,

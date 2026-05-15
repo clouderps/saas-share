@@ -21,16 +21,49 @@ class PrinterConfig(models.Model):
     )
     printer_mode = fields.Selection(
         [
-            ('auto', 'Auto Detect'),
+            ('epos', 'ePOS-Print (Browser ↔ Printer, recommended)'),
+            ('network', 'Network (TCP — server prints, on-prem only)'),
+            ('agent', 'Bridge Agent (LAN proxy for cloud Odoo)'),
             ('iot', 'IoT Box'),
-            ('network', 'Network (IP/TCP)'),
-            ('usb', 'USB'),
+            ('usb', 'USB / WebUSB'),
             ('bluetooth', 'Bluetooth'),
-            ('agent', 'Print Agent'),
+            ('auto', 'Auto Detect'),
         ],
         string='Printer Mode',
-        default='network',
+        default='epos',
         required=True,
+        help=(
+            "ePOS-Print: the browser POSTs the print job directly to the "
+            "printer's own HTTPS server. Works for any Epson/Star/Bixolon "
+            "receipt printer with ePOS-Print enabled. No agent or LAN "
+            "reachability needed from the cloud server.\n"
+            "Network: classic raw ESC/POS over TCP 9100 from the Odoo "
+            "process. Only works when Odoo is on the same LAN as the "
+            "printer (on-prem deploys).\n"
+            "Bridge Agent: a small daemon on a LAN PC executes the print "
+            "on behalf of the cloud server."
+        ),
+    )
+
+    # ── ePOS-Print fields (used when printer_mode='epos') ─────────
+    epos_dev_id = fields.Char(
+        string='ePOS Device ID', default='local_printer',
+        help="The 'devid' query parameter sent to the printer's ePOS "
+             "service. 99% of installs use 'local_printer'. Change "
+             "only if the printer's web admin assigns a custom id.",
+    )
+    epos_use_https = fields.Boolean(
+        string='ePOS over HTTPS', default=True,
+        help="Highly recommended. Required when the Odoo page itself is "
+             "HTTPS (mixed-content blocks HTTPS→HTTP). The browser will "
+             "prompt to trust the printer's self-signed certificate on "
+             "first use — accept it once per browser profile.",
+    )
+    epos_port = fields.Integer(
+        string='ePOS Port', default=0,
+        help="0 (default) = auto: 443 for HTTPS, 80 for HTTP. Some "
+             "Epson firmwares use 8043 / 8008 instead — set explicitly "
+             "if your printer's web admin shows a non-default port.",
     )
     printer_use = fields.Selection(
         [
@@ -111,26 +144,45 @@ class PrinterConfig(models.Model):
                            limit=1, order='sequence, id')
 
     def print_bytes(self, data, *, source='backend', record_ref=None, timeout=None):
-        """Send raw ESC/POS bytes — directly or through the bridge agent.
+        """Send raw ESC/POS bytes — directly, via agent, or via browser.
 
         Routing:
-          * agent_id set + agent online → enqueue an ab.printer.job marked
-            for that agent, return {'success': True, 'queued': True,
-            'job_id': N} immediately. The agent's /poll picks it up,
-            executes the TCP send on its LAN, and reports back via
-            /report. Final state is delivered on bus channel
-            'ab_printer_job_<id>' (see PrinterJob._notify).
-          * Otherwise → direct TCP send (current behaviour).
+          * mode='epos' (browser-side path) → the cloud server cannot
+            speak to the printer (it's behind NAT and the server has no
+            route). Return success=False with browser_dispatch=True so
+            the caller can re-emit the job to the operator's browser.
+            Only the OWL/POS frontend can drive ePOS over TLS to a
+            private LAN IP.
+          * mode in (network, agent) + agent_id set + agent online →
+            enqueue an ab.printer.job marked for that agent, return
+            {'success': True, 'queued': True, 'job_id': N} immediately.
+            Agent's /poll picks it up, executes the TCP send on its
+            LAN, reports back via /report. Final state via bus channel
+            'ab_printer_job_<id>'.
+          * mode='network' + no agent → direct TCP send (on-prem path,
+            unchanged behaviour).
 
         Logs an ab.printer.log row on every direct attempt. Returns:
           {'success': bool, 'error': str, 'duration': float, ...}
         Never raises — callers inspect the dict.
         """
         self.ensure_one()
+        if self.printer_mode == 'epos':
+            return {
+                'success': False, 'browser_dispatch': True,
+                'mode': 'epos',
+                'epos_config': self._get_browser_dispatch_config(),
+                'error': (
+                    "ePOS prints must be dispatched from the operator's "
+                    "browser. The cloud Odoo cannot reach printers on "
+                    "private LANs directly. Use the POS receipt button, "
+                    "or 'Test ePOS' on the printer form."
+                ),
+            }
         if self.printer_mode not in ('network', 'agent'):
             return {'success': False,
-                    'error': f'print_bytes only supports network/agent mode '
-                             f'(this is {self.printer_mode})'}
+                    'error': f'print_bytes does not support {self.printer_mode}; '
+                             f'use epos/network/agent or the POS frontend'}
         if not self.printer_ip:
             return {'success': False, 'error': f'No printer_ip on {self.name}'}
 
@@ -279,6 +331,23 @@ class PrinterConfig(models.Model):
     def action_test_connection(self):
         """Form button: send the canonical 'Ghaima POS' test slip."""
         self.ensure_one()
+        # ePOS mode: hand the test slip off to the browser. The
+        # 'ab_printer.test_epos' OWL service picks up the action and
+        # POSTs to the printer directly from the operator's browser
+        # (only place that can — the cloud has no route to the LAN).
+        if self.printer_mode == 'epos':
+            import base64
+            payload = escpos.build_test_slip(printer_name=self.name)
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'ab_printer.test_epos',
+                'params': {
+                    'driver_id': self.id,
+                    'driver_name': self.name,
+                    'config': self._get_browser_dispatch_config(),
+                    'escpos_b64': base64.b64encode(payload).decode('ascii'),
+                },
+            }
         payload = escpos.build_test_slip(printer_name=self.name)
         res = self.print_bytes(payload, source='test')
         return {
@@ -290,6 +359,29 @@ class PrinterConfig(models.Model):
                 'message': res.get('error') or f'Sent to {self.printer_ip}.',
                 'sticky': False,
             },
+        }
+
+    def _get_browser_dispatch_config(self):
+        """Bundle every field the OWL ePOS client needs for one print.
+
+        Returned dict is JSON-safe and posted to the OWL frontend as
+        part of the test action's params, or written into the POS pre-
+        load so the cashier UI can dispatch without a round-trip back
+        to the server.
+        """
+        self.ensure_one()
+        port = self.epos_port or (443 if self.epos_use_https else 80)
+        return {
+            'id': self.id,
+            'name': self.name,
+            'mode': self.printer_mode,
+            'ip': self.printer_ip or '',
+            'port': port,
+            'use_https': bool(self.epos_use_https),
+            'dev_id': self.epos_dev_id or 'local_printer',
+            'paper_width_mm': self.paper_width_mm,
+            'timeout_ms': self.timeout or 5000,
+            'retry_count': self.retry_count or 3,
         }
 
     @api.model

@@ -218,6 +218,22 @@ class PrinterScannerController(http.Controller):
                         b['mac'] = mac
                     if v:
                         b['vendor'] = v
+                # ePOS-Print probe — if the printer's web server answers
+                # on 443 / 8043, the browser can drive it directly. Save
+                # the port we got a hit on so the caller can pre-fill
+                # epos_port on the registered row.
+                b['epos_https_port'] = 0
+                for ep in (443, 8043):
+                    ok, _ms = tcp.probe(ip, ep, timeout_s * 1.5)
+                    if ok:
+                        b['epos_https_port'] = ep
+                        break
+                if not b['epos_https_port']:
+                    # Last-chance HTTP variant on common alt ports.
+                    for ep in (80, 8008):
+                        if ep in b['ports']:
+                            b['epos_http_port'] = ep
+                            break
                 if do_verify and 9100 in b['ports']:
                     vr = verify.verify_printer(ip, 9100, timeout_s=timeout_s * 4)
                     b['verified'] = vr['verified']
@@ -232,11 +248,22 @@ class PrinterScannerController(http.Controller):
             b = hits[ip]
             sorted_ports = sorted(b['ports'])
             primary = sorted_ports[0]
-            label, mode = scan.PORT_META.get(primary, ('Unknown', 'network'))
+            label, _legacy_mode = scan.PORT_META.get(primary, ('Unknown', 'network'))
             ms = round(b['elapsed_ms'], 1)
+            # Mode recommendation: prefer ePOS when the printer's web
+            # server is up on 443 / 8043 — browser can drive it directly.
+            # Fall back to 'network' (server-side TCP) only if no HTTPS
+            # endpoint is reachable.
+            if b.get('epos_https_port'):
+                mode_hint = 'epos'
+            else:
+                mode_hint = 'network'
             results.append({
                 'ip': ip, 'port': primary, 'port_label': label,
-                'open_ports': sorted_ports, 'mode_hint': mode,
+                'open_ports': sorted_ports,
+                'mode_hint': mode_hint,
+                'epos_port': b.get('epos_https_port') or 0,
+                'epos_use_https': bool(b.get('epos_https_port')),
                 'vendor': b.get('vendor', ''), 'mac': b.get('mac', ''),
                 'hostname': b.get('hostname', ''), 'banner': b.get('banner', ''),
                 'verified': bool(b.get('verified')),
@@ -328,9 +355,10 @@ class PrinterScannerController(http.Controller):
             ip = p.get('ip')
             if not ip:
                 continue
-            rec = Driver.create({
+            mode = p.get('mode_hint') or 'epos'
+            vals = {
                 'name': p.get('name') or f'Printer @ {ip}',
-                'printer_mode': p.get('mode_hint') or 'network',
+                'printer_mode': mode,
                 'printer_use': p.get('printer_use') or 'receipt',
                 'printer_ip': ip,
                 'printer_port': int(p.get('port') or 9100),
@@ -338,6 +366,10 @@ class PrinterScannerController(http.Controller):
                 'mac': p.get('mac', ''),
                 'verified': bool(p.get('verified')),
                 'state': 'connected' if p.get('verified') else 'disconnected',
-            })
+            }
+            if mode == 'epos':
+                vals['epos_use_https'] = bool(p.get('epos_use_https', True))
+                vals['epos_port'] = int(p.get('epos_port') or 0)
+            rec = Driver.create(vals)
             ids.append(rec.id)
         return {'success': True, 'printer_ids': ids, 'count': len(ids)}

@@ -81,6 +81,18 @@ class PrinterDispatchController(http.Controller):
         else:
             return {'success': False, 'error': 'payload must be str/dict'}
 
+        # ePOS path: caller (typically the POS frontend) must dispatch
+        # directly to the printer. We hand back the connection params
+        # and the raw payload — no job row, no server-side TCP.
+        if driver.printer_mode == 'epos':
+            return {
+                'success': False, 'browser_dispatch': True,
+                'mode': 'epos',
+                'epos_config': driver._get_browser_dispatch_config(),
+                'payload_b64': payload_b64,
+                'error': 'dispatch ePOS print from the browser, not the server',
+            }
+
         job = env['ab.printer.job'].sudo().create({
             'printer_config_id': driver.id,
             'agent_id': driver.agent_id.id or False,

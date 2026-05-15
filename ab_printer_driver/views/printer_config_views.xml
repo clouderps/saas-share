@@ -79,9 +79,15 @@
                         <group string="Connection">
                             <field name="printer_mode"/>
                             <field name="printer_ip"
-                                   invisible="printer_mode != 'network'"/>
+                                   invisible="printer_mode not in ('epos','network','agent')"/>
                             <field name="printer_port"
                                    invisible="printer_mode != 'network'"/>
+                            <field name="epos_use_https"
+                                   invisible="printer_mode != 'epos'"/>
+                            <field name="epos_port"
+                                   invisible="printer_mode != 'epos'"/>
+                            <field name="epos_dev_id"
+                                   invisible="printer_mode != 'epos'"/>
                             <field name="agent_id"
                                    options="{'no_create': True}"
                                    invisible="printer_mode not in ('network','agent')"/>
