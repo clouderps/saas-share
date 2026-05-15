@@ -55,6 +55,72 @@ def divider(char='-', width=42):
     return enc(char * width) + FEED1
 
 
+def text_size(width=1, height=1):
+    """Set magnification multiplier (1..8 each axis)."""
+    size = ((width - 1) << 4) | (height - 1)
+    return GS + b'!' + bytes([size])
+
+
+def align(alignment='left'):
+    return {'left': ALIGN_L, 'center': ALIGN_C, 'right': ALIGN_R}.get(
+        alignment, ALIGN_L)
+
+
+def barcode(data, barcode_type=73):
+    """Code128 by default (type 73)."""
+    encoded = data.encode('utf-8') if isinstance(data, str) else data
+    cmd = GS + b'h\x50'            # height = 80
+    cmd += GS + b'w\x02'           # width = 2
+    cmd += GS + b'H\x02'           # HRI below barcode
+    cmd += GS + b'k' + bytes([barcode_type, len(encoded)]) + encoded
+    return cmd
+
+
+def qr_code(data, size=6):
+    """QR Model 2, error-correction L. size 1..16."""
+    encoded = data.encode('utf-8') if isinstance(data, str) else data
+    length = len(encoded) + 3
+    pl, ph = length & 0xFF, (length >> 8) & 0xFF
+    cmd = (
+        GS + b'(k\x04\x00\x31\x41\x32\x00'         # model 2
+        + GS + b'(k\x03\x00\x31\x43' + bytes([size])
+        + GS + b'(k\x03\x00\x31\x45\x30'           # ECL L
+        + GS + b'(k' + bytes([pl, ph]) + b'\x31\x50\x30' + encoded
+        + GS + b'(k\x03\x00\x31\x51\x30'
+    )
+    return cmd
+
+
+def format_receipt(lines):
+    """Build ESC/POS bytes from a list of line dicts.
+
+    Each line dict may carry:
+        - text  : str            (required)
+        - bold  : bool
+        - align : 'left'/'center'/'right'
+        - size  : (width, height) magnification, each 1..8
+    """
+    cmd = INIT
+    for ln in lines:
+        if ln.get('align'):
+            cmd += align(ln['align'])
+        if ln.get('bold'):
+            cmd += BOLD_ON
+        if ln.get('size'):
+            w, h = ln['size']
+            cmd += text_size(w, h)
+        cmd += enc(ln.get('text', ''))
+        cmd += FEED1
+        if ln.get('bold'):
+            cmd += BOLD_OFF
+        if ln.get('size'):
+            cmd += text_size(1, 1)
+        if ln.get('align'):
+            cmd += ALIGN_L
+    cmd += FEED3 + CUT_FULL
+    return cmd
+
+
 def build_test_slip(printer_name='', extra=''):
     """Build the standard 'Ghaima POS' test slip we send from the
     scanner / config-form Test buttons."""

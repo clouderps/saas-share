@@ -49,6 +49,26 @@ class PrinterDispatchController(http.Controller):
             return {'success': False,
                     'error': f'No printer configured for use={use}'}
 
+        # 'report' kind — render an ir.actions.report and rasterise.
+        # Bypasses the job queue because it's a synchronous backend
+        # action (operator clicked Print — wants the result now).
+        if kind == 'report':
+            report_ref = (payload or {}).get('report_ref')
+            res_ids = (payload or {}).get('res_ids') or []
+            if not report_ref or not res_ids:
+                return {'success': False,
+                        'error': 'payload must include report_ref + res_ids'}
+            model_name = env['ir.actions.report'].sudo()._get_report(
+                report_ref).model if isinstance(report_ref, str) else None
+            if not model_name:
+                # Fall back: caller can hint the model
+                model_name = (payload or {}).get('model')
+            if not model_name:
+                return {'success': False, 'error': 'cannot resolve report model'}
+            records = env[model_name].sudo().browse([int(i) for i in res_ids])
+            res = driver.print_report(report_ref, records, render_kind='raster')
+            return res
+
         # Normalise payload to base64 string for storage.
         if isinstance(payload, dict):
             payload_b64 = base64.b64encode(
