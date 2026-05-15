@@ -56,7 +56,7 @@
                         <option value="auto">Auto</option>
                         <option value="direct">Cloud server (direct)</option>
                         <t t-foreach="state.agents" t-as="a" t-key="a.id">
-                            <option t-att-value="String(a.id)">
+                            <option t-att-value="'' + a.id">
                                 <t t-esc="(a.online ? '🟢 ' : '⚪ ') + a.name + (a.agent_subnet ? ' [' + a.agent_subnet + '.0/24]' : '')"/>
                             </option>
                         </t>
