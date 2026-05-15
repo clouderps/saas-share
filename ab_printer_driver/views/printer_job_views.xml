@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_printer_job_list" model="ir.ui.view">
+        <field name="name">ab.printer.job.list</field>
+        <field name="model">ab.printer.job</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="printer_config_id"/>
+                <field name="payload_kind"/>
+                <field name="source"/>
+                <field name="priority"/>
+                <field name="attempts"/>
+                <field name="duration_ms"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'done'"
+                       decoration-info="state == 'sending'"
+                       decoration-warning="state == 'retrying'"
+                       decoration-danger="state in ('failed', 'cancelled')"/>
+                <field name="last_attempt_at"/>
+                <button name="action_retry" string="Retry" type="object" icon="fa-refresh"
+                        invisible="state not in ('failed', 'cancelled')"/>
+                <button name="action_dispatch_now" string="Send Now" type="object"
+                        icon="fa-paper-plane"
+                        invisible="state not in ('queued', 'retrying')"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_printer_job_form" model="ir.ui.view">
+        <field name="name">ab.printer.job.form</field>
+        <field name="model">ab.printer.job</field>
+        <field name="arch" type="xml">
+            <form create="false">
+                <header>
+                    <button name="action_dispatch_now" type="object"
+                            string="Send Now" class="oe_highlight"
+                            invisible="state not in ('queued', 'retrying')"/>
+                    <button name="action_retry" type="object"
+                            string="Retry"
+                            invisible="state not in ('failed', 'cancelled')"/>
+                    <button name="action_cancel" type="object"
+                            string="Cancel" class="btn-secondary"
+                            invisible="state in ('done', 'cancelled')"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="printer_config_id"/>
+                            <field name="payload_kind"/>
+                            <field name="source"/>
+                            <field name="priority"/>
+                        </group>
+                        <group>
+                            <field name="attempts"/>
+                            <field name="max_attempts"/>
+                            <field name="last_attempt_at"/>
+                            <field name="duration_ms"/>
+                        </group>
+                    </group>
+                    <group string="Last Error" invisible="not last_error">
+                        <field name="last_error" nolabel="1" readonly="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_printer_job_search" model="ir.ui.view">
+        <field name="name">ab.printer.job.search</field>
+        <field name="model">ab.printer.job</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="printer_config_id"/>
+                <field name="source"/>
+                <filter string="Queued" name="queued"
+                        domain="[('state', '=', 'queued')]"/>
+                <filter string="Retrying" name="retrying"
+                        domain="[('state', '=', 'retrying')]"/>
+                <filter string="Failed" name="failed"
+                        domain="[('state', '=', 'failed')]"/>
+                <filter string="Done" name="done"
+                        domain="[('state', '=', 'done')]"/>
+                <group>
+                    <filter string="Printer" name="g_printer"
+                            context="{'group_by': 'printer_config_id'}"/>
+                    <filter string="State" name="g_state"
+                            context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_printer_job" model="ir.actions.act_window">
+        <field name="name">Print Jobs</field>
+        <field name="res_model">ab.printer.job</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_printer_job_search"/>
+        <field name="context">{'search_default_queued': 1, 'search_default_retrying': 1, 'search_default_failed': 1}</field>
+    </record>
+</odoo>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Root menu — appears as its own app icon so non-POS modules
+         (invoice / sale / stock) can also reach the scanner + queue. -->
+    <menuitem id="menu_printer_driver_root"
+              name="Printers"
+              web_icon="ab_printer_driver,static/description/icon.png"
+              sequence="100"/>
+
+    <menuitem id="menu_printer_scanner"
+              name="Network Scanner"
+              parent="menu_printer_driver_root"
+              action="action_printer_scanner"
+              sequence="5"/>
+
+    <menuitem id="menu_printer_config"
+              name="All Printers"
+              parent="menu_printer_driver_root"
+              action="action_printer_config"
+              sequence="10"/>
+
+    <menuitem id="menu_printer_category"
+              name="Categories"
+              parent="menu_printer_driver_root"
+              action="action_printer_category"
+              sequence="20"/>
+
+    <menuitem id="menu_printer_jobs"
+              name="Print Queue"
+              parent="menu_printer_driver_root"
+              action="action_printer_job"
+              sequence="30"/>
+
+    <menuitem id="menu_printer_log"
+              name="Print Log"
+              parent="menu_printer_driver_root"
+              action="action_printer_log"
+              sequence="40"/>
+</odoo>

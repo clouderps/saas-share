@@ -1,0 +1,635 @@
+// ──────────────────────────────────────────────────────────────────
+// <PrinterScannerApp/> — professional scan UX
+//
+// Ghaima palette + IBM Carbon spacing. Three-zone vertical layout:
+//   1. Header (title + scan summary pill)
+//   2. Controls bar (subnet / ports / range / timeout / flags / CTA)
+//   3. Body (empty state OR scanning splash OR results grid)
+//   4. Footer (action bar — "Add as drivers")
+// ──────────────────────────────────────────────────────────────────
+
+.o_ab_printer_scanner {
+    --ps-blue:    var(--ghaima-blue,  #005FF6);
+    --ps-navy:    var(--ghaima-navy,  #0D00A2);
+    --ps-cyan:    var(--ghaima-cyan,  #5DD8CA);
+    --ps-bg:      var(--ghaima-bg,    #F7F8FC);
+    --ps-line:    var(--ghaima-line,  #E5E7EB);
+    --ps-ink:     var(--ghaima-ink,   #1A1F36);
+    --ps-muted:   var(--ghaima-muted, #6B7280);
+    --ps-good:    #047857;
+    --ps-warn:    #B98800;
+    --ps-bad:     #B91C1C;
+
+    --ps-radius:  10px;
+    --ps-shadow:  0 4px 16px rgba(13, 0, 162, 0.06);
+
+    background: var(--ps-bg);
+    font-family: var(--ghaima-font-body, "Vazirmatn", system-ui, sans-serif);
+    color: var(--ps-ink);
+    overflow: auto;
+
+    * { box-sizing: border-box; }
+
+    // ── 1. Header ──────────────────────────────────────────────
+    &__header {
+        background: linear-gradient(180deg, white 0%, rgba(0, 95, 246, 0.03) 100%);
+        border-bottom: 1px solid var(--ps-line);
+        padding: 1.5rem 2rem 1.25rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    &__title {
+        h1 {
+            font-family: var(--ghaima-font-heading, "Drystick", "Vazirmatn", sans-serif);
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--ps-ink);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            letter-spacing: -0.01em;
+
+            .fa-print {
+                color: var(--ps-blue);
+                background: rgba(0, 95, 246, 0.1);
+                padding: 0.5rem;
+                border-radius: 8px;
+                font-size: 1.1rem;
+            }
+        }
+    }
+
+    &__subtitle {
+        margin: 0.4rem 0 0 0;
+        font-size: 0.875rem;
+        color: var(--ps-muted);
+        max-width: 640px;
+        line-height: 1.5;
+    }
+
+    &__summary {
+        flex-shrink: 0;
+    }
+
+    // ── 2. Scan controls bar ──────────────────────────────────
+    &__controls {
+        background: white;
+        border-bottom: 1px solid var(--ps-line);
+        padding: 1rem 2rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem 1.25rem;
+        align-items: end;
+
+        .o_ab_printer_field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+
+            label {
+                font-size: 0.75rem;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+                color: var(--ps-muted);
+                font-weight: 600;
+                margin: 0;
+            }
+
+            input[type="text"],
+            input[type="number"],
+            select {
+                background: white;
+                border: 1px solid var(--ps-line);
+                border-radius: 8px;
+                padding: 0.5rem 0.7rem;
+                font-size: 0.875rem;
+                color: var(--ps-ink);
+                font-family: inherit;
+                transition: border-color 0.15s, box-shadow 0.15s;
+
+                &:focus {
+                    outline: none;
+                    border-color: var(--ps-blue);
+                    box-shadow: 0 0 0 3px rgba(0, 95, 246, 0.12);
+                }
+                &:disabled { background: var(--ps-bg); opacity: 0.7; }
+            }
+
+            &--flags {
+                grid-column: auto / span 1;
+                gap: 0.4rem;
+                .o_ab_printer_check {
+                    font-size: 0.825rem;
+                    color: var(--ps-ink);
+                }
+            }
+
+            &--cta {
+                display: flex;
+                flex-direction: row;
+                gap: 0.5rem;
+                align-items: stretch;
+                grid-column: auto / span 2;
+            }
+        }
+    }
+
+    // Composite field widgets
+    .o_ab_printer_subnet {
+        display: flex;
+        align-items: stretch;
+        border: 1px solid var(--ps-line);
+        border-radius: 8px;
+        overflow: hidden;
+        background: white;
+
+        input {
+            border: none !important;
+            padding: 0.5rem 0.7rem;
+            flex: 1;
+            min-width: 0;
+            &:focus { box-shadow: none !important; }
+        }
+        &__suffix {
+            padding: 0.5rem 0.7rem;
+            background: var(--ps-bg);
+            color: var(--ps-muted);
+            font-size: 0.825rem;
+            font-variant-numeric: tabular-nums;
+            border-inline-start: 1px solid var(--ps-line);
+        }
+        &:focus-within {
+            border-color: var(--ps-blue);
+            box-shadow: 0 0 0 3px rgba(0, 95, 246, 0.12);
+        }
+    }
+
+    .o_ab_printer_range,
+    .o_ab_printer_timeout {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        input { width: 100%; font-variant-numeric: tabular-nums; }
+        span { color: var(--ps-muted); font-size: 0.825rem; }
+    }
+
+    .o_ab_printer_check {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        cursor: pointer;
+        font-size: 0.85rem;
+        input { width: 16px; height: 16px; accent-color: var(--ps-blue); }
+    }
+
+    // ── 3. Buttons ─────────────────────────────────────────────
+    .o_ab_printer_btn {
+        appearance: none;
+        border: none;
+        border-radius: 8px;
+        font-family: inherit;
+        font-weight: 600;
+        font-size: 0.875rem;
+        padding: 0.55rem 1rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        white-space: nowrap;
+        transition: all 0.15s ease;
+
+        .fa { font-size: 0.875rem; }
+
+        &--primary {
+            background: var(--ps-blue);
+            color: white;
+            &:hover:not(:disabled) {
+                background: var(--ps-navy);
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(0, 95, 246, 0.3);
+            }
+        }
+        &--ghost {
+            background: white;
+            color: var(--ps-blue);
+            border: 1px solid var(--ps-line);
+            &:hover:not(:disabled) {
+                background: rgba(0, 95, 246, 0.04);
+                border-color: var(--ps-blue);
+            }
+        }
+        &:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
+    }
+
+    // ── 4. Summary pill ───────────────────────────────────────
+    .o_ab_printer_summary_pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        background: rgba(4, 120, 87, 0.08);
+        color: var(--ps-good);
+        border: 1px solid rgba(4, 120, 87, 0.25);
+        border-radius: 999px;
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+        font-weight: 500;
+
+        .fa-check-circle { font-size: 1rem; }
+    }
+
+    // ── 5. Manual "Add IP" panel ──────────────────────────────
+    .o_ab_printer_manual {
+        background: white;
+        border-bottom: 1px solid var(--ps-line);
+        padding: 0.85rem 2rem;
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+
+        &__input {
+            flex: 1;
+            background: white;
+            border: 1px solid var(--ps-line);
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            font-family: inherit;
+            &:focus {
+                outline: none;
+                border-color: var(--ps-blue);
+                box-shadow: 0 0 0 3px rgba(0, 95, 246, 0.12);
+            }
+        }
+        &__port {
+            width: 90px;
+            background: white;
+            border: 1px solid var(--ps-line);
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            font-variant-numeric: tabular-nums;
+        }
+    }
+
+    // ── 6. Alert banner ───────────────────────────────────────
+    .o_ab_printer_alert {
+        padding: 0.7rem 1rem;
+        margin: 1rem 2rem 0;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        font-size: 0.875rem;
+
+        &--error {
+            background: rgba(185, 28, 28, 0.06);
+            color: var(--ps-bad);
+            border: 1px solid rgba(185, 28, 28, 0.2);
+        }
+    }
+
+    // ── 7. Empty state ────────────────────────────────────────
+    .o_ab_printer_empty {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem 2rem;
+
+        &__inner {
+            max-width: 480px;
+            text-align: center;
+        }
+        &__icon {
+            width: 88px; height: 88px;
+            background: rgba(0, 95, 246, 0.08);
+            border-radius: 50%;
+            color: var(--ps-blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            margin: 0 auto 1.5rem;
+        }
+        h2 {
+            font-family: var(--ghaima-font-heading, "Drystick", "Vazirmatn", sans-serif);
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin: 0 0 0.5rem;
+        }
+        p {
+            color: var(--ps-muted);
+            line-height: 1.5;
+            margin: 0 0 1.5rem;
+        }
+        code {
+            background: var(--ps-bg);
+            color: var(--ps-navy);
+            padding: 0.1em 0.4em;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+    }
+
+    .o_ab_printer_tips {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        text-align: start;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        background: white;
+        border: 1px solid var(--ps-line);
+        border-radius: var(--ps-radius);
+        padding: 1rem 1.25rem;
+
+        li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.65rem;
+            font-size: 0.825rem;
+            color: var(--ps-muted);
+            line-height: 1.4;
+
+            .fa {
+                color: var(--ps-blue);
+                margin-block-start: 0.15rem;
+                font-size: 0.85rem;
+                width: 18px;
+                text-align: center;
+            }
+        }
+    }
+
+    // ── 8. Scanning splash ────────────────────────────────────
+    .o_ab_printer_scanning {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        padding: 3rem;
+
+        &__pulse {
+            position: relative;
+            width: 100px; height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            .fa {
+                color: var(--ps-blue);
+                font-size: 2.5rem;
+                z-index: 2;
+            }
+
+            &::before, &::after {
+                content: "";
+                position: absolute;
+                inset: 0;
+                border: 2px solid var(--ps-blue);
+                border-radius: 50%;
+                animation: ps-ping 2s ease-out infinite;
+            }
+            &::after { animation-delay: 1s; }
+        }
+        h2 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin: 0;
+        }
+        p { color: var(--ps-muted); margin: 0; }
+
+        &__bar {
+            width: 320px;
+            height: 4px;
+            background: var(--ps-line);
+            border-radius: 999px;
+            overflow: hidden;
+            margin-top: 1rem;
+            position: relative;
+
+            .o_ab_printer_scanning__bar_fill {
+                position: absolute;
+                inset: 0;
+                width: 40%;
+                background: linear-gradient(90deg, var(--ps-blue), var(--ps-cyan));
+                border-radius: 999px;
+                animation: ps-bar 1.4s ease-in-out infinite;
+            }
+        }
+    }
+
+    @keyframes ps-ping {
+        0%   { transform: scale(0.7); opacity: 0.7; }
+        80%, 100% { transform: scale(1.6); opacity: 0; }
+    }
+    @keyframes ps-bar {
+        0%   { transform: translateX(-100%); }
+        100% { transform: translateX(250%); }
+    }
+
+    // ── 9. Results grid ───────────────────────────────────────
+    .o_ab_printer_results {
+        flex: 1;
+        padding: 1.25rem 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+
+        &__head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.825rem;
+            color: var(--ps-muted);
+            font-weight: 500;
+        }
+
+        &__grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+    }
+
+    .o_ab_printer_card {
+        background: white;
+        border: 1px solid var(--ps-line);
+        border-radius: var(--ps-radius);
+        padding: 0.85rem 1.1rem;
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 1rem;
+        align-items: center;
+        transition: all 0.15s ease;
+
+        &:hover {
+            border-color: rgba(0, 95, 246, 0.4);
+            box-shadow: var(--ps-shadow);
+        }
+
+        &.is-selected {
+            border-color: var(--ps-blue);
+            background: rgba(0, 95, 246, 0.02);
+        }
+
+        &__check {
+            width: 18px; height: 18px;
+            accent-color: var(--ps-blue);
+            cursor: pointer;
+        }
+
+        &__main {
+            min-width: 0;
+        }
+
+        &__top {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 0.35rem;
+            flex-wrap: wrap;
+        }
+
+        &__name {
+            border: none;
+            background: transparent;
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--ps-ink);
+            font-family: inherit;
+            padding: 0.15rem 0.35rem;
+            margin-inline-start: -0.35rem;
+            border-radius: 4px;
+            min-width: 0;
+            max-width: 320px;
+            text-overflow: ellipsis;
+
+            &:focus {
+                outline: none;
+                background: var(--ps-bg);
+                box-shadow: 0 0 0 2px rgba(0, 95, 246, 0.2);
+            }
+        }
+
+        &__meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.85rem 1.1rem;
+            font-size: 0.8rem;
+            color: var(--ps-muted);
+            font-variant-numeric: tabular-nums;
+
+            > span {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.3rem;
+                .fa { font-size: 0.75rem; opacity: 0.7; }
+            }
+        }
+
+        &__actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+
+            .o_ab_printer_use {
+                background: white;
+                border: 1px solid var(--ps-line);
+                border-radius: 6px;
+                padding: 0.35rem 0.55rem;
+                font-size: 0.8rem;
+                color: var(--ps-ink);
+                font-family: inherit;
+                cursor: pointer;
+                &:focus {
+                    outline: none;
+                    border-color: var(--ps-blue);
+                }
+            }
+
+            .o_ab_printer_btn { padding: 0.4rem 0.75rem; font-size: 0.8rem; }
+        }
+    }
+
+    // Vendor chip — colour-coded
+    .o_ab_printer_vendor {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.15rem 0.55rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        background: var(--ps-bg);
+        color: var(--ps-navy);
+        border: 1px solid var(--ps-line);
+
+        &--epson          { color: #0066B2; background: rgba(0, 102, 178, 0.10); border-color: rgba(0, 102, 178, 0.3); }
+        &--starmicronics  { color: #B91C1C; background: rgba(185, 28, 28, 0.10); border-color: rgba(185, 28, 28, 0.3); }
+        &--bixolon        { color: #9333EA; background: rgba(147, 51, 234, 0.10); border-color: rgba(147, 51, 234, 0.3); }
+        &--brother        { color: #B91C1C; background: rgba(185, 28, 28, 0.10); border-color: rgba(185, 28, 28, 0.3); }
+        &--hp             { color: #00807A; background: rgba(0, 128, 122, 0.10); border-color: rgba(0, 128, 122, 0.3); }
+        &--zebra          { color: #1F2937; background: rgba(31, 41, 55, 0.10); border-color: rgba(31, 41, 55, 0.3); }
+        &--citizen        { color: #D97706; background: rgba(217, 119, 6, 0.10); border-color: rgba(217, 119, 6, 0.3); }
+    }
+
+    // Response-time chip
+    .o_ab_printer_speed {
+        &--fast { color: var(--ps-good); }
+        &--ok   { color: var(--ps-blue); }
+        &--slow { color: var(--ps-warn); }
+    }
+
+    // ── 10. Footer ────────────────────────────────────────────
+    &__footer {
+        background: white;
+        border-top: 1px solid var(--ps-line);
+        padding: 1rem 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1.5rem;
+        position: sticky;
+        bottom: 0;
+        backdrop-filter: blur(8px);
+    }
+
+    .o_ab_printer_hint {
+        color: var(--ps-muted);
+        font-size: 0.825rem;
+        max-width: 720px;
+        line-height: 1.4;
+        code {
+            background: var(--ps-bg);
+            color: var(--ps-navy);
+            padding: 0.05em 0.35em;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+    }
+
+    // ── 11. Mobile ────────────────────────────────────────────
+    @media (max-width: 720px) {
+        &__header { padding: 1rem; }
+        &__controls { padding: 1rem; grid-template-columns: 1fr; }
+        .o_ab_printer_field--cta { grid-column: 1; }
+        .o_ab_printer_card {
+            grid-template-columns: auto 1fr;
+            grid-template-areas: "check main" "actions actions";
+            .o_ab_printer_card__check  { grid-area: check; }
+            .o_ab_printer_card__main   { grid-area: main; }
+            .o_ab_printer_card__actions { grid-area: actions; justify-content: flex-end; }
+        }
+        &__footer { flex-direction: column; align-items: stretch; gap: 0.75rem; padding: 1rem; }
+    }
+}

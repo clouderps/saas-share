@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <record id="ir_sequence_printer_job" model="ir.sequence">
+            <field name="name">Printer Job</field>
+            <field name="code">ab.printer.job</field>
+            <field name="prefix">PRJ/</field>
+            <field name="padding">6</field>
+            <field name="implementation">no_gap</field>
+        </record>
+
+        <!-- Drain queued jobs every minute. Each tick processes up
+             to 50 jobs (priority desc, oldest first). -->
+        <record id="ir_cron_printer_job_drain" model="ir.cron">
+            <field name="name">Printer Driver: drain job queue</field>
+            <field name="model_id" ref="model_ab_printer_job"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_drain_queue()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">minutes</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <!-- Re-verify connected printers every 5 minutes so the
+             "Status" column on the printer list reflects reality
+             without operators having to hit Refresh. -->
+        <record id="ir_cron_printer_health_check" model="ir.cron">
+            <field name="name">Printer Driver: health check</field>
+            <field name="model_id" ref="model_ab_printer_config"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_health_check()</field>
+            <field name="interval_number">5</field>
+            <field name="interval_type">minutes</field>
+            <field name="active" eval="True"/>
+        </record>
+
+    </data>
+</odoo>

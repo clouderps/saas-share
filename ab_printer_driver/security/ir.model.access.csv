@@ -1,0 +1,11 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_ab_printer_config_user,ab.printer.config.user,model_ab_printer_config,base.group_user,1,0,0,0
+access_ab_printer_config_system,ab.printer.config.system,model_ab_printer_config,base.group_system,1,1,1,1
+access_ab_printer_category_user,ab.printer.category.user,model_ab_printer_category,base.group_user,1,0,0,0
+access_ab_printer_category_system,ab.printer.category.system,model_ab_printer_category,base.group_system,1,1,1,1
+access_ab_printer_log_user,ab.printer.log.user,model_ab_printer_log,base.group_user,1,0,0,0
+access_ab_printer_log_system,ab.printer.log.system,model_ab_printer_log,base.group_system,1,1,1,1
+access_ab_printer_job_user,ab.printer.job.user,model_ab_printer_job,base.group_user,1,1,1,0
+access_ab_printer_job_system,ab.printer.job.system,model_ab_printer_job,base.group_system,1,1,1,1
+access_ab_printer_detect_wizard,ab.printer.detect.wizard,model_ab_printer_detect_wizard,base.group_user,1,1,1,1
+access_ab_printer_detect_line,ab.printer.detect.line,model_ab_printer_detect_line,base.group_user,1,1,1,1

@@ -1,0 +1,267 @@
+from odoo import api, fields, models
+
+from ..lib import tcp, image, escpos, verify
+
+
+class PrinterConfig(models.Model):
+    """Driver registry: every physical printer the SaaS knows about.
+
+    Domain-agnostic. Consumer modules (POS, accounting, …) layer
+    references on top via _inherit + their own pos_config_id /
+    invoice_use / picking_use fields.
+    """
+    _name = 'ab.printer.config'
+    _description = 'Printer Driver Configuration'
+    _order = 'sequence, name'
+
+    name = fields.Char(string='Printer Name', required=True)
+    sequence = fields.Integer(string='Sequence', default=10)
+    category_id = fields.Many2one(
+        'ab.printer.category', string='Category',
+    )
+    printer_mode = fields.Selection(
+        [
+            ('auto', 'Auto Detect'),
+            ('iot', 'IoT Box'),
+            ('network', 'Network (IP/TCP)'),
+            ('usb', 'USB'),
+            ('bluetooth', 'Bluetooth'),
+            ('agent', 'Print Agent'),
+        ],
+        string='Printer Mode',
+        default='network',
+        required=True,
+    )
+    printer_use = fields.Selection(
+        [
+            ('receipt', 'Receipt Printer'),
+            ('kitchen', 'Kitchen / Order Printer'),
+            ('document', 'Document Printer (A4)'),
+            ('label', 'Label Printer'),
+            ('both', 'Receipt & Kitchen'),
+        ],
+        string='Printer Use',
+        default='receipt',
+    )
+    printer_ip = fields.Char(string='Printer IP')
+    printer_port = fields.Integer(string='Printer Port', default=9100)
+    paper_width_mm = fields.Selection(
+        [('58', '58 mm'), ('80', '80 mm'), ('a4', 'A4')],
+        string='Paper Width', default='80',
+    )
+    usb_vendor_id = fields.Char(string='USB Vendor ID')
+    usb_product_id = fields.Char(string='USB Product ID')
+    bluetooth_device_name = fields.Char(string='Bluetooth Device Name')
+    enable_fallback = fields.Boolean(string='Enable Fallback', default=True)
+    retry_count = fields.Integer(string='Retry Count', default=3)
+    timeout = fields.Integer(string='Timeout (ms)', default=5000)
+    state = fields.Selection(
+        [
+            ('connected', 'Connected'),
+            ('disconnected', 'Disconnected'),
+            ('printing', 'Printing'),
+            ('error', 'Error'),
+        ],
+        string='Status', default='disconnected', readonly=True,
+    )
+    last_seen = fields.Datetime(string='Last Verified', readonly=True)
+    verified = fields.Boolean(
+        string='ESC/POS Verified', readonly=True,
+        help='True when the printer answered our DLE EOT 1 status query — '
+             'distinguishes a real ESC/POS device from a generic TCP port.',
+    )
+    vendor = fields.Char(string='Vendor', help='Detected by banner / MAC OUI.')
+    mac = fields.Char(string='MAC Address')
+
+    # ── Driver API ────────────────────────────────────────────────
+    # env['ab.printer.config'].get_default(use='receipt').print_bytes(escpos)
+    # env['ab.printer.config'].get_default(use='kitchen').print_report(...)
+
+    @api.model
+    def get_default(self, use='receipt', pos_config=None, partner=None):
+        """Resolve the default printer for a given use.
+
+        Resolution order:
+          1. Consumer-supplied hint (pos_config / partner) — extended
+             by consumer modules via _inherit + super()
+          2. ab.printer.config with printer_use == use and state in
+             (connected, printing), lowest sequence wins
+          3. any connected printer (for emergency fallback)
+        """
+        rec = self.search([
+            ('printer_use', 'in', (use, 'both')),
+            ('state', 'in', ('connected', 'printing')),
+        ], limit=1, order='sequence, id')
+        if rec:
+            return rec
+        return self.search([('state', 'in', ('connected', 'printing'))],
+                           limit=1, order='sequence, id')
+
+    def print_bytes(self, data, *, source='backend', record_ref=None, timeout=None):
+        """Send raw ESC/POS bytes through the per-IP mutex.
+
+        Logs an ab.printer.log row on every attempt. Returns:
+          {'success': bool, 'error': str, 'duration': float}
+        Never raises — callers inspect the dict.
+        """
+        self.ensure_one()
+        if self.printer_mode != 'network':
+            return {'success': False,
+                    'error': f'print_bytes only supports network mode '
+                             f'(this is {self.printer_mode})'}
+        if not self.printer_ip:
+            return {'success': False, 'error': f'No printer_ip on {self.name}'}
+
+        if isinstance(data, list):
+            data = bytes(data)
+        elif isinstance(data, str):
+            data = data.encode('utf-8')
+
+        self.sudo().state = 'printing'
+        ok, err, duration = tcp.send_to_printer(
+            self.printer_ip, int(self.printer_port or 9100),
+            data, timeout=(timeout or (self.timeout or 5000) / 1000.0),
+        )
+        self.sudo().state = 'connected' if ok else 'error'
+
+        try:
+            self.env['ab.printer.log'].sudo().create({
+                'printer_config_id': self.id,
+                'printer_type': self.printer_mode,
+                'job_status': 'done' if ok else 'failed',
+                'error_message': err or '',
+                'duration': duration,
+                'source': source,
+            })
+        except Exception:
+            pass
+        return {'success': ok, 'error': err or '', 'duration': duration}
+
+    def print_image(self, image_bytes, *, source='backend'):
+        """JPEG/PNG bytes → ESC/POS raster → dispatch."""
+        self.ensure_one()
+        max_w = image.THERMAL_58MM_MAX_WIDTH if self.paper_width_mm == '58' \
+            else image.THERMAL_80MM_MAX_WIDTH
+        try:
+            escpos_bytes = image.image_to_escpos_raster(image_bytes, max_width=max_w)
+        except Exception as e:
+            return {'success': False, 'error': f'rasterise failed: {e}'}
+        return self.print_bytes(escpos_bytes, source=source)
+
+    def print_report(self, report_ref, records, *, render_kind='raster'):
+        """Render an ir.actions.report (qweb-pdf) and dispatch to the
+        printer. render_kind='raster' goes thermal; 'pdf' spools."""
+        self.ensure_one()
+        Report = self.env['ir.actions.report']
+        if isinstance(report_ref, str):
+            report = self.env.ref(report_ref, raise_if_not_found=False)
+            if not report:
+                return {'success': False, 'error': f'Report {report_ref} not found'}
+        else:
+            report = report_ref
+
+        try:
+            pdf_bytes, _ct = Report._render_qweb_pdf(report.report_name, records.ids)
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
+        if render_kind == 'pdf':
+            import os, tempfile, time as _t
+            spool = '/var/spool/ghaima-printers'
+            try:
+                os.makedirs(spool, exist_ok=True)
+                path = os.path.join(spool, f'{int(_t.time()*1000)}-{self.id}.pdf')
+                with open(path, 'wb') as fh:
+                    fh.write(pdf_bytes)
+                return {'success': True, 'spool_path': path}
+            except (PermissionError, OSError) as e:
+                return {'success': False, 'error': f'Cannot write spool: {e}'}
+
+        # Raster: render page 1 to PNG, rasterise, send.
+        try:
+            from pdf2image import convert_from_bytes
+            from io import BytesIO
+            images = convert_from_bytes(pdf_bytes, dpi=203, first_page=1, last_page=1)
+            if not images:
+                return {'success': False, 'error': 'PDF rendering produced no page'}
+            buf = BytesIO()
+            images[0].save(buf, format='PNG')
+            return self.print_image(buf.getvalue(), source='report')
+        except ImportError:
+            return {'success': False,
+                    'error': 'pdf2image / poppler not available — install for raster reports'}
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
+    # ── Health / verification ─────────────────────────────────────
+
+    def action_verify_connection(self):
+        """Form button: probe + ESC @ + DLE EOT 1 status read. Updates
+        state, verified, last_seen fields."""
+        self.ensure_one()
+        result = verify.verify_printer(self.printer_ip,
+                                       int(self.printer_port or 9100))
+        self.sudo().write({
+            'state': 'connected' if result['reachable'] else 'disconnected',
+            'verified': result['verified'],
+            'last_seen': fields.Datetime.now() if result['reachable'] else self.last_seen,
+        })
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'type': 'success' if result['verified']
+                       else 'warning' if result['reachable']
+                       else 'danger',
+                'title': ('Verified ESC/POS' if result['verified']
+                          else 'Port open (no ESC/POS response)' if result['reachable']
+                          else 'Unreachable'),
+                'message': (result.get('error') or
+                            f"Response: {result['response_ms']} ms"),
+                'sticky': False,
+            },
+        }
+
+    def action_test_connection(self):
+        """Form button: send the canonical 'Ghaima POS' test slip."""
+        self.ensure_one()
+        payload = escpos.build_test_slip(printer_name=self.name)
+        res = self.print_bytes(payload, source='test')
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'type': 'success' if res['success'] else 'danger',
+                'title': 'Test print sent' if res['success'] else 'Test failed',
+                'message': res.get('error') or f'Sent to {self.printer_ip}.',
+                'sticky': False,
+            },
+        }
+
+    @api.model
+    def _cron_health_check(self):
+        """Cron: every 5 min, re-verify every connected printer.
+        Updates state + last_seen + fans out bus.bus 'printer_state_change'."""
+        for rec in self.search([('printer_mode', '=', 'network'),
+                                ('printer_ip', '!=', False)]):
+            before = (rec.state, rec.verified)
+            result = verify.verify_printer(
+                rec.printer_ip, int(rec.printer_port or 9100), timeout_s=1.0,
+            )
+            after_state = 'connected' if result['reachable'] else 'disconnected'
+            rec.sudo().write({
+                'state': after_state,
+                'verified': result['verified'],
+                'last_seen': fields.Datetime.now() if result['reachable']
+                             else rec.last_seen,
+            })
+            if (after_state, result['verified']) != before:
+                try:
+                    self.env['bus.bus']._sendone(
+                        'printer_health',
+                        'state_change',
+                        {'printer_id': rec.id, 'state': after_state,
+                         'verified': result['verified']},
+                    )
+                except Exception:
+                    pass

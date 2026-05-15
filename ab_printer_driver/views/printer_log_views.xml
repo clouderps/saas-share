@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_printer_log_list" model="ir.ui.view">
+        <field name="name">ab.printer.log.list</field>
+        <field name="model">ab.printer.log</field>
+        <field name="arch" type="xml">
+            <list create="false">
+                <field name="create_date" string="When"/>
+                <field name="printer_config_id"/>
+                <field name="source"/>
+                <field name="job_status" widget="badge"
+                       decoration-success="job_status == 'done'"
+                       decoration-danger="job_status == 'failed'"
+                       decoration-info="job_status == 'printing'"/>
+                <field name="duration" digits="[12, 3]"/>
+                <field name="error_message"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_printer_log" model="ir.actions.act_window">
+        <field name="name">Print Log</field>
+        <field name="res_model">ab.printer.log</field>
+        <field name="view_mode">list</field>
+    </record>
+</odoo>

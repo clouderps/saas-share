@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="ab_printer_driver.PrinterScannerApp">
+        <div class="o_ab_printer_scanner o_action h-100 d-flex flex-column">
+
+            <!-- ── Header: title + scan summary ─────────────── -->
+            <header class="o_ab_printer_scanner__header">
+                <div class="o_ab_printer_scanner__title">
+                    <h1>
+                        <i class="fa fa-print"/>
+                        <span>Network Printer Scanner</span>
+                    </h1>
+                    <p class="o_ab_printer_scanner__subtitle">
+                        Find every printer on your LAN and wire it into the
+                        POS &amp; backend print pipelines as a live driver.
+                    </p>
+                </div>
+                <div t-if="state.phase === 'done'" class="o_ab_printer_scanner__summary">
+                    <div class="o_ab_printer_summary_pill">
+                        <i class="fa fa-check-circle"/>
+                        <span t-esc="summaryLine"/>
+                    </div>
+                </div>
+            </header>
+
+            <!-- ── Controls: scan parameters ─────────────────── -->
+            <section class="o_ab_printer_scanner__controls">
+                <div class="o_ab_printer_field">
+                    <label>Subnet</label>
+                    <div class="o_ab_printer_subnet">
+                        <input type="text"
+                               t-model="state.subnet"
+                               placeholder="192.168.1"
+                               t-att-disabled="state.phase === 'scanning'"/>
+                        <span class="o_ab_printer_subnet__suffix">.0/24</span>
+                    </div>
+                </div>
+                <div class="o_ab_printer_field">
+                    <label>Ports</label>
+                    <select t-model="state.portMode"
+                            t-att-disabled="state.phase === 'scanning'">
+                        <option value="raw">RAW · 9100</option>
+                        <option value="common">Common · 9100 + 631 + 515</option>
+                        <option value="all">Full sweep · + 80</option>
+                    </select>
+                </div>
+                <div class="o_ab_printer_field">
+                    <label>Range</label>
+                    <div class="o_ab_printer_range">
+                        <input type="number" min="1" max="254"
+                               t-model.number="state.rangeStart"
+                               t-att-disabled="state.phase === 'scanning'"/>
+                        <span>→</span>
+                        <input type="number" min="1" max="254"
+                               t-model.number="state.rangeEnd"
+                               t-att-disabled="state.phase === 'scanning'"/>
+                    </div>
+                </div>
+                <div class="o_ab_printer_field">
+                    <label>Timeout</label>
+                    <div class="o_ab_printer_timeout">
+                        <input type="number" min="50" max="2000" step="50"
+                               t-model.number="state.timeoutMs"
+                               t-att-disabled="state.phase === 'scanning'"/>
+                        <span>ms</span>
+                    </div>
+                </div>
+                <div class="o_ab_printer_field o_ab_printer_field--flags">
+                    <label class="o_ab_printer_check">
+                        <input type="checkbox" t-model="state.doBannerGrab"/>
+                        <span>Identify vendor</span>
+                    </label>
+                    <label class="o_ab_printer_check">
+                        <input type="checkbox" t-model="state.doReverseDns"/>
+                        <span>Resolve hostnames</span>
+                    </label>
+                </div>
+                <div class="o_ab_printer_field o_ab_printer_field--cta">
+                    <button class="o_ab_printer_btn o_ab_printer_btn--primary"
+                            t-on-click="scan"
+                            t-att-disabled="state.phase === 'scanning'">
+                        <i t-att-class="state.phase === 'scanning' ? 'fa fa-spinner fa-spin' : 'fa fa-search'"/>
+                        <span t-esc="scanLabel"/>
+                    </button>
+                    <button class="o_ab_printer_btn o_ab_printer_btn--ghost"
+                            t-on-click="() => state.manualOpen = !state.manualOpen">
+                        <i class="fa fa-plus"/>
+                        <span>Add by IP</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- ── Manual "Add IP" panel ─────────────────────── -->
+            <section t-if="state.manualOpen" class="o_ab_printer_manual">
+                <input type="text" t-model="state.manualIp"
+                       placeholder="Printer IP (e.g. 192.168.1.42)"
+                       class="o_ab_printer_manual__input"/>
+                <input type="number" t-model.number="state.manualPort"
+                       class="o_ab_printer_manual__port" min="1" max="65535"/>
+                <button class="o_ab_printer_btn o_ab_printer_btn--primary"
+                        t-on-click="addManualIp"
+                        t-att-disabled="state.manualBusy">
+                    <i t-att-class="state.manualBusy ? 'fa fa-spinner fa-spin' : 'fa fa-check'"/>
+                    <span>Probe &amp; add</span>
+                </button>
+                <button class="o_ab_printer_btn o_ab_printer_btn--ghost"
+                        t-on-click="() => state.manualOpen = false">
+                    Cancel
+                </button>
+            </section>
+
+            <!-- ── Error banner ──────────────────────────────── -->
+            <div t-if="state.error" class="o_ab_printer_alert o_ab_printer_alert--error">
+                <i class="fa fa-exclamation-triangle"/>
+                <span t-esc="state.error"/>
+            </div>
+
+            <!-- ── Body: scan splash OR results grid ─────────── -->
+
+            <!-- Pre-scan empty state -->
+            <div t-if="state.phase === 'ready' and !state.results.length"
+                 class="o_ab_printer_empty">
+                <div class="o_ab_printer_empty__inner">
+                    <div class="o_ab_printer_empty__icon">
+                        <i class="fa fa-wifi"/>
+                    </div>
+                    <h2>Ready to scan</h2>
+                    <p>
+                        Tap <strong>Scan network</strong> to discover every printer
+                        on the <code t-esc="state.subnet + '.0/24'"/> subnet across
+                        the standard printing ports.
+                    </p>
+                    <ul class="o_ab_printer_tips">
+                        <li><i class="fa fa-bolt"/> Typical /24 scan completes in 5-7 seconds.</li>
+                        <li><i class="fa fa-flag"/> Auto-identifies Epson · Star · Bixolon · HP · Brother · Zebra · Citizen.</li>
+                        <li><i class="fa fa-shield"/> Read-only — no packets sent to the printer beyond a TCP handshake + a 3-byte status query.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Scanning splash -->
+            <div t-if="state.phase === 'scanning'" class="o_ab_printer_scanning">
+                <div class="o_ab_printer_scanning__pulse">
+                    <i class="fa fa-search fa-spin"/>
+                </div>
+                <h2>Scanning <span t-esc="state.subnet"/>.0/24…</h2>
+                <p>Probing every host across the selected ports.</p>
+                <div class="o_ab_printer_scanning__bar">
+                    <div class="o_ab_printer_scanning__bar_fill"/>
+                </div>
+            </div>
+
+            <!-- Results grid -->
+            <section t-if="state.results.length"
+                     class="o_ab_printer_results">
+                <div class="o_ab_printer_results__head">
+                    <label class="o_ab_printer_check">
+                        <input type="checkbox"
+                               t-att-checked="state.selectedCount === state.results.length"
+                               t-on-change="toggleAll"/>
+                        <span><t t-esc="state.selectedCount"/> of <t t-esc="state.results.length"/> selected</span>
+                    </label>
+                </div>
+                <div class="o_ab_printer_results__grid">
+                    <t t-foreach="state.results" t-as="row" t-key="row.ip">
+                        <div class="o_ab_printer_card"
+                             t-att-class="{ 'is-selected': row.selected }">
+                            <input type="checkbox"
+                                   class="o_ab_printer_card__check"
+                                   t-att-checked="row.selected"
+                                   t-on-change="() => this.toggleOne(row)"/>
+                            <div class="o_ab_printer_card__main">
+                                <div class="o_ab_printer_card__top">
+                                    <input type="text"
+                                           class="o_ab_printer_card__name"
+                                           t-model="row.custom_name"/>
+                                    <span t-if="row.vendor"
+                                          class="o_ab_printer_vendor"
+                                          t-att-class="vendorChipClass(row)"
+                                          t-esc="row.vendor"/>
+                                </div>
+                                <div class="o_ab_printer_card__meta">
+                                    <span class="o_ab_printer_ip">
+                                        <i class="fa fa-network-wired"/>
+                                        <t t-esc="row.ip"/>:<t t-esc="row.port"/>
+                                    </span>
+                                    <span class="o_ab_printer_proto"
+                                          t-esc="portsLabel(row)"/>
+                                    <span t-if="row.hostname"
+                                          class="o_ab_printer_hostname">
+                                        <i class="fa fa-tag"/>
+                                        <t t-esc="row.hostname"/>
+                                    </span>
+                                    <span class="o_ab_printer_speed"
+                                          t-att-class="speedClass(row)">
+                                        <i class="fa fa-clock"/>
+                                        <t t-esc="row.response_ms"/> ms
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="o_ab_printer_card__actions">
+                                <select class="o_ab_printer_use" t-model="row.printer_use">
+                                    <option value="receipt">Receipt</option>
+                                    <option value="kitchen">Kitchen</option>
+                                    <option value="label">Label</option>
+                                    <option value="report">Report</option>
+                                </select>
+                                <button class="o_ab_printer_btn o_ab_printer_btn--ghost"
+                                        t-on-click="() => this.testPrint(row)"
+                                        t-att-disabled="row.busy"
+                                        title="Send a Ghaima POS test slip">
+                                    <i t-att-class="row.busy ? 'fa fa-spinner fa-spin' : 'fa fa-print'"/>
+                                    <span>Test</span>
+                                </button>
+                            </div>
+                        </div>
+                    </t>
+                </div>
+            </section>
+
+            <!-- ── Footer action bar ─────────────────────────── -->
+            <footer t-if="state.results.length"
+                    class="o_ab_printer_scanner__footer">
+                <span class="o_ab_printer_hint">
+                    Adding registers selected printers as live drivers — the POS receipt flow
+                    and any module calling
+                    <code>env['ab.printer.config'].get_default()</code> will use them.
+                </span>
+                <button class="o_ab_printer_btn o_ab_printer_btn--primary"
+                        t-on-click="addDrivers"
+                        t-att-disabled="!state.selectedCount">
+                    <i class="fa fa-check"/>
+                    <span>Add <t t-esc="state.selectedCount"/> as drivers</span>
+                </button>
+            </footer>
+        </div>
+    </t>
+
+</templates>

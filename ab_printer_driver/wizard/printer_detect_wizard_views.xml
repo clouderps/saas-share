@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_printer_detect_wizard_form" model="ir.ui.view">
+        <field name="name">ab.printer.detect.wizard.form</field>
+        <field name="model">ab.printer.detect.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group string="Scan Settings">
+                        <group>
+                            <field name="subnet" placeholder="192.168.1"
+                                   readonly="state == 'scanning'"/>
+                            <field name="port_mode"
+                                   readonly="state == 'scanning'"/>
+                        </group>
+                        <group>
+                            <label for="scan_range_start" string="IP Range"/>
+                            <div class="o_row">
+                                <field name="scan_range_start"
+                                       readonly="state == 'scanning'"
+                                       style="width: 4em;"/>
+                                <span class="mx-1">to</span>
+                                <field name="scan_range_end"
+                                       readonly="state == 'scanning'"
+                                       style="width: 4em;"/>
+                            </div>
+                            <field name="timeout_ms"
+                                   readonly="state == 'scanning'"/>
+                            <field name="do_banner_grab"/>
+                            <field name="do_reverse_dns"/>
+                        </group>
+                    </group>
+
+                    <group string="Results" invisible="state != 'done'">
+                        <field name="scanned_count" readonly="1"/>
+                        <field name="found_count" readonly="1"/>
+                        <field name="scan_duration_s" readonly="1"/>
+                    </group>
+
+                    <field name="detected_printer_ids" nolabel="1"
+                           invisible="state != 'done'">
+                        <list editable="bottom">
+                            <field name="selected" widget="boolean_toggle"/>
+                            <field name="name"/>
+                            <field name="vendor"/>
+                            <field name="ip_address"/>
+                            <field name="port"/>
+                            <field name="open_ports" optional="show"/>
+                            <field name="hostname" optional="show"/>
+                            <field name="mac" optional="hide"/>
+                            <field name="response_time_ms" string="ms"/>
+                        </list>
+                    </field>
+                </sheet>
+                <footer>
+                    <button name="action_scan" type="object"
+                            string="Scan" class="btn-primary"
+                            invisible="state == 'scanning'"/>
+                    <button name="action_register_selected" type="object"
+                            string="Add Selected" class="btn-primary"
+                            invisible="state != 'done'"/>
+                    <button special="cancel" string="Close"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_printer_detect_wizard" model="ir.actions.act_window">
+        <field name="name">Detect Printers (legacy)</field>
+        <field name="res_model">ab.printer.detect.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>
