@@ -32,6 +32,8 @@
                 <field name="category_id" optional="show"/>
                 <field name="printer_mode"/>
                 <field name="printer_use"/>
+                <field name="agent_id" optional="show"/>
+                <field name="agent_online" widget="boolean_toggle" optional="hide"/>
                 <field name="vendor" optional="show"/>
                 <field name="printer_ip" optional="show"/>
                 <field name="printer_port" optional="hide"/>
@@ -80,6 +82,11 @@
                                    invisible="printer_mode != 'network'"/>
                             <field name="printer_port"
                                    invisible="printer_mode != 'network'"/>
+                            <field name="agent_id"
+                                   options="{'no_create': True}"
+                                   invisible="printer_mode not in ('network','agent')"/>
+                            <field name="agent_online" readonly="1"
+                                   invisible="not agent_id"/>
                             <field name="usb_vendor_id"
                                    invisible="printer_mode != 'usb'"/>
                             <field name="usb_product_id"

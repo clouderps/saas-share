@@ -36,12 +36,22 @@ export class PrinterScannerApp extends Component {
             doBannerGrab:  true,
             doReverseDns:  true,
 
+            // Scan source — 'auto' picks the right path for the subnet,
+            // 'direct' forces the Odoo server to sweep (only works
+            // on-prem), or a numeric string == an agent id.
+            viaSource:     "auto",
+            // Banner shown when WebRTC detected the operator's local
+            // /24 and that suggests a better default than what we have.
+            localSubnetHint: "",
+
             // Scan status
             phase: "ready",                // 'ready' | 'scanning' | 'done'
             scannedCount: 0,
             foundCount: 0,
             durationS: 0,
             error: "",
+            needsAgent: false,            // server told us this subnet needs an agent
+            agentErrorSubnet: "",
 
             // Results
             results: [],                  // { ip, port, vendor, ... selected: bool, busy: bool }
@@ -53,6 +63,10 @@ export class PrinterScannerApp extends Component {
             registered: [],
             registeredBusy: {},          // {driver_id: bool} for per-row buttons
 
+            // Bridge agents available on this DB (for the picker).
+            agents: [],
+            agentsLoadedAt: 0,
+
             // Manual "Add IP" form
             manualOpen: false,
             manualIp: "",
@@ -63,7 +77,10 @@ export class PrinterScannerApp extends Component {
         onMounted(async () => {
             const cached = sessionStorage.getItem("ab_printer_scanner_subnet");
             this.state.subnet = cached || await this._guessSubnet();
-            await this._loadRegistered();
+            // Best-effort WebRTC local IP detection — runs in parallel
+            // with the API loads, doesn't block the UI.
+            this._detectLocalSubnetViaWebRTC();
+            await Promise.all([this._loadRegistered(), this._loadAgents()]);
         });
     }
 
@@ -74,6 +91,58 @@ export class PrinterScannerApp extends Component {
         } catch (e) {
             // Non-fatal — just hide the section.
         }
+    }
+
+    async _loadAgents() {
+        try {
+            const res = await rpc("/ab_printer/scan/agents", {});
+            this.state.agents = res.agents || [];
+            this.state.agentsLoadedAt = Date.now();
+            // If exactly one online agent exists, pre-select it as the
+            // scan source — operators most often have a single LAN.
+            const onlines = this.state.agents.filter((a) => a.online);
+            if (onlines.length === 1 && this.state.viaSource === "auto") {
+                this.state.viaSource = String(onlines[0].id);
+                if (onlines[0].agent_subnet && !sessionStorage.getItem("ab_printer_scanner_subnet")) {
+                    this.state.subnet = onlines[0].agent_subnet;
+                }
+            }
+        } catch (e) {}
+    }
+
+    /**
+     * Use a WebRTC peer connection's ICE candidates to discover the
+     * operator's LAN IP (works on Chromium + Firefox; degrades silently
+     * elsewhere). Pre-fills the subnet field if we get an RFC1918 hit
+     * and the user hasn't typed anything yet.
+     */
+    _detectLocalSubnetViaWebRTC() {
+        try {
+            if (!window.RTCPeerConnection) return;
+            const pc = new RTCPeerConnection({ iceServers: [] });
+            pc.createDataChannel("");
+            pc.onicecandidate = (ev) => {
+                if (!ev || !ev.candidate || !ev.candidate.candidate) return;
+                const m = ev.candidate.candidate.match(
+                    /(\b(?:10|172|192)\.\d{1,3}\.\d{1,3})\.\d{1,3}/
+                );
+                if (!m) return;
+                const sub = m[1];
+                // Only suggest if it materially differs from what we have.
+                if (sub && sub !== this.state.subnet && !this.state.localSubnetHint) {
+                    this.state.localSubnetHint = sub;
+                }
+                try { pc.close(); } catch (e) {}
+            };
+            pc.createOffer().then((offer) => pc.setLocalDescription(offer))
+                .catch(() => {});
+        } catch (e) {}
+    }
+
+    useLocalSubnet() {
+        if (!this.state.localSubnetHint) return;
+        this.state.subnet = this.state.localSubnetHint;
+        this.state.localSubnetHint = "";
     }
 
     async testRegistered(row) {
@@ -145,21 +214,43 @@ export class PrinterScannerApp extends Component {
             .replace(/\.$/, "");
         this.state.phase = "scanning";
         this.state.error = "";
+        this.state.needsAgent = false;
+        this.state.agentErrorSubnet = "";
         this.state.results = [];
         this.state.selectedCount = 0;
         sessionStorage.setItem("ab_printer_scanner_subnet", this.state.subnet);
+        // Build routing hint: 'auto' lets the server decide; 'direct'
+        // forces server-side sweep; numeric == agent id.
+        const params = {
+            subnet: this.state.subnet,
+            port_mode: this.state.portMode,
+            range_start: this.state.rangeStart,
+            range_end: this.state.rangeEnd,
+            timeout_ms: this.state.timeoutMs,
+            do_banner_grab: this.state.doBannerGrab,
+            do_reverse_dns: this.state.doReverseDns,
+        };
+        if (this.state.viaSource === "direct") {
+            params.via = "direct";
+        } else if (this.state.viaSource !== "auto") {
+            const aid = parseInt(this.state.viaSource, 10);
+            if (!Number.isNaN(aid)) {
+                params.via_agent_id = aid;
+                params.via = "agent";
+            }
+        }
         try {
-            const res = await rpc("/ab_printer/scan/run", {
-                subnet: this.state.subnet,
-                port_mode: this.state.portMode,
-                range_start: this.state.rangeStart,
-                range_end: this.state.rangeEnd,
-                timeout_ms: this.state.timeoutMs,
-                do_banner_grab: this.state.doBannerGrab,
-                do_reverse_dns: this.state.doReverseDns,
-            });
+            const res = await rpc("/ab_printer/scan/run", params);
             if (!res.success) {
                 this.state.error = res.error || "Scan failed";
+                if (res.needs_agent) {
+                    this.state.needsAgent = true;
+                    this.state.agentErrorSubnet = res.subnet || this.state.subnet;
+                }
+                if (res.agent_offline || res.agent_timeout) {
+                    // Reload the agent list so the UI reflects current liveness.
+                    this._loadAgents();
+                }
                 this.state.phase = "ready";
                 return;
             }

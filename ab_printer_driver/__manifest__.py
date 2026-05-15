@@ -1,10 +1,12 @@
 {
     'name': 'Printer Driver',
-    'version': '18.0.1.0.0',
+    'version': '18.0.2.0.0',
     'category': 'Tools',
     'summary': 'Base printer driver — detect, verify, dispatch, log. '
-               'Domain-agnostic. POS / accounting / sales / stock consumers '
-               'depend on this for thermal + network printing.',
+               'Bridge agent for cloud-hosted SaaS so the Odoo server can '
+               'drive LAN printers across NAT. Domain-agnostic. POS / '
+               'accounting / sales / stock consumers depend on this for '
+               'thermal + network printing.',
     'description': """
 Printer Driver (base)
 =====================
@@ -37,6 +39,7 @@ No business-domain dependencies.
         'views/printer_config_views.xml',
         'views/printer_log_views.xml',
         'views/printer_job_views.xml',
+        'views/printer_agent_views.xml',
         'views/printer_menu.xml',
     ],
     'assets': {

@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ── List ─────────────────────────────────────────────────── -->
+    <record id="view_printer_agent_list" model="ir.ui.view">
+        <field name="name">ab.printer.agent.list</field>
+        <field name="model">ab.printer.agent</field>
+        <field name="arch" type="xml">
+            <list string="Printer Bridge Agents">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="location_hint"/>
+                <field name="agent_subnet"/>
+                <field name="agent_local_ip"/>
+                <field name="version"/>
+                <field name="last_seen"/>
+                <field name="online" widget="boolean_toggle"/>
+                <field name="printer_count" string="Printers"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ── Form ─────────────────────────────────────────────────── -->
+    <record id="view_printer_agent_form" model="ir.ui.view">
+        <field name="name">ab.printer.agent.form</field>
+        <field name="model">ab.printer.agent</field>
+        <field name="arch" type="xml">
+            <form string="Bridge Agent">
+                <header>
+                    <button name="action_rotate_token" type="object"
+                            string="Rotate Token"
+                            confirm="Rotating the token disconnects the running agent. Continue?"
+                            class="oe_highlight"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_printers" type="object"
+                                class="oe_stat_button" icon="fa-print">
+                            <field name="printer_count" widget="statinfo"
+                                   string="Printers"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Online"
+                            bg_color="bg-success" invisible="not online"/>
+                    <widget name="web_ribbon" title="Offline"
+                            bg_color="bg-danger" invisible="online"/>
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only"/>
+                        <h1><field name="name" placeholder="Main Branch — Front PC"/></h1>
+                    </div>
+                    <group>
+                        <group string="Identity">
+                            <field name="location_hint"
+                                   placeholder="Riyadh — Main Office"/>
+                            <field name="sequence"/>
+                            <field name="version" readonly="1"/>
+                            <field name="last_seen" readonly="1"/>
+                        </group>
+                        <group string="Network (reported by the agent)">
+                            <field name="agent_local_ip" readonly="1"/>
+                            <field name="agent_subnet" readonly="1"/>
+                            <field name="online" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Install command" name="install">
+                            <p class="text-muted">
+                                Run this <strong>one command</strong> on a Linux PC /
+                                Raspberry Pi / mini-PC inside the customer's LAN
+                                (the same network as the printers). The agent will
+                                register itself and start pulling jobs.
+                            </p>
+                            <div class="alert alert-info" role="alert">
+                                <p class="mb-1"><strong>One-liner installer</strong></p>
+                                <pre style="white-space: pre-wrap; word-break: break-all; background: #f4f4f4; padding: 0.6rem;">curl -fsSL <field name="id" readonly="1" nolabel="1" widget="char" class="d-none"/><span>YOUR_TENANT_URL/ab_printer/agent/download</span> -o /tmp/ab_printer_agent.py &amp;&amp; \
+sudo AGENT_URL=YOUR_TENANT_URL \
+     AGENT_TOKEN=<field name="token" readonly="1" widget="CopyClipboardChar" nolabel="1"/> \
+     AGENT_NAME="<field name="name" readonly="1" widget="CopyClipboardChar" nolabel="1"/>" \
+     bash -c 'cd /tmp &amp;&amp; curl -fsSL "$AGENT_URL/ab_printer_driver/tools/install_agent.sh" -o install_agent.sh &amp;&amp; bash install_agent.sh'</pre>
+                                <p class="mt-2 small mb-0">
+                                    Replace <code>YOUR_TENANT_URL</code> with the tenant
+                                    URL the operator uses (e.g.
+                                    <code>https://fayia.ghaima.sa</code>).
+                                </p>
+                            </div>
+                            <p class="text-muted mt-3">
+                                Status after install:
+                                <code>sudo systemctl status ghaima-printer-agent</code><br/>
+                                Live logs:
+                                <code>sudo journalctl -u ghaima-printer-agent -f</code>
+                            </p>
+                        </page>
+                        <page string="Auth token" name="auth">
+                            <group>
+                                <field name="token" widget="CopyClipboardChar"/>
+                            </group>
+                            <p class="text-muted small">
+                                The agent sends this in the
+                                <code>X-Agent-Token</code> header on every request.
+                                Rotating it forces re-configuration on the LAN PC.
+                            </p>
+                        </page>
+                        <page string="Notes" name="notes">
+                            <field name="note" placeholder="Operator notes — power schedule, network notes, anything useful for support."/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_printer_agent_search" model="ir.ui.view">
+        <field name="name">ab.printer.agent.search</field>
+        <field name="model">ab.printer.agent</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="agent_subnet"/>
+                <field name="location_hint"/>
+                <filter name="online_only" string="Online"
+                        domain="[('online','=',True)]"/>
+                <filter name="offline_only" string="Offline"
+                        domain="[('online','=',False)]"/>
+                <group expand="0" string="Group By">
+                    <filter name="by_subnet" string="LAN Subnet"
+                            context="{'group_by': 'agent_subnet'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_printer_agent" model="ir.actions.act_window">
+        <field name="name">Bridge Agents</field>
+        <field name="res_model">ab.printer.agent</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Register a Printer Bridge Agent
+            </p>
+            <p>
+                A Bridge Agent runs on a PC inside the customer's LAN and
+                proxies printing for cloud-hosted tenants. Create one row
+                here, then use the install command on the LAN PC.
+            </p>
+        </field>
+    </record>
+
+</odoo>

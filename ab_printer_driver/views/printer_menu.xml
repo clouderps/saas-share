@@ -42,4 +42,10 @@
               parent="menu_printer_driver_root"
               action="action_print_live_monitor"
               sequence="6"/>
+
+    <menuitem id="menu_printer_agent"
+              name="Bridge Agents"
+              parent="menu_printer_driver_root"
+              action="action_printer_agent"
+              sequence="15"/>
 </odoo>

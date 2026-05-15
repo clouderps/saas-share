@@ -1,0 +1,29 @@
+[Unit]
+Description=Ghaima Printer Bridge Agent
+Documentation=https://ghaima.sa
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# EDIT THESE TWO ENV VARS BEFORE starting the service:
+Environment=AGENT_URL=https://YOUR-TENANT.ghaima.sa
+Environment=AGENT_TOKEN=PASTE-UUID-HEX-FROM-ODOO
+Environment=AGENT_NAME=%H
+# Optional:
+# Environment=AGENT_SUBNET=192.168.8
+# Environment=AGENT_LOG_LEVEL=INFO
+ExecStart=/usr/bin/python3 /opt/ghaima-printer-agent/ab_printer_agent.py
+Restart=on-failure
+RestartSec=5
+User=ghaima-agent
+Group=ghaima-agent
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/log/ghaima-printer-agent
+
+[Install]
+WantedBy=multi-user.target

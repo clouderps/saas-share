@@ -32,6 +32,16 @@ class PrinterJob(models.Model):
     printer_config_id = fields.Many2one(
         'ab.printer.config', string='Printer', required=True, ondelete='cascade',
     )
+    agent_id = fields.Many2one(
+        'ab.printer.agent', string='Via Agent', ondelete='set null',
+        help='When set, this job is dispatched by the named LAN bridge '
+             'agent, not the Odoo server.',
+    )
+    op_type = fields.Selection(
+        [('print', 'Print'), ('test', 'Test Slip'), ('verify', 'Verify')],
+        string='Operation', default='print', required=True,
+        help='What the worker should do with this job.',
+    )
     payload_kind = fields.Selection(
         [
             ('escpos', 'Raw ESC/POS bytes'),
@@ -44,6 +54,7 @@ class PrinterJob(models.Model):
     state = fields.Selection(
         [
             ('queued',    'Queued'),
+            ('claimed',   'Claimed by Agent'),
             ('sending',   'Sending'),
             ('retrying',  'Retrying'),
             ('done',      'Done'),
@@ -52,6 +63,7 @@ class PrinterJob(models.Model):
         ],
         string='Status', default='queued', tracking=True, index=True,
     )
+    claimed_at = fields.Datetime(string='Claimed At', readonly=True)
     priority = fields.Integer(string='Priority', default=10,
                               help='Higher prints first.')
     attempts = fields.Integer(string='Attempts', default=0, readonly=True)
@@ -137,13 +149,38 @@ class PrinterJob(models.Model):
 
     @api.model
     def _cron_drain_queue(self, limit=50):
-        """Process queued + retrying jobs in priority order."""
+        """Process queued + retrying jobs in priority order.
+
+        Skips agent-owned jobs — those are pulled by the agent's /poll
+        endpoint and executed inside the customer's LAN.
+        """
         jobs = self.search(
-            [('state', 'in', ('queued', 'retrying'))],
+            [('state', 'in', ('queued', 'retrying')),
+             ('agent_id', '=', False)],
             order='priority desc, create_date', limit=limit,
         )
         for j in jobs:
             j._dispatch_one()
+
+    @api.model
+    def _cron_reap_stale_claims(self):
+        """Recover jobs claimed by an agent that never reported back.
+
+        After 90 seconds in 'claimed' with no /report, mark them
+        retrying so another agent /poll can pick them up.
+        """
+        from datetime import datetime, timedelta
+        cutoff = datetime.utcnow() - timedelta(seconds=90)
+        stale = self.search([('state', '=', 'claimed'),
+                             ('claimed_at', '<', cutoff)])
+        for j in stale:
+            if j.attempts >= j.max_attempts:
+                j.write({'state': 'failed',
+                         'last_error': 'Agent claimed but never reported'})
+            else:
+                j.write({'state': 'retrying',
+                         'last_error': 'Agent timeout — re-queued'})
+            j._notify()
 
     # ── Actions ───────────────────────────────────────────────────
 

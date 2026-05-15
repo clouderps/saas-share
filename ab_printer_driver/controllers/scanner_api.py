@@ -7,17 +7,30 @@ Endpoints:
   POST /ab_printer/scan/test    → send a test slip
   POST /ab_printer/scan/add     → register selected hits as drivers
 """
+import json
 import logging
+import re
 import socket
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from odoo import http
+from odoo import http, fields
 from odoo.http import request
 
 from ..lib import scan, tcp, verify, escpos as escpos_lib
 
 _logger = logging.getLogger(__name__)
+
+# RFC1918 ranges — used to decide when an agent is required.
+_RFC1918_RE = re.compile(
+    r'^(?:10\.\d{1,3}\.\d{1,3}'                         # 10.0.0.0/8
+    r'|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}'              # 172.16.0.0/12
+    r'|192\.168\.\d{1,3})$'                             # 192.168.0.0/16
+)
+
+# Polling cadence for the agent-mediated scan path.
+SCAN_AGENT_TIMEOUT_S = 20
+SCAN_POLL_TICK_S = 0.4
 
 
 def _resolve_ports(port_mode):
@@ -26,6 +39,42 @@ def _resolve_ports(port_mode):
     if port_mode == 'all':
         return scan.SCAN_PORTS
     return [9100, 631, 515]
+
+
+def _is_private_subnet(subnet):
+    """True when the /24 prefix is in an RFC1918 range."""
+    return bool(_RFC1918_RE.match(subnet or ''))
+
+
+def _scan_via_agent(agent, params):
+    """Enqueue a scan request, wait for the agent's reply, return its JSON."""
+    ScanReq = request.env['ab.printer.scan.request'].sudo()
+    sr = ScanReq.create({
+        'agent_id': agent.id,
+        'params_json': json.dumps(params),
+    })
+    request.env.cr.commit()  # let the agent see this row immediately
+    deadline = time.time() + SCAN_AGENT_TIMEOUT_S
+    last_state = 'pending'
+    while time.time() < deadline:
+        request.env.cr.commit()  # see writes from the agent's /report
+        sr.invalidate_recordset(['state', 'result_json', 'error'])
+        last_state = sr.state
+        if last_state == 'done':
+            try:
+                return json.loads(sr.result_json or '{}')
+            except Exception:
+                return {'success': False,
+                        'error': 'agent returned non-JSON result'}
+        if last_state in ('failed', 'expired'):
+            return {'success': False,
+                    'error': sr.error or 'agent reported failure'}
+        time.sleep(SCAN_POLL_TICK_S)
+    # Timed out — let the GC cron clean up.
+    return {'success': False,
+            'error': f'Agent "{agent.name}" did not respond within '
+                     f'{SCAN_AGENT_TIMEOUT_S}s. Is it running?',
+            'agent_timeout': True}
 
 
 def _friendly_name(bucket, ip):
@@ -46,20 +95,36 @@ class PrinterScannerController(http.Controller):
 
     @http.route('/ab_printer/scan/run', type='json', auth='user', methods=['POST'])
     def scan_run(self, **kw):
-        """Run a synchronous /24 sweep. Bounded ~5-7 s."""
+        """Run a synchronous /24 sweep.
+
+        Routing (in priority order):
+          1. kw['via_agent_id'] explicit → forward to that agent
+          2. kw['via'] == 'agent' and an online agent matching the subnet
+             exists → forward
+          3. RFC1918 subnet + any online agent → forward to the best match
+             (same /24 wins over any-other-online)
+          4. Otherwise → direct sweep from this Odoo process
+
+        The agent path enqueues an ab.printer.scan.request row, polls
+        until the agent reports back, and returns the agent's result
+        verbatim. Direct path is unchanged (works on-prem).
+
+        For the direct path on an RFC1918 subnet when no agent is
+        registered: returns a friendly error pointing the operator to
+        the agent installer instead of silently returning 0 hits.
+        """
         subnet = (kw.get('subnet') or '').strip().rstrip('.')
         if not subnet:
             return {'success': False, 'error': 'subnet required'}
         # Accept full IP / CIDR / trailing 0 in the subnet field.
         forced_host = None
-        import re as _re
-        m = _re.match(r'^(\d{1,3}\.\d{1,3}\.\d{1,3})\.(\d{1,3})$', subnet)
+        m = re.match(r'^(\d{1,3}\.\d{1,3}\.\d{1,3})\.(\d{1,3})$', subnet)
         if m:
             subnet = m.group(1)
             forced_host = int(m.group(2))
         else:
-            subnet = _re.sub(r'/\d+$', '', subnet)
-            subnet = _re.sub(r'\.0$', '', subnet).rstrip('.')
+            subnet = re.sub(r'/\d+$', '', subnet)
+            subnet = re.sub(r'\.0$', '', subnet).rstrip('.')
         ports = _resolve_ports(kw.get('port_mode') or 'common')
         start_ip = max(1, int(kw.get('range_start') or 1))
         end_ip = min(254, int(kw.get('range_end') or 254))
@@ -69,6 +134,46 @@ class PrinterScannerController(http.Controller):
         do_banner = bool(kw.get('do_banner_grab', True))
         do_rdns = bool(kw.get('do_reverse_dns', True))
         do_verify = bool(kw.get('do_verify', True))
+
+        # ── Agent routing ─────────────────────────────────────────
+        Agent = request.env['ab.printer.agent'].sudo()
+        via_agent_id = kw.get('via_agent_id')
+        agent = (Agent.browse(int(via_agent_id))
+                 if via_agent_id else Agent.browse())
+        if not agent and kw.get('via') == 'agent':
+            agent = Agent._online_default_for_subnet(subnet)
+        if not agent and _is_private_subnet(subnet) and kw.get('via') != 'direct':
+            agent = Agent._online_default_for_subnet(subnet)
+
+        if agent and agent.online:
+            return _scan_via_agent(agent, {
+                'subnet': subnet, 'ports': ports,
+                'range_start': start_ip, 'range_end': end_ip,
+                'timeout_s': timeout_s,
+                'do_banner_grab': do_banner,
+                'do_reverse_dns': do_rdns,
+                'do_verify': do_verify,
+            })
+        if agent and not agent.online:
+            return {
+                'success': False,
+                'error': f'Agent "{agent.name}" is offline. '
+                         'Start the bridge agent on the LAN PC, '
+                         'then retry the scan.',
+                'agent_offline': True, 'agent_id': agent.id,
+            }
+        if _is_private_subnet(subnet) and not Agent.search_count([]):
+            return {
+                'success': False, 'needs_agent': True,
+                'subnet': subnet,
+                'error': (
+                    f'{subnet}.0/24 is a private LAN range. This Odoo server '
+                    'cannot reach it directly. Register a Printer Bridge '
+                    'Agent (Printers → Agents → New) and install it on a '
+                    'PC inside that network. Once the agent is online, '
+                    'rerun the scan.'
+                ),
+            }
 
         targets = [(f'{subnet}.{i}', p)
                    for i in range(start_ip, end_ip + 1) for p in ports]
@@ -146,6 +251,24 @@ class PrinterScannerController(http.Controller):
             'duration_s': round(time.time() - scan_start, 2),
             'results': results,
         }
+
+    @http.route('/ab_printer/scan/agents', type='json',
+                auth='user', methods=['POST'])
+    def scan_agents(self, **_kw):
+        """List bridge agents available on this DB — for the scan picker."""
+        Agent = request.env['ab.printer.agent'].sudo()
+        rows = []
+        for a in Agent.search([], order='sequence, id'):
+            rows.append({
+                'id': a.id, 'name': a.name,
+                'online': bool(a.online),
+                'agent_subnet': a.agent_subnet or '',
+                'agent_local_ip': a.agent_local_ip or '',
+                'last_seen': a.last_seen and a.last_seen.isoformat() or '',
+                'version': a.version or '',
+                'location_hint': a.location_hint or '',
+            })
+        return {'success': True, 'agents': rows, 'count': len(rows)}
 
     @http.route('/ab_printer/scan/registered', type='json',
                 auth='user', methods=['POST'])

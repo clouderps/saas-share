@@ -73,6 +73,19 @@ class PrinterConfig(models.Model):
     vendor = fields.Char(string='Vendor', help='Detected by banner / MAC OUI.')
     mac = fields.Char(string='MAC Address')
 
+    # ── Bridge agent (optional) ───────────────────────────────────
+    agent_id = fields.Many2one(
+        'ab.printer.agent', string='Via Agent', ondelete='set null',
+        help="Set this when the printer is on a LAN unreachable from the "
+             "Odoo server (typical for SaaS deployments). The bridge agent "
+             "running inside the LAN will pick up jobs and execute them locally. "
+             "Leave empty for on-prem deploys where Odoo can talk to the "
+             "printer directly.",
+    )
+    agent_online = fields.Boolean(
+        string='Agent Online', related='agent_id.online', readonly=True,
+    )
+
     # ── Driver API ────────────────────────────────────────────────
     # env['ab.printer.config'].get_default(use='receipt').print_bytes(escpos)
     # env['ab.printer.config'].get_default(use='kitchen').print_report(...)
@@ -98,16 +111,25 @@ class PrinterConfig(models.Model):
                            limit=1, order='sequence, id')
 
     def print_bytes(self, data, *, source='backend', record_ref=None, timeout=None):
-        """Send raw ESC/POS bytes through the per-IP mutex.
+        """Send raw ESC/POS bytes — directly or through the bridge agent.
 
-        Logs an ab.printer.log row on every attempt. Returns:
-          {'success': bool, 'error': str, 'duration': float}
+        Routing:
+          * agent_id set + agent online → enqueue an ab.printer.job marked
+            for that agent, return {'success': True, 'queued': True,
+            'job_id': N} immediately. The agent's /poll picks it up,
+            executes the TCP send on its LAN, and reports back via
+            /report. Final state is delivered on bus channel
+            'ab_printer_job_<id>' (see PrinterJob._notify).
+          * Otherwise → direct TCP send (current behaviour).
+
+        Logs an ab.printer.log row on every direct attempt. Returns:
+          {'success': bool, 'error': str, 'duration': float, ...}
         Never raises — callers inspect the dict.
         """
         self.ensure_one()
-        if self.printer_mode != 'network':
+        if self.printer_mode not in ('network', 'agent'):
             return {'success': False,
-                    'error': f'print_bytes only supports network mode '
+                    'error': f'print_bytes only supports network/agent mode '
                              f'(this is {self.printer_mode})'}
         if not self.printer_ip:
             return {'success': False, 'error': f'No printer_ip on {self.name}'}
@@ -117,6 +139,38 @@ class PrinterConfig(models.Model):
         elif isinstance(data, str):
             data = data.encode('utf-8')
 
+        # Agent path — enqueue and return; agent will execute on its LAN.
+        if self.agent_id:
+            import base64 as _b64
+            if not self.agent_id.online:
+                return {'success': False,
+                        'error': f'Agent "{self.agent_id.name}" is offline. '
+                                 'The print job will run when it reconnects.',
+                        'agent_offline': True, 'queued': True,
+                        'job_id': self.env['ab.printer.job'].sudo().create({
+                            'printer_config_id': self.id,
+                            'agent_id': self.agent_id.id,
+                            'op_type': 'print',
+                            'payload_kind': 'escpos',
+                            'payload_b64': _b64.b64encode(data).decode('ascii'),
+                            'source': source,
+                            'state': 'queued',
+                        }).id}
+            job = self.env['ab.printer.job'].sudo().create({
+                'printer_config_id': self.id,
+                'agent_id': self.agent_id.id,
+                'op_type': 'print',
+                'payload_kind': 'escpos',
+                'payload_b64': _b64.b64encode(data).decode('ascii'),
+                'source': source,
+                'state': 'queued',
+            })
+            return {'success': True, 'queued': True, 'job_id': job.id,
+                    'error': '', 'duration': 0,
+                    'agent_id': self.agent_id.id,
+                    'agent_name': self.agent_id.name}
+
+        # Direct path — server has reach to the printer.
         self.sudo().state = 'printing'
         ok, err, duration = tcp.send_to_printer(
             self.printer_ip, int(self.printer_port or 9100),
@@ -241,9 +295,15 @@ class PrinterConfig(models.Model):
     @api.model
     def _cron_health_check(self):
         """Cron: every 5 min, re-verify every connected printer.
-        Updates state + last_seen + fans out bus.bus 'printer_state_change'."""
+        Updates state + last_seen + fans out bus.bus 'printer_state_change'.
+
+        Skips printers bound to a bridge agent — the server has no route
+        to those LAN IPs, and the agent's own /poll heartbeat is the
+        authoritative liveness signal for them.
+        """
         for rec in self.search([('printer_mode', '=', 'network'),
-                                ('printer_ip', '!=', False)]):
+                                ('printer_ip', '!=', False),
+                                ('agent_id', '=', False)]):
             before = (rec.state, rec.verified)
             result = verify.verify_printer(
                 rec.printer_ip, int(rec.printer_port or 9100), timeout_s=1.0,

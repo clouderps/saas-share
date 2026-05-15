@@ -9,3 +9,6 @@ access_ab_printer_job_user,ab.printer.job.user,model_ab_printer_job,base.group_u
 access_ab_printer_job_system,ab.printer.job.system,model_ab_printer_job,base.group_system,1,1,1,1
 access_ab_printer_detect_wizard,ab.printer.detect.wizard,model_ab_printer_detect_wizard,base.group_user,1,1,1,1
 access_ab_printer_detect_line,ab.printer.detect.line,model_ab_printer_detect_line,base.group_user,1,1,1,1
+access_ab_printer_agent_user,ab.printer.agent.user,model_ab_printer_agent,base.group_user,1,0,0,0
+access_ab_printer_agent_system,ab.printer.agent.system,model_ab_printer_agent,base.group_system,1,1,1,1
+access_ab_printer_scan_request_system,ab.printer.scan.request.system,model_ab_printer_scan_request,base.group_system,1,1,1,1

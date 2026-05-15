@@ -24,6 +24,19 @@
                 </div>
             </header>
 
+            <!-- ── WebRTC subnet hint ─────────────────────────── -->
+            <div t-if="state.localSubnetHint"
+                 class="o_ab_printer_alert o_ab_printer_alert--info">
+                <i class="fa fa-info-circle"/>
+                <span>Detected your local subnet via WebRTC:
+                    <code t-esc="state.localSubnetHint + '.0/24'"/>.
+                </span>
+                <button class="o_ab_printer_btn o_ab_printer_btn--ghost"
+                        t-on-click="useLocalSubnet">
+                    Use this subnet
+                </button>
+            </div>
+
             <!-- ── Controls: scan parameters ─────────────────── -->
             <section class="o_ab_printer_scanner__controls">
                 <div class="o_ab_printer_field">
@@ -35,6 +48,19 @@
                                t-att-disabled="state.phase === 'scanning'"/>
                         <span class="o_ab_printer_subnet__suffix">.0/24</span>
                     </div>
+                </div>
+                <div class="o_ab_printer_field">
+                    <label>Scan via</label>
+                    <select t-model="state.viaSource"
+                            t-att-disabled="state.phase === 'scanning'">
+                        <option value="auto">Auto</option>
+                        <option value="direct">Cloud server (direct)</option>
+                        <t t-foreach="state.agents" t-as="a" t-key="a.id">
+                            <option t-att-value="String(a.id)">
+                                <t t-esc="(a.online ? '🟢 ' : '⚪ ') + a.name + (a.agent_subnet ? ' [' + a.agent_subnet + '.0/24]' : '')"/>
+                            </option>
+                        </t>
+                    </select>
                 </div>
                 <div class="o_ab_printer_field">
                     <label>Ports</label>
@@ -165,9 +191,26 @@
             </section>
 
             <!-- ── Error banner ──────────────────────────────── -->
-            <div t-if="state.error" class="o_ab_printer_alert o_ab_printer_alert--error">
+            <div t-if="state.error and !state.needsAgent"
+                 class="o_ab_printer_alert o_ab_printer_alert--error">
                 <i class="fa fa-exclamation-triangle"/>
                 <span t-esc="state.error"/>
+            </div>
+
+            <!-- ── Needs-agent call-to-action ────────────────── -->
+            <div t-if="state.needsAgent"
+                 class="o_ab_printer_alert o_ab_printer_alert--warning">
+                <i class="fa fa-shield"/>
+                <div>
+                    <strong>This LAN needs a Bridge Agent.</strong>
+                    <p class="mb-1" t-esc="state.error"/>
+                    <p class="mb-0 small text-muted">
+                        Steps: open <em>Printers → Agents</em> → New, copy
+                        the generated install command, run it on a PC inside
+                        <code t-esc="state.agentErrorSubnet + '.0/24'"/>,
+                        then rerun this scan.
+                    </p>
+                </div>
             </div>
 
             <!-- ── Body: scan splash OR results grid ─────────── -->

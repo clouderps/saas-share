@@ -35,5 +35,28 @@
             <field name="active" eval="True"/>
         </record>
 
+        <!-- Reap jobs an agent claimed but never reported back on
+             (agent died mid-print). Re-queue or fail per max_attempts. -->
+        <record id="ir_cron_printer_job_reap_stale" model="ir.cron">
+            <field name="name">Printer Driver: reap stale agent claims</field>
+            <field name="model_id" ref="model_ab_printer_job"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_reap_stale_claims()</field>
+            <field name="interval_number">2</field>
+            <field name="interval_type">minutes</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <!-- GC: expire unresolved scan requests > 5 min old. -->
+        <record id="ir_cron_printer_scan_request_gc" model="ir.cron">
+            <field name="name">Printer Driver: scan-request GC</field>
+            <field name="model_id" ref="model_ab_printer_scan_request"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_gc()</field>
+            <field name="interval_number">5</field>
+            <field name="interval_type">minutes</field>
+            <field name="active" eval="True"/>
+        </record>
+
     </data>
 </odoo>

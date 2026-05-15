@@ -83,11 +83,26 @@ class PrinterDispatchController(http.Controller):
 
         job = env['ab.printer.job'].sudo().create({
             'printer_config_id': driver.id,
+            'agent_id': driver.agent_id.id or False,
+            'op_type': 'print',
             'payload_kind': kind,
             'payload_b64': payload_b64,
             'priority': priority,
             'source': source,
         })
+        # Agent path: the agent's /poll picks the job up; HTTP returns
+        # immediately. Caller can subscribe to bus channel
+        # 'ab_printer_job_<id>' for the final state.
+        if driver.agent_id:
+            return {
+                'success': True, 'queued': True,
+                'job_id': job.id, 'state': job.state,
+                'agent_id': driver.agent_id.id,
+                'agent_online': bool(driver.agent_id.online),
+                'agent_name': driver.agent_id.name,
+                'error': '' if driver.agent_id.online
+                         else 'Agent offline — job will run when it reconnects',
+            }
         if sync:
             job._dispatch_one()
 
