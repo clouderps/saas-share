@@ -633,3 +633,115 @@
         &__footer { flex-direction: column; align-items: stretch; gap: 0.75rem; padding: 1rem; }
     }
 }
+
+/* Currently-registered panel — sits above the scan results section
+ * so operators see "what's already connected" before they scan. */
+.o_ab_printer_registered {
+  margin: 0 1.25rem 1rem;
+  padding: 0.75rem 1rem;
+  background: #FFFFFF;
+  border: 1px solid #DCE2EC;
+  border-radius: 10px;
+
+  &__head {
+    margin-bottom: 0.5rem;
+    h3 {
+      margin: 0;
+      font-size: 0.95rem;
+      color: #0D00A2;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      .fa { color: #005FF6; }
+    }
+  }
+
+  &__count { color: #66718A; font-weight: 400; font-size: 0.85rem; }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 0.5rem;
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 0.25rem 1rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid #E7EBF2;
+    border-radius: 8px;
+    border-inline-start: 4px solid #C6CCD8;
+    background: #FAFBFD;
+
+    &--connected { border-inline-start-color: #1FAB6C; }
+    &--printing  { border-inline-start-color: #005FF6; }
+    &--error,
+    &--disconnected { border-inline-start-color: #D34A4A; }
+  }
+
+  &__main {
+    grid-column: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4rem;
+    color: #0D00A2;
+  }
+
+  &__meta {
+    grid-column: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    color: #495367;
+    font-size: 0.8rem;
+    .fa { width: 14px; color: #92A0B7; }
+  }
+
+  &__actions {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    align-self: center;
+  }
+}
+
+.o_ab_printer_chip {
+  display: inline-block;
+  padding: 1px 7px;
+  background: #EEF1F8;
+  color: #0D00A2;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+
+  &--use      { background: #FFF5E0; color: #8A5A00; }
+  &--verified { background: #D7F2E6; color: #0E6B43; }
+}
+
+.o_ab_printer_state_dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+
+  &::before {
+    content: "";
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #C6CCD8;
+  }
+
+  &--connected::before { background: #1FAB6C; }
+  &--printing::before  { background: #005FF6; }
+  &--error::before,
+  &--disconnected::before { background: #D34A4A; }
+}

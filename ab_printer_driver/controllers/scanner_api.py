@@ -147,6 +147,25 @@ class PrinterScannerController(http.Controller):
             'results': results,
         }
 
+    @http.route('/ab_printer/scan/registered', type='json',
+                auth='user', methods=['POST'])
+    def scan_registered(self, **kw):
+        """Return currently-registered ab.printer.config rows so the
+        scanner UI can show 'what's already connected' on first open —
+        operators no longer have to re-scan to see what's there."""
+        Driver = request.env['ab.printer.config'].sudo()
+        rows = []
+        for d in Driver.search([], order='sequence, id'):
+            rows.append({
+                'id': d.id, 'name': d.name,
+                'ip': d.printer_ip or '', 'port': d.printer_port or 9100,
+                'vendor': d.vendor or '', 'mac': d.mac or '',
+                'state': d.state, 'verified': bool(d.verified),
+                'use': d.printer_use or '',
+                'last_seen': d.last_seen and d.last_seen.isoformat() or '',
+            })
+        return {'success': True, 'registered': rows, 'count': len(rows)}
+
     @http.route('/ab_printer/scan/probe', type='json', auth='user', methods=['POST'])
     def scan_probe(self, ip=None, port=9100, **kw):
         if not ip:

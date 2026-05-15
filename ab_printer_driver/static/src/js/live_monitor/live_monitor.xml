@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+  <t t-name="ab_printer_driver.PrintLiveMonitor">
+    <div class="o_pm_monitor">
+      <div class="o_pm_monitor__header">
+        <div class="o_pm_monitor__title">
+          <i class="fa fa-heartbeat"/>
+          <span>Print Diagnostics</span>
+        </div>
+        <div class="o_pm_monitor__toolbar">
+          <span class="text-muted small me-3"
+                t-if="state.lastRefresh">
+            Updated <t t-esc="relTime(state.lastRefresh.toISOString())"/>
+          </span>
+          <label class="form-check form-switch me-2 mb-0 small">
+            <input type="checkbox" class="form-check-input"
+                   t-model="state.autoRefresh"/>
+            Auto-refresh
+          </label>
+          <button class="btn btn-outline-secondary btn-sm me-2"
+                  t-on-click="refresh">
+            <i class="fa fa-refresh"/> Refresh
+          </button>
+          <button class="btn btn-primary btn-sm"
+                  t-on-click="openQueue">
+            <i class="fa fa-list-ul"/> Open Print Queue
+          </button>
+        </div>
+      </div>
+
+      <div class="o_pm_monitor__error alert alert-danger"
+           t-if="state.error">
+        <i class="fa fa-exclamation-triangle"/> <t t-esc="state.error"/>
+      </div>
+
+      <!-- Printer grid -->
+      <div class="o_pm_section">
+        <div class="o_pm_section__head">
+          <h5><t t-esc="state.printers.length"/> printer(s)</h5>
+        </div>
+        <div class="o_pm_grid">
+          <t t-foreach="state.printers" t-as="p" t-key="p.id">
+            <div class="o_pm_card" t-att-class="stateBadgeClass(p)">
+              <div class="o_pm_card__top">
+                <div class="o_pm_card__title">
+                  <strong t-esc="p.name"/>
+                  <span class="o_pm_chip" t-if="p.vendor" t-esc="p.vendor"/>
+                </div>
+                <span class="o_pm_card__use" t-esc="p.use"/>
+              </div>
+              <div class="o_pm_card__meta">
+                <div>
+                  <i class="fa fa-network-wired"/>
+                  <span t-esc="p.ip + ':' + p.port"/>
+                </div>
+                <div t-if="p.last_seen">
+                  <i class="fa fa-clock-o"/>
+                  <span>last seen <t t-esc="relTime(p.last_seen)"/></span>
+                </div>
+                <div t-if="p.queued">
+                  <i class="fa fa-hourglass-half text-warning"/>
+                  <span t-esc="p.queued"/> queued
+                </div>
+                <div t-if="p.failed_24h" class="text-danger">
+                  <i class="fa fa-times"/>
+                  <span t-esc="p.failed_24h"/> failed 24h
+                </div>
+              </div>
+              <div class="o_pm_card__lasterr text-danger small"
+                   t-if="p.last_status === 'failed' and p.last_error">
+                <i class="fa fa-warning"/>
+                <span t-esc="p.last_error"/>
+              </div>
+              <div class="o_pm_card__actions">
+                <button class="btn btn-primary btn-sm"
+                        t-on-click="() => this.diagnose(p)"
+                        t-att-disabled="state.traces[p.id] and state.traces[p.id].running">
+                  <i class="fa fa-stethoscope"/>
+                  <t t-if="state.traces[p.id] and state.traces[p.id].running">
+                    Diagnosing…
+                  </t>
+                  <t t-else="">Diagnose</t>
+                </button>
+                <button class="btn btn-link btn-sm"
+                        t-on-click="() => this.openDriver(p)">
+                  Edit driver
+                </button>
+              </div>
+
+              <!-- Trace render -->
+              <div class="o_pm_trace"
+                   t-if="state.traces[p.id] and state.traces[p.id].steps.length">
+                <div class="o_pm_trace__head" t-att-class="state.traces[p.id].ok ? 'text-success' : 'text-danger'">
+                  <i class="fa" t-att-class="state.traces[p.id].ok ? 'fa-check' : 'fa-times'"/>
+                  <span>
+                    <t t-if="state.traces[p.id].ok">All checks passed</t>
+                    <t t-else="">Chain stopped at: <t t-esc="state.traces[p.id].steps.find(s => s.status === 'fail')?.name or 'last step'"/></t>
+                  </span>
+                </div>
+                <ol class="o_pm_steps">
+                  <li t-foreach="state.traces[p.id].steps" t-as="s" t-key="s_index">
+                    <i class="fa" t-att-class="stepIcon(s)"/>
+                    <span class="o_pm_step__name" t-esc="s.name"/>
+                    <span class="o_pm_step__detail text-muted" t-if="s.detail">
+                      <t t-esc="s.detail"/>
+                    </span>
+                    <span class="o_pm_step__ms text-muted small"
+                          t-if="s.duration_ms">
+                      <t t-esc="s.duration_ms"/>ms
+                    </span>
+                  </li>
+                </ol>
+              </div>
+            </div>
+          </t>
+
+          <div class="o_pm_empty" t-if="!state.loading and !state.printers.length">
+            <i class="fa fa-print fa-3x text-muted"/>
+            <p>No printers registered yet.</p>
+            <p class="small text-muted">
+              Open the Network Scanner to find printers on your LAN.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent jobs -->
+      <div class="o_pm_section">
+        <div class="o_pm_section__head">
+          <h5>Recent Jobs</h5>
+        </div>
+        <table class="o_pm_table">
+          <thead>
+            <tr>
+              <th>When</th>
+              <th>Job</th>
+              <th>Printer</th>
+              <th>Source</th>
+              <th>Kind</th>
+              <th>Tries</th>
+              <th>Duration</th>
+              <th>State</th>
+              <th>Error</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr t-foreach="state.jobs" t-as="j" t-key="j.id">
+              <td><t t-esc="relTime(j.at)"/></td>
+              <td><code t-esc="j.name"/></td>
+              <td t-esc="j.printer"/>
+              <td t-esc="j.source"/>
+              <td t-esc="j.kind"/>
+              <td t-esc="j.attempts"/>
+              <td t-if="j.duration_ms"><t t-esc="j.duration_ms"/>ms</td>
+              <td t-else="">—</td>
+              <td>
+                <span class="o_pm_pill" t-att-class="'o_pm_pill--' + j.state"
+                      t-esc="j.state"/>
+              </td>
+              <td class="text-danger small" t-esc="j.error"/>
+            </tr>
+            <tr t-if="!state.jobs.length">
+              <td colspan="9" class="text-center text-muted py-3">
+                No jobs yet — submit a print to see activity here.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Recent log -->
+      <div class="o_pm_section">
+        <div class="o_pm_section__head">
+          <h5>Recent Log</h5>
+        </div>
+        <table class="o_pm_table">
+          <thead>
+            <tr>
+              <th>When</th>
+              <th>Printer</th>
+              <th>Source</th>
+              <th>Status</th>
+              <th>Duration</th>
+              <th>Error</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr t-foreach="state.logs" t-as="lg" t-key="lg.id">
+              <td><t t-esc="relTime(lg.at)"/></td>
+              <td t-esc="lg.printer"/>
+              <td t-esc="lg.source"/>
+              <td>
+                <span class="o_pm_pill" t-att-class="'o_pm_pill--' + lg.status"
+                      t-esc="lg.status"/>
+              </td>
+              <td t-if="lg.duration"><t t-esc="(lg.duration * 1000).toFixed(0)"/>ms</td>
+              <td t-else="">—</td>
+              <td class="text-danger small" t-esc="lg.error"/>
+            </tr>
+            <tr t-if="!state.logs.length">
+              <td colspan="6" class="text-center text-muted py-3">
+                Quiet — no recent print attempts.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </t>
+
+</templates>

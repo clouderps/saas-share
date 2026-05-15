@@ -36,4 +36,10 @@
               parent="menu_printer_driver_root"
               action="action_printer_log"
               sequence="40"/>
+
+    <menuitem id="menu_printer_live_monitor"
+              name="Live Monitor"
+              parent="menu_printer_driver_root"
+              action="action_print_live_monitor"
+              sequence="6"/>
 </odoo>

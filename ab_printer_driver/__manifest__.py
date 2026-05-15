@@ -43,8 +43,11 @@ No business-domain dependencies.
         'web.assets_backend': [
             'ab_printer_driver/static/src/css/printer_scan.scss',
             'ab_printer_driver/static/src/css/printer_scanner.scss',
+            'ab_printer_driver/static/src/css/live_monitor.scss',
             'ab_printer_driver/static/src/js/printer_scanner/printer_scanner.js',
             'ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml',
+            'ab_printer_driver/static/src/js/live_monitor/live_monitor.js',
+            'ab_printer_driver/static/src/js/live_monitor/live_monitor.xml',
         ],
     },
     'installable': True,

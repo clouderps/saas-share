@@ -47,6 +47,12 @@ export class PrinterScannerApp extends Component {
             results: [],                  // { ip, port, vendor, ... selected: bool, busy: bool }
             selectedCount: 0,
 
+            // Currently-registered printers — shown above the scan
+            // section so operators see what's already connected
+            // without having to re-scan.
+            registered: [],
+            registeredBusy: {},          // {driver_id: bool} for per-row buttons
+
             // Manual "Add IP" form
             manualOpen: false,
             manualIp: "",
@@ -55,10 +61,47 @@ export class PrinterScannerApp extends Component {
         });
 
         onMounted(async () => {
-            // Auto-detect subnet on first open by probing the user's
-            // session storage cache OR running a 1-IP scan to seed.
             const cached = sessionStorage.getItem("ab_printer_scanner_subnet");
             this.state.subnet = cached || await this._guessSubnet();
+            await this._loadRegistered();
+        });
+    }
+
+    async _loadRegistered() {
+        try {
+            const res = await rpc("/ab_printer/scan/registered", {});
+            this.state.registered = res.registered || [];
+        } catch (e) {
+            // Non-fatal — just hide the section.
+        }
+    }
+
+    async testRegistered(row) {
+        this.state.registeredBusy[row.id] = true;
+        try {
+            const res = await rpc("/ab_printer/diagnose", {
+                driver_id: row.id, send_test: true,
+            });
+            const lastStep = (res.steps || []).slice(-1)[0];
+            this.notification.add(
+                res.success
+                    ? `Test slip sent to ${row.name}.`
+                    : `Failed at: ${lastStep?.name || "unknown step"} — ${lastStep?.detail || ""}`,
+                { type: res.success ? "success" : "danger" },
+            );
+            await this._loadRegistered();
+        } finally {
+            this.state.registeredBusy[row.id] = false;
+        }
+    }
+
+    openRegistered(row) {
+        this.action.doAction({
+            type: "ir.actions.act_window",
+            res_model: "ab.printer.config",
+            res_id: row.id,
+            views: [[false, "form"]],
+            target: "current",
         });
     }
 

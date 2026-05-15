@@ -147,4 +147,10 @@
         <field name="tag">ab_printer_driver.scanner</field>
     </record>
 
+    <!-- OWL Print Diagnostics / Live Monitor -->
+    <record id="action_print_live_monitor" model="ir.actions.client">
+        <field name="name">Live Monitor</field>
+        <field name="tag">ab_printer_driver.live_monitor</field>
+    </record>
+
 </odoo>

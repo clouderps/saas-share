@@ -110,6 +110,60 @@
                 </button>
             </section>
 
+            <!-- ── Currently registered (always visible) ─────── -->
+            <section t-if="state.registered.length"
+                     class="o_ab_printer_registered">
+                <header class="o_ab_printer_registered__head">
+                    <h3>
+                        <i class="fa fa-plug"/>
+                        Currently connected
+                        <span class="o_ab_printer_registered__count"
+                              t-esc="'(' + state.registered.length + ')'"/>
+                    </h3>
+                    <p class="text-muted small">
+                        Printers already registered as drivers. Test or open
+                        any to edit its settings — these don't need rescanning.
+                    </p>
+                </header>
+                <div class="o_ab_printer_registered__grid">
+                    <div t-foreach="state.registered" t-as="r" t-key="r.id"
+                         class="o_ab_printer_registered__row"
+                         t-att-class="'o_ab_printer_registered__row--' + r.state">
+                        <div class="o_ab_printer_registered__main">
+                            <strong t-esc="r.name"/>
+                            <span class="o_ab_printer_chip"
+                                  t-if="r.vendor" t-esc="r.vendor"/>
+                            <span class="o_ab_printer_chip o_ab_printer_chip--use"
+                                  t-if="r.use" t-esc="r.use"/>
+                            <span class="o_ab_printer_chip o_ab_printer_chip--verified"
+                                  t-if="r.verified">verified</span>
+                        </div>
+                        <div class="o_ab_printer_registered__meta">
+                            <span><i class="fa fa-network-wired"/> <t t-esc="r.ip + ':' + r.port"/></span>
+                            <span t-if="r.last_seen" class="text-muted">
+                                <i class="fa fa-clock-o"/>
+                                <t t-esc="new Date(r.last_seen.replace(' ', 'T') + 'Z').toLocaleString()"/>
+                            </span>
+                            <span class="o_ab_printer_state_dot"
+                                  t-att-class="'o_ab_printer_state_dot--' + r.state"
+                                  t-esc="r.state"/>
+                        </div>
+                        <div class="o_ab_printer_registered__actions">
+                            <button class="o_ab_printer_btn o_ab_printer_btn--ghost"
+                                    t-on-click="() => this.testRegistered(r)"
+                                    t-att-disabled="state.registeredBusy[r.id]">
+                                <i t-att-class="state.registeredBusy[r.id] ? 'fa fa-spinner fa-spin' : 'fa fa-vial'"/>
+                                Test
+                            </button>
+                            <button class="o_ab_printer_btn o_ab_printer_btn--ghost"
+                                    t-on-click="() => this.openRegistered(r)">
+                                <i class="fa fa-pencil"/> Edit
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- ── Error banner ──────────────────────────────── -->
             <div t-if="state.error" class="o_ab_printer_alert o_ab_printer_alert--error">
                 <i class="fa fa-exclamation-triangle"/>
