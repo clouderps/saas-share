@@ -85,9 +85,13 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
             return envelope['response'], agent_run, envelope
 
     # ── 3. Build system prompt + tool schemas ─────────────────
+    # Retrieve org knowledge ONCE here so it's both injected and
+    # captured on the audit row (monitor) without a double RAG hit.
+    kb_block = _org_knowledge_block(env, user_question)
     system_prompt = _compose_system_prompt(env, agent, locale=locale, skill=skill,
                                            record_ref=record_ref,
-                                           user_question=user_question)
+                                           user_question=user_question,
+                                           org_knowledge=kb_block)
     tools = _resolve_tools(env, agent)
     llm_tool_schemas = [t.as_llm_schema(agent=agent) for t in tools]
 
@@ -324,11 +328,28 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
         'sources': sources,
     }
 
+    # Grounding signal — the triage lever for "this answer is wrong".
+    # grounded   = a tool returned data OR KB facts were injected
+    # partial    = tools were attempted but all failed
+    # ungrounded = pure-LLM answer (no tool, no KB) — most likely
+    #              to be inaccurate; the monitor flags these red.
+    _tool_ok = any(c.get('ok') for c in tool_calls_audit)
+    if _tool_ok or kb_block:
+        grounded = 'grounded'
+    elif tool_calls_audit:
+        grounded = 'partial'
+    else:
+        grounded = 'ungrounded'
+    envelope['provenance']['grounded'] = grounded
+
     agent_run.finalize(
         state='done',
         response=rendered_text,
         latency_ms=latency_ms,
         tool_calls=tool_calls_audit,
+        system_prompt=system_prompt,
+        retrieved_context=kb_block or '',
+        grounded=grounded,
     )
     agent_run.sudo().write({
         'hops': hop + 1 if 'hop' in locals() else 0,
@@ -355,7 +376,8 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
 # ───────────────────────── helpers ──────────────────────────
 
 def _compose_system_prompt(env, agent, *, locale='en', skill=None,
-                           record_ref=None, user_question=None):
+                           record_ref=None, user_question=None,
+                           org_knowledge=None):
     """Compose the system prompt = persona + topics + date reference
     + live business snapshot + org knowledge (RAG) + user context
     + record context.
@@ -389,7 +411,8 @@ def _compose_system_prompt(env, agent, *, locale='en', skill=None,
     # tenant knowledge base, scoped to the user's question. Restores
     # the grounding the legacy chatbot path injected before the
     # chatbot + Ask AI were unified onto this runtime.
-    kb = _org_knowledge_block(env, user_question)
+    kb = (org_knowledge if org_knowledge is not None
+          else _org_knowledge_block(env, user_question))
     if kb:
         parts.append(kb)
 

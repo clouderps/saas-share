@@ -94,6 +94,26 @@ class AIAgentRun(models.Model):
         ('cache',   'Response Cache (G.1)'),
     ])
 
+    # Request context — what the model actually had to work with.
+    # The single most useful thing when triaging "this answer is
+    # wrong": you can see the exact system prompt + the RAG facts that
+    # were (or were NOT) retrieved + the full tool results.
+    system_prompt = fields.Text(
+        help='The exact composed system prompt sent to the model '
+             '(persona + snapshot + retrieved knowledge + topics).')
+    retrieved_context = fields.Text(
+        help='Organisation-knowledge (RAG) block injected for this '
+             'question. Empty = the answer had no KB grounding.')
+    grounded = fields.Selection([
+        ('grounded',   'Grounded'),
+        ('partial',    'Partial'),
+        ('ungrounded', 'Ungrounded'),
+    ], index=True,
+        help='grounded = a tool returned data or KB facts were '
+             'injected; ungrounded = pure-LLM answer (the ones most '
+             'likely to be inaccurate); partial = tools were tried '
+             'but failed.')
+
     # Quality
     verdict = fields.Selection([
         ('verified',         'Verified'),
@@ -141,7 +161,8 @@ class AIAgentRun(models.Model):
     # ── State helpers ──────────────────────────────────────────
 
     def finalize(self, *, state, response=None, error=None, latency_ms=None,
-                 tool_calls=None):
+                 tool_calls=None, system_prompt=None, retrieved_context=None,
+                 grounded=None):
         """Move the run to a terminal state. Best-effort — never raises."""
         self.ensure_one()
         vals = {'state': state, 'finished_at': fields.Datetime.now()}
@@ -156,6 +177,12 @@ class AIAgentRun(models.Model):
                 vals['tool_calls_json'] = json.dumps(tool_calls, default=str)[:50000]
             except Exception:
                 pass
+        if system_prompt is not None:
+            vals['system_prompt'] = (system_prompt or '')[:60000]
+        if retrieved_context is not None:
+            vals['retrieved_context'] = (retrieved_context or '')[:30000]
+        if grounded is not None:
+            vals['grounded'] = grounded
         try:
             self.sudo().write(vals)
         except Exception:

@@ -6,19 +6,24 @@
         <field name="model">ai.agent.run</field>
         <field name="arch" type="xml">
             <list string="Agent Runs" create="0"
-                  decoration-success="state == 'done'"
-                  decoration-warning="state in ('maxhops','cost_capped','budget')"
-                  decoration-danger="state == 'error'">
+                  decoration-success="state == 'done' and grounded == 'grounded'"
+                  decoration-warning="state in ('maxhops','cost_capped','budget') or grounded == 'partial'"
+                  decoration-danger="state == 'error' or grounded == 'ungrounded'">
                 <field name="started_at"/>
                 <field name="agent_id"/>
                 <field name="user_id"/>
                 <field name="surface"/>
                 <field name="question"/>
                 <field name="state"/>
+                <field name="grounded" widget="badge"
+                       decoration-danger="grounded == 'ungrounded'"
+                       decoration-success="grounded == 'grounded'"/>
                 <field name="hops"/>
                 <field name="total_tokens"/>
                 <field name="cost_usd" widget="monetary"/>
                 <field name="latency_ms"/>
+                <field name="model_used" optional="show"/>
+                <field name="routed_via" optional="show"/>
                 <field name="feedback"/>
             </list>
         </field>
@@ -68,6 +73,19 @@
                             <field name="tool_calls_json" widget="ace"
                                    options="{'mode': 'json'}" readonly="1"/>
                         </page>
+                        <page string="Request Context">
+                            <group>
+                                <field name="grounded"/>
+                            </group>
+                            <separator string="Retrieved knowledge (RAG)"/>
+                            <p class="text-muted" colspan="2">
+                                Empty here means the answer had NO knowledge-base
+                                grounding — the usual reason an answer is wrong.
+                            </p>
+                            <field name="retrieved_context" readonly="1" nolabel="1"/>
+                            <separator string="System prompt sent to the model"/>
+                            <field name="system_prompt" readonly="1" nolabel="1"/>
+                        </page>
                         <page string="Quality">
                             <group>
                                 <field name="verdict"/>
@@ -93,12 +111,19 @@
                 <filter name="state_done" string="Done" domain="[('state', '=', 'done')]"/>
                 <filter name="state_error" string="Errors" domain="[('state', '=', 'error')]"/>
                 <filter name="state_capped" string="Capped" domain="[('state', 'in', ('cost_capped', 'budget', 'maxhops'))]"/>
+                <separator/>
+                <filter name="ungrounded" string="⚠ Ungrounded (likely inaccurate)"
+                        domain="[('grounded', '=', 'ungrounded')]"/>
+                <filter name="grounded_ok" string="Grounded"
+                        domain="[('grounded', '=', 'grounded')]"/>
+                <separator/>
                 <filter name="thumbs_up" string="👍 Thumbs up" domain="[('feedback', '=', 'up')]"/>
                 <filter name="thumbs_down" string="👎 Thumbs down" domain="[('feedback', '=', 'down')]"/>
                 <filter name="today" string="Today" domain="[('started_at', '&gt;=', context_today().strftime('%Y-%m-%d 00:00:00'))]"/>
                 <group expand="0" string="Group By">
                     <filter name="group_agent" string="Agent" context="{'group_by': 'agent_id'}"/>
                     <filter name="group_state" string="State" context="{'group_by': 'state'}"/>
+                    <filter name="group_grounded" string="Grounded" context="{'group_by': 'grounded'}"/>
                     <filter name="group_surface" string="Surface" context="{'group_by': 'surface'}"/>
                 </group>
             </search>
