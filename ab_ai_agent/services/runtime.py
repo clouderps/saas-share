@@ -290,22 +290,42 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
             extracted_text = extracted_render.get('title') or ''
 
     # Tool-produced render wins when the LLM didn't emit one itself.
-    # Analysis/report tools (data_analysis, …) return
-    # {'render': {...}, 'summary': '...'} — the numbers come straight
-    # from the ORM, never the model, so we lift `render` off the most
-    # recent successful tool result (same pattern as `action` below)
-    # and keep the LLM's prose as the narrative.
+    # Analysis/report tools (data_analysis, recent_records, …) return
+    # {'render': {...}, 'summary': '...'} — numbers come straight from
+    # the ORM, never the model. A compound request ("latest SO and
+    # invoice and purchase") makes the agent call a tool once per
+    # entity, so we MERGE every successful tool render into one
+    # envelope (each as its own titled section) instead of keeping
+    # only the last. The LLM's prose stays the narrative.
     if not extracted_render:
-        for call in reversed(tool_calls_audit):
+        tool_renders = []
+        for call in tool_calls_audit:                 # natural call order
             if not call.get('ok'):
                 continue
             res = call.get('result') or {}
-            if isinstance(res, dict) and isinstance(res.get('render'), dict):
-                extracted_render = res['render']
-                if not extracted_text:
-                    extracted_text = (res.get('summary')
-                                      or extracted_render.get('title') or '')
-                break
+            r = res.get('render') if isinstance(res, dict) else None
+            if isinstance(r, dict) and r.get('blocks'):
+                tool_renders.append((r, res.get('summary') or ''))
+        if len(tool_renders) == 1:
+            extracted_render = tool_renders[0][0]
+            if not extracted_text:
+                extracted_text = (tool_renders[0][1]
+                                  or extracted_render.get('title') or '')
+        elif len(tool_renders) > 1:
+            merged = []
+            for r, _summary in tool_renders:
+                sect = r.get('title')
+                if sect:
+                    merged.append({'type': 'text', 'text': f'### {sect}'})
+                merged.extend(r.get('blocks') or [])
+            extracted_render = {
+                'layout': 'report',
+                'title': 'Results',
+                'blocks': merged,
+            }
+            if not extracted_text:
+                extracted_text = ' '.join(
+                    s for _r, s in tool_renders if s)[:600]
 
     # ── 6. Citations ──────────────────────────────────────────
     rendered_text, sources = citation_svc.apply_numeric_citations(
