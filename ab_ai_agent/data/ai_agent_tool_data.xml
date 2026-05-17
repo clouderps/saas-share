@@ -75,6 +75,17 @@
             <field name="allow_end_message" eval="True"/>
         </record>
 
+        <record id="tool_record_action" model="ai.agent.tool">
+            <field name="name">Confirm / Post / Validate a record by number</field>
+            <field name="code">record_action</field>
+            <field name="category">write</field>
+            <field name="description">Finalize a business document the user names by its number: confirm a Sale/Purchase Order, post an Invoice/Bill/Payment, or validate a Stock Picking. Examples: "INV/2026/00001 please post", "SO00047 confirm the order", "WH/IN/00012 validate", "PBNK1/2026/0003 post payment". Pass the exact reference the user said. WRITE action — only runs when the agent is allowed write actions; otherwise the user is told it's blocked.</field>
+            <field name="schema">{"type": "object", "properties": {"reference": {"type": "string", "description": "The document number/reference exactly as the user gave it, e.g. INV/2026/00001, SO00047, WH/IN/00012"}, "action": {"type": "string", "description": "Optional intent word (confirm/post/validate) — the tool picks the correct one per record type anyway"}}, "required": ["reference"]}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="is_write_action" eval="True"/>
+            <field name="allow_end_message" eval="True"/>
+        </record>
+
         <!-- ── HR domain tools (gated by hr / hr.attendance presence) ── -->
 
         <record id="tool_hr_attendance_missing_today" model="ai.agent.tool">

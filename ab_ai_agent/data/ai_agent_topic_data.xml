@@ -29,13 +29,16 @@
 - `open_pivot` for cross-tab analysis ("pivot sales by product and month").
 - `open_graph` for charts ("pie chart of customers by country", "bar chart of sales by branch").
 
-Always end with `__end_message` summarising what you opened (e.g. "Opening the P&amp;L for this month — the report should appear shortly.").</field>
+When the user names a document by its number and asks to confirm / post / validate it ("INV/2026/00001 please post", "SO00047 confirm", "WH/IN/00012 validate", "post payment PBNK1/2026/0003"), call `record_action` with the exact reference. It picks the right finalize per type (confirm SO/PO, post invoice/bill/payment, validate picking) and is safe — if it's already finalized or the agent lacks write permission you'll be told.
+
+Always end with `__end_message` summarising what you opened/did (e.g. "Opening the P&amp;L for this month — the report should appear shortly." / "Invoice INV/2026/00001 posted.").</field>
             <field name="tool_ids" eval="[(6, 0, [
                 ref('tool_open_record'),
                 ref('tool_open_list'),
                 ref('tool_open_pivot'),
                 ref('tool_open_graph'),
                 ref('tool_open_action'),
+                ref('tool_record_action'),
             ])]"/>
         </record>
 

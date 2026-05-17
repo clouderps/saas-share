@@ -687,8 +687,75 @@ def _builtin_recent_records(env, agent=None, kind=None, model=None,
     }
 
 
+# ─── Write action: confirm / validate / post a record by its number ──
+# "INV/2026/00001 please post", "SO00047 confirm", "WH/IN/00012
+# validate", "PBNK1/2026/0003 post". Domain-agnostic: resolves the
+# reference across the standard business docs and runs the one
+# canonical finalize method per model. WRITE action — the dispatcher
+# blocks it unless agent.allow_write_actions is True.
+
+# (model, [number-ish fields], finalize method, already-done predicate)
+_RECORD_ACTION_SPECS = (
+    ('sale.order',     ('name', 'client_order_ref'),
+     'action_confirm', lambda r: r.state in ('sale', 'done')),
+    ('purchase.order', ('name', 'partner_ref'),
+     'button_confirm', lambda r: r.state in ('purchase', 'done')),
+    ('account.move',   ('name', 'ref', 'payment_reference'),
+     'action_post',    lambda r: r.state == 'posted'),
+    ('stock.picking',  ('name', 'origin'),
+     'button_validate', lambda r: r.state == 'done'),
+    ('account.payment', ('name',),
+     'action_post',    lambda r: r.state == 'posted'),
+)
+
+
+def _builtin_record_action(env, agent=None, reference=None, action=None, **_kw):
+    """Find a record by its number and finalize it (confirm SO/PO,
+    post invoice/bill/payment, validate picking). Returns an `action`
+    so the chat shows an Open chip."""
+    ref = (reference or '').strip()
+    if not ref:
+        return {'error': 'reference required, e.g. "INV/2026/00001" or "SO00047"'}
+    for model, fnames, method, is_done in _RECORD_ACTION_SPECS:
+        if model not in env:
+            continue
+        rec = None
+        for op in ('=ilike', 'ilike'):
+            dom = ['|'] * (len(fnames) - 1) + [(f, op, ref) for f in fnames]
+            try:
+                rec = env[model].search(dom, limit=1)
+            except Exception:
+                rec = None
+            if rec:
+                break
+        if not rec:
+            continue
+        label = rec.display_name
+        descriptor = {
+            'type': 'ir.actions.act_window', 'name': label,
+            'res_model': model, 'res_id': rec.id,
+            'view_mode': 'form', 'views': [[False, 'form']],
+            'target': 'current',
+        }
+        if is_done(rec):
+            return {'message': f'{label} is already finalized — nothing to do.',
+                    'already_done': True, 'action': descriptor}
+        try:
+            getattr(rec, method)()
+        except Exception as e:
+            return {'error': f'{label}: {type(e).__name__}: {e}',
+                    'action': descriptor}
+        verb = {'action_confirm': 'confirmed', 'button_confirm': 'confirmed',
+                'action_post': 'posted', 'button_validate': 'validated'}[method]
+        return {'message': f'{label} {verb}.', 'done': True,
+                'action': descriptor}
+    return {'error': f'No sale order, purchase order, invoice/bill, '
+                     f'picking or payment matches "{ref}".'}
+
+
 register('date_reference', _builtin_date_reference)
 register('echo', _builtin_echo)
+register('record_action', _builtin_record_action)
 register('data_analysis', _builtin_data_analysis)
 register('recent_records', _builtin_recent_records)
 register('open_record', _builtin_open_record)
