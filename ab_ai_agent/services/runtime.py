@@ -100,6 +100,7 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
     cost_cap = float(agent.max_cost_usd or 0)
     transcript = [user_question]
     tool_calls_audit = []
+    forced_tool_retry_used = False
     cum_cost = 0.0
     cum_tokens = {'p': 0, 'c': 0, 'cached': 0}
     final_text = ''
@@ -218,12 +219,38 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
 
         if parsed.get('kind') == 'final':
             final_text = parsed.get('text') or ''
-            break
+        else:
+            # No structured action — treat as a final freeform answer.
+            final_text = response if isinstance(response, str) else (
+                '\n'.join(response) if isinstance(response, list) else str(response)
+            )
 
-        # No structured action — treat as a final freeform answer.
-        final_text = response if isinstance(response, str) else (
-            '\n'.join(response) if isinstance(response, list) else str(response)
-        )
+        # ── Grounding retry (#3) ──────────────────────────────
+        # A data question answered with NO tool and NO knowledge
+        # base is the single biggest source of wrong answers
+        # (it recycles training data / stale context). Force ONE
+        # corrective hop that must call a tool before we accept a
+        # pure-LLM answer. Single-shot (no infinite loop): if the
+        # model still won't use a tool, we take the answer.
+        if (not forced_tool_retry_used
+                and not any(c.get('ok') for c in tool_calls_audit)
+                and not kb_block
+                and agent.all_tool_ids
+                and hop < hard_cap - 1
+                and _looks_like_data_question(user_question)):
+            forced_tool_retry_used = True
+            on_event('grounding_retry', run_id=agent_run.id, hop=hop + 1)
+            transcript.append(
+                'STOP. You answered a business/data question WITHOUT '
+                'calling any tool, so the answer is not grounded in '
+                'real data and is likely wrong. Do NOT answer from '
+                'memory or from earlier conversation. Pick the single '
+                'most relevant tool for this question and return a '
+                '{"action":"tool", ...} now. Only after a tool returns '
+                'may you give a "final" answer.'
+            )
+            continue
+
         break
 
     if not final_text:
@@ -650,6 +677,35 @@ def _user_context_block(env):
     if user.tz:
         parts.append(f'- Timezone: {user.tz}')
     return '\n'.join(parts)
+
+
+_DATA_Q_HINTS = (
+    'sale', 'sales', 'invoice', 'bill', 'order', 'customer', 'client',
+    'revenue', 'profit', 'loss', 'p&l', 'pnl', 'margin', 'stock',
+    'inventory', 'product', 'employee', 'attendance', 'leave', 'payment',
+    'cash', 'bank', 'total', 'amount', 'balance', 'overdue', 'aging',
+    'trend', 'report', 'pos', 'session', 'how many', 'how much', 'count',
+    'list', 'latest', 'recent', 'last ', 'top ', 'best', 'worst',
+    'compare', 'today', 'yesterday', 'week', 'month', 'quarter', 'year',
+    'expense', 'purchase', 'vendor', 'supplier', 'tax', 'due',
+    # Arabic
+    'مبيعات', 'فاتورة', 'فواتير', 'طلب', 'طلبات', 'عميل', 'عملاء',
+    'مخزون', 'ربح', 'تقرير', 'كم', 'اجمالي', 'إجمالي', 'احدث', 'أحدث',
+    'اخر', 'آخر', 'رصيد', 'دفعة', 'مصروف', 'ضريبة',
+)
+
+
+def _looks_like_data_question(q):
+    """Conservative heuristic: does this question want real business
+    data (so an answer with no tool/KB is probably wrong)? A digit or
+    any business-noun hint qualifies; pure greetings / how-to / concept
+    questions do not, so we don't force a pointless tool hop on them."""
+    if not q:
+        return False
+    t = q.lower()
+    if any(ch.isdigit() for ch in t):
+        return True
+    return any(h in t for h in _DATA_Q_HINTS)
 
 
 def _org_knowledge_block(env, query):
