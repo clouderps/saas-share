@@ -86,7 +86,8 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
 
     # ── 3. Build system prompt + tool schemas ─────────────────
     system_prompt = _compose_system_prompt(env, agent, locale=locale, skill=skill,
-                                           record_ref=record_ref)
+                                           record_ref=record_ref,
+                                           user_question=user_question)
     tools = _resolve_tools(env, agent)
     llm_tool_schemas = [t.as_llm_schema(agent=agent) for t in tools]
 
@@ -353,9 +354,11 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
 
 # ───────────────────────── helpers ──────────────────────────
 
-def _compose_system_prompt(env, agent, *, locale='en', skill=None, record_ref=None):
+def _compose_system_prompt(env, agent, *, locale='en', skill=None,
+                           record_ref=None, user_question=None):
     """Compose the system prompt = persona + topics + date reference
-    + live business snapshot + user context + record context.
+    + live business snapshot + org knowledge (RAG) + user context
+    + record context.
 
     The aim is comprehensive data knowledge BEFORE the LLM picks a
     tool: counts of every key entity (orders, invoices, POS sessions,
@@ -381,6 +384,14 @@ def _compose_system_prompt(env, agent, *, locale='en', skill=None, record_ref=No
     snapshot = _business_snapshot_block(env)
     if snapshot:
         parts.append(snapshot)
+
+    # Organisation knowledge (RAG) — semantic retrieval against the
+    # tenant knowledge base, scoped to the user's question. Restores
+    # the grounding the legacy chatbot path injected before the
+    # chatbot + Ask AI were unified onto this runtime.
+    kb = _org_knowledge_block(env, user_question)
+    if kb:
+        parts.append(kb)
 
     # Caller context — who is asking, from where.
     parts.append(_user_context_block(env))
@@ -616,6 +627,33 @@ def _user_context_block(env):
     if user.tz:
         parts.append(f'- Timezone: {user.tz}')
     return '\n'.join(parts)
+
+
+def _org_knowledge_block(env, query):
+    """RAG grounding for the unified runtime.
+
+    Dependency-safe: ab_ai_agent (saas-share) must not import the
+    domain chatbot module, so we duck-type a knowledge model that
+    exposes ``to_prompt_block``. Today that is ab_ai_chatbot's
+    ``ai.chat.fact`` (hybrid pgvector + pg_trgm retrieval with a
+    similarity floor). Absent / failing → empty string, never raises.
+
+    top_k is ``ab_ai_agent.rag_top_k`` (default 4)."""
+    if not query:
+        return ''
+    Fact = env.get('ai.chat.fact')
+    if Fact is None or not hasattr(Fact, 'to_prompt_block'):
+        return ''
+    try:
+        top_k = int(env['ir.config_parameter'].sudo()
+                    .get_param('ab_ai_agent.rag_top_k', '4'))
+    except (TypeError, ValueError):
+        top_k = 4
+    try:
+        return Fact.sudo().to_prompt_block(query, limit=top_k) or ''
+    except Exception:
+        _logger.debug('org knowledge retrieval failed', exc_info=True)
+        return ''
 
 
 def _report_rendering_block():
