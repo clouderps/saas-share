@@ -118,5 +118,14 @@
             <field name="dispatch_kind">python</field>
         </record>
 
+        <record id="tool_recent_records" model="ai.agent.tool">
+            <field name="name">Recent Records (latest added)</field>
+            <field name="code">recent_records</field>
+            <field name="category">retrieval</field>
+            <field name="description">The most recently ADDED records of a business object, straight from the database. Use for "latest invoice added", "last 5 sale orders", "newest customers", "most recent POS orders". NEVER answer these from prior conversation context — call this. kind: invoices | bills | sale_orders | pos_orders | purchase_orders | customers. limit 1-50 (default 10). Returns a ready data table; write one short sentence highlighting the newest item.</field>
+            <field name="schema">{"type": "object", "properties": {"kind": {"type": "string", "enum": ["invoices", "bills", "sale_orders", "pos_orders", "purchase_orders", "customers"]}, "limit": {"type": "number", "default": 10, "description": "How many recent records (1-50)"}}, "required": ["kind"]}</field>
+            <field name="dispatch_kind">python</field>
+        </record>
+
     </data>
 </odoo>

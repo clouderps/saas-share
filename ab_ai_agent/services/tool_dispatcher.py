@@ -569,9 +569,128 @@ def _builtin_data_analysis(env, agent=None, metric='pos_sales',
     }
 
 
+# key -> (model, date_field, [(label, fname), ...], extra_domain, title)
+_RECENT_KINDS = {
+    'invoices': ('account.move', 'invoice_date',
+                 [('Number', 'name'), ('Customer', 'partner_id'),
+                  ('Date', 'invoice_date'), ('Total', 'amount_total'),
+                  ('Status', 'state')],
+                 [('move_type', '=', 'out_invoice')], 'Latest customer invoices'),
+    'bills': ('account.move', 'invoice_date',
+              [('Number', 'name'), ('Vendor', 'partner_id'),
+               ('Date', 'invoice_date'), ('Total', 'amount_total'),
+               ('Status', 'state')],
+              [('move_type', '=', 'in_invoice')], 'Latest vendor bills'),
+    'sale_orders': ('sale.order', 'date_order',
+                    [('Order', 'name'), ('Customer', 'partner_id'),
+                     ('Date', 'date_order'), ('Total', 'amount_total'),
+                     ('Status', 'state')], [], 'Latest sales orders'),
+    'pos_orders': ('pos.order', 'date_order',
+                   [('Receipt', 'name'), ('Customer', 'partner_id'),
+                    ('Date', 'date_order'), ('Total', 'amount_total'),
+                    ('Status', 'state')], [], 'Latest POS orders'),
+    'purchase_orders': ('purchase.order', 'date_order',
+                        [('Order', 'name'), ('Vendor', 'partner_id'),
+                         ('Date', 'date_order'), ('Total', 'amount_total'),
+                         ('Status', 'state')], [], 'Latest purchase orders'),
+    'customers': ('res.partner', 'create_date',
+                  [('Name', 'name'), ('Email', 'email'),
+                   ('Phone', 'phone'), ('City', 'city')],
+                  [('customer_rank', '>', 0)], 'Most recently added customers'),
+}
+
+
+def _builtin_recent_records(env, agent=None, kind=None, model=None,
+                            limit=10, **_kw):
+    """The N most recently ADDED records of a business object.
+
+    Answers "latest invoice added", "last 5 sale orders", "newest
+    customers" — questions the model otherwise recycles stale context
+    for. Numbers/IDs come straight from the ORM under the caller's
+    access rights (record rules / branch isolation respected).
+
+    Args:
+      kind:  invoices | bills | sale_orders | pos_orders |
+             purchase_orders | customers
+      model: technical model name (advanced; overrides kind, ordered
+             by create_date desc)
+      limit: 1-50 (default 10)
+    """
+    try:
+        limit = max(1, min(50, int(limit)))
+    except (TypeError, ValueError):
+        limit = 10
+
+    if kind and kind in _RECENT_KINDS:
+        mname, date_field, cols, domain, title = _RECENT_KINDS[kind]
+    elif model:
+        mname, date_field, cols, domain, title = (
+            model, 'create_date',
+            [('Name', 'display_name'), ('Created', 'create_date')],
+            [], f'Latest {model} records')
+    else:
+        return {'error': 'kind required, one of %s (or a model=)'
+                         % sorted(_RECENT_KINDS)}
+
+    if mname not in env:
+        return {'error': f'{mname} not installed on this instance'}
+    Model = env[mname]
+    try:
+        Model.check_access('read')
+    except Exception as e:
+        return {'error': f'no read access to {mname}: {e}'}
+    if date_field not in Model._fields:
+        date_field = 'create_date'
+
+    try:
+        recs = Model.search(domain or [], order=f'{date_field} desc, id desc',
+                            limit=limit)
+    except Exception as e:
+        return {'error': f'{mname} query failed: {type(e).__name__}: {e}'}
+    if not recs:
+        return {'render': {'layout': 'report', 'title': title,
+                           'blocks': [{'type': 'callout', 'tone': 'warn',
+                                       'title': 'Nothing found',
+                                       'body': f'No {kind or mname} records.'}]},
+                'summary': f'No {kind or mname} records found.'}
+
+    def _cell(rec, fname):
+        if fname not in rec._fields:
+            return ''
+        val = rec[fname]
+        f = rec._fields[fname]
+        if f.type == 'many2one':
+            return val.display_name or '' if val else ''
+        if f.type in ('date', 'datetime'):
+            return str(val) if val else ''
+        if f.type in ('float', 'monetary'):
+            return f'{val:,.2f}'
+        return '' if val in (False, None) else str(val)
+
+    headers = [c[0] for c in cols]
+    rows = [[_cell(r, c[1]) for c in cols] for r in recs]
+    newest = recs[0]
+    nd = newest[date_field] if date_field in newest._fields else None
+    return {
+        'render': {
+            'layout': 'report', 'title': title,
+            'blocks': [{
+                'type': 'data_table',
+                'title': f'{len(recs)} most recent (newest first)',
+                'headers': headers, 'rows': rows,
+            }],
+        },
+        'summary': (
+            f'{len(recs)} most recent {kind or mname}; newest: '
+            f'{newest.display_name} ({nd}).'
+        ),
+    }
+
+
 register('date_reference', _builtin_date_reference)
 register('echo', _builtin_echo)
 register('data_analysis', _builtin_data_analysis)
+register('recent_records', _builtin_recent_records)
 register('open_record', _builtin_open_record)
 register('open_list', _builtin_open_list)
 register('open_pivot', _builtin_open_pivot)
