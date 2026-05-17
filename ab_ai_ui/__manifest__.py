@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'AB AI UI — Shared response renderer',
-    'version': '18.0.1.1.0',
+    'version': '18.0.1.2.0',
     'category': 'Tools',
     'summary': 'OWL <AiResponse/> + block kit (KPI grid, highlight list, '
                'data table, callout, actions, tool trace, provenance) used by '
@@ -69,6 +69,8 @@ colours. RTL-first via CSS logical properties.
             'ab_ai_ui/static/src/blocks/action_button.xml',
             'ab_ai_ui/static/src/blocks/tool_trace.js',
             'ab_ai_ui/static/src/blocks/tool_trace.xml',
+            'ab_ai_ui/static/src/blocks/ai_chart.js',
+            'ab_ai_ui/static/src/blocks/ai_chart.xml',
             'ab_ai_ui/static/src/ai_response/ai_response.js',
             'ab_ai_ui/static/src/ai_response/ai_response.xml',
             'ab_ai_ui/static/src/ai_response/ai_response_service.js',
@@ -101,6 +103,8 @@ colours. RTL-first via CSS logical properties.
             'ab_ai_ui/static/src/blocks/action_button.xml',
             'ab_ai_ui/static/src/blocks/tool_trace.js',
             'ab_ai_ui/static/src/blocks/tool_trace.xml',
+            'ab_ai_ui/static/src/blocks/ai_chart.js',
+            'ab_ai_ui/static/src/blocks/ai_chart.xml',
             'ab_ai_ui/static/src/ai_response/ai_response.js',
             'ab_ai_ui/static/src/ai_response/ai_response.xml',
             'ab_ai_ui/static/src/ai_response/ai_response_service.js',

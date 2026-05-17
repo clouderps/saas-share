@@ -257,6 +257,24 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
         if not extracted_text and extracted_render:
             extracted_text = extracted_render.get('title') or ''
 
+    # Tool-produced render wins when the LLM didn't emit one itself.
+    # Analysis/report tools (data_analysis, …) return
+    # {'render': {...}, 'summary': '...'} — the numbers come straight
+    # from the ORM, never the model, so we lift `render` off the most
+    # recent successful tool result (same pattern as `action` below)
+    # and keep the LLM's prose as the narrative.
+    if not extracted_render:
+        for call in reversed(tool_calls_audit):
+            if not call.get('ok'):
+                continue
+            res = call.get('result') or {}
+            if isinstance(res, dict) and isinstance(res.get('render'), dict):
+                extracted_render = res['render']
+                if not extracted_text:
+                    extracted_text = (res.get('summary')
+                                      or extracted_render.get('title') or '')
+                break
+
     # ── 6. Citations ──────────────────────────────────────────
     rendered_text, sources = citation_svc.apply_numeric_citations(
         extracted_text, source_lookup or {})
@@ -369,6 +387,9 @@ def _compose_system_prompt(env, agent, *, locale='en', skill=None, record_ref=No
 
     # How to render reports (P&L, sales summary, etc.) as data_table.
     parts.append(_report_rendering_block())
+
+    # How to answer trend/analytics questions with an accurate chart.
+    parts.append(_chart_rendering_block())
 
     # Topic instructions.
     if agent.topic_ids:
@@ -620,6 +641,27 @@ def _report_rendering_block():
         '```\n'
         'Plain prose answers stay plain strings — use the render block '
         'only when the data benefits from a table or KPI tiles.'
+    )
+
+
+def _chart_rendering_block():
+    """Tell the LLM to route trend/analytics questions through the
+    deterministic data_analysis tool instead of inventing numbers."""
+    return (
+        '## Trends & charts (CRITICAL)\n'
+        'For ANY question about a metric over time or vs another period '
+        '— "sales trend", "POS sales last 30 days", "how are we doing", '
+        '"compare this month to last", "weekly/monthly breakdown" — you '
+        'MUST call the `data_analysis` tool. NEVER hand-build chart JSON '
+        'and NEVER invent or estimate figures: the tool computes them '
+        'from the database and returns the chart, KPI grid and peak '
+        'callout fully rendered.\n'
+        '- Pick `metric` (pos_sales | sale_orders | invoiced_revenue), '
+        '`period_days`, and `group` (day/week/month) from the question.\n'
+        '- After the tool returns, DO NOT restate the table or numbers. '
+        'Your `final` answer is ONE short paragraph (plain string): what '
+        'changed, why it matters, and one concrete recommended action.\n'
+        'The chart is attached automatically — your prose sits above it.'
     )
 
 

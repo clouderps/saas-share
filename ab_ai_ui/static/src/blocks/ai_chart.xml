@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="ab_ai_ui.AiChart">
+        <figure t-att-class="'ai-chart ai-chart--' + (props.tone or 'neutral')" dir="auto">
+            <figcaption t-if="props.title" class="ai-chart__title" t-esc="props.title"/>
+            <div class="ai-chart__canvas">
+                <canvas t-ref="canvas" aria-label="Chart"/>
+            </div>
+            <p t-if="props.insight" class="ai-chart__insight">
+                <i class="fa fa-lightbulb-o" role="img" aria-label="Insight"/>
+                <span t-esc="props.insight"/>
+            </p>
+        </figure>
+    </t>
+</templates>

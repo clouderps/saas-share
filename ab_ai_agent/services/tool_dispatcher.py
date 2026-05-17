@@ -432,8 +432,146 @@ def _builtin_hr_attendance_open_shifts(env, agent=None, **_kw):
     }
 
 
+# ─── Analysis tools ──────────────────────────────────────────────────
+# Numbers come straight from the ORM/SQL — NEVER from the model. The
+# tool returns a `render` envelope (chart + KPI grid + peak callout);
+# runtime.py lifts that onto envelope.render verbatim (same path as
+# `action`). The LLM only writes the surrounding narrative paragraph.
+
+_DA_METRICS = {
+    # key: (table, amount_col, date_col, state_sql, label)
+    'pos_sales': ("pos_order", "amount_total", "date_order",
+                  "state IN ('paid','done','invoiced')", "POS sales"),
+    'sale_orders': ("sale_order", "amount_total", "date_order",
+                    "state IN ('sale','done')", "Sales orders"),
+    'invoiced_revenue': ("account_move", "amount_total_signed", "invoice_date",
+                         "move_type = 'out_invoice' AND state = 'posted'",
+                         "Invoiced revenue"),
+}
+_DA_GROUPS = {'day', 'week', 'month'}
+
+
+def _builtin_data_analysis(env, agent=None, metric='pos_sales',
+                           period_days=30, group='day', **_kw):
+    """Deterministic timeseries analysis → render envelope.
+
+    Args:
+      metric:      pos_sales | sale_orders | invoiced_revenue
+      period_days: lookback window (1–365, default 30)
+      group:       day | week | month (bucket granularity)
+    """
+    from datetime import timedelta
+    from odoo import fields as _fields
+
+    spec = _DA_METRICS.get(metric)
+    if not spec:
+        return {'error': f'unknown metric {metric!r}; '
+                         f'choose one of {sorted(_DA_METRICS)}'}
+    table, amt_col, date_col, state_sql, label = spec
+    group = group if group in _DA_GROUPS else 'day'
+    try:
+        period_days = max(1, min(365, int(period_days)))
+    except (TypeError, ValueError):
+        period_days = 30
+
+    today = _fields.Date.context_today(env['res.users'])
+    start = today - timedelta(days=period_days)
+    prev_start = start - timedelta(days=period_days)
+    unit = (env.company.currency_id.symbol or 'SAR')
+
+    # Guard: table may not exist on every tenant (no POS, no accounting).
+    env.cr.execute("SELECT to_regclass(%s)", (f'public.{table}',))
+    if not (env.cr.fetchone() or [None])[0]:
+        return {'error': f'{metric}: table {table} not present on this instance'}
+
+    q = (
+        f"SELECT date_trunc(%s, {date_col})::date d, "
+        f"       COALESCE(SUM({amt_col}), 0) amt, COUNT(*) n "
+        f"  FROM {table} "
+        f" WHERE {state_sql} AND {date_col} >= %s AND {date_col} < %s "
+        f" GROUP BY 1 ORDER BY 1"
+    )
+    try:
+        with env.cr.savepoint(flush=False):
+            env.cr.execute(q, (group, start, today))
+            rows = env.cr.fetchall()
+            env.cr.execute(
+                f"SELECT COALESCE(SUM({amt_col}), 0) FROM {table} "
+                f"WHERE {state_sql} AND {date_col} >= %s AND {date_col} < %s",
+                (prev_start, start),
+            )
+            prev_total = float((env.cr.fetchone() or [0])[0] or 0)
+    except Exception as e:  # never raise into the hop loop
+        return {'error': f'{metric} query failed: {type(e).__name__}: {e}'}
+
+    if not rows:
+        return {
+            'render': {
+                'layout': 'report',
+                'title': f'{label} — last {period_days} days',
+                'blocks': [{
+                    'type': 'callout', 'tone': 'warn',
+                    'title': 'No data',
+                    'body': f'No {label.lower()} between {start} and {today}.',
+                }],
+            },
+            'summary': f'No {label.lower()} in the last {period_days} days.',
+        }
+
+    x = [r[0].isoformat() for r in rows]
+    amounts = [round(float(r[1]), 2) for r in rows]
+    counts = [int(r[2]) for r in rows]
+    total = round(sum(amounts), 2)
+    txn = sum(counts)
+    avg = round(total / len(x), 2)
+    peak = max(rows, key=lambda r: r[1])
+    delta = (((total - prev_total) / prev_total * 100.0)
+             if prev_total else None)
+    tone = 'good' if (delta is None or delta >= 0) else 'bad'
+    delta_txt = (f'{delta:+.1f}%' if delta is not None else '—')
+    insight = (
+        f'{"Up" if (delta or 0) >= 0 else "Down"} {abs(delta):.1f}% vs the '
+        f'previous {period_days} days.' if delta is not None
+        else 'No comparable prior period.'
+    )
+
+    kpis = [
+        {'label': 'Total', 'value': f'{total:,.0f} {unit}',
+         'delta_pct': delta_txt, 'tone': tone},
+        {'label': 'Transactions', 'value': f'{txn:,}'},
+        {'label': f'Avg / {group}', 'value': f'{avg:,.0f} {unit}'},
+    ]
+    return {
+        'render': {
+            'layout': 'report',
+            'title': f'{label} — last {period_days} days',
+            'blocks': [
+                {'type': 'kpi_grid', 'items': kpis},
+                {'type': 'chart', 'chart': 'area',
+                 'title': f'{label} by {group}', 'x': x,
+                 'series': [
+                     {'name': f'{label} ({unit})', 'data': amounts},
+                     {'name': 'Transactions', 'data': counts, 'axis': 'right'},
+                 ],
+                 'unit': unit, 'tone': tone, 'insight': insight},
+                {'type': 'callout', 'tone': 'info', 'title': 'Peak',
+                 'body': f'{peak[0]}: {float(peak[1]):,.0f} {unit} '
+                         f'across {int(peak[2])} transactions.'},
+            ],
+        },
+        # Compact factual line the LLM bases its narrative on. The model
+        # is told NOT to restate the table — just interpret this.
+        'summary': (
+            f'{label}: {total:,.0f} {unit} over {len(x)} {group}-buckets '
+            f'({txn} transactions), {delta_txt} vs prior {period_days}d, '
+            f'peak {peak[0]} at {float(peak[1]):,.0f} {unit}.'
+        ),
+    }
+
+
 register('date_reference', _builtin_date_reference)
 register('echo', _builtin_echo)
+register('data_analysis', _builtin_data_analysis)
 register('open_record', _builtin_open_record)
 register('open_list', _builtin_open_list)
 register('open_pivot', _builtin_open_pivot)

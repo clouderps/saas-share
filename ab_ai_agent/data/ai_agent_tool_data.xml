@@ -107,5 +107,16 @@
             <field name="requires_pii" eval="True"/>
         </record>
 
+        <!-- ── Analysis ─────────────────────────────────────────── -->
+
+        <record id="tool_data_analysis" model="ai.agent.tool">
+            <field name="name">Data Analysis (timeseries + chart)</field>
+            <field name="code">data_analysis</field>
+            <field name="category">analysis</field>
+            <field name="description">Aggregate a business metric over time and return a ready-made chart, KPI grid and peak callout. Numbers are computed from the database — accurate, never estimated. Use this for ANY "trend / over time / how are X doing / compare to last period / breakdown by day-week-month" question about sales. metric: pos_sales (Point of Sale), sale_orders (sales orders), invoiced_revenue (posted customer invoices). period_days 1-365. group day|week|month. Do NOT restate the returned table in prose — write one short paragraph interpreting it.</field>
+            <field name="schema">{"type": "object", "properties": {"metric": {"type": "string", "enum": ["pos_sales", "sale_orders", "invoiced_revenue"], "default": "pos_sales"}, "period_days": {"type": "number", "default": 30, "description": "Lookback window in days (1-365)"}, "group": {"type": "string", "enum": ["day", "week", "month"], "default": "day"}}, "required": []}</field>
+            <field name="dispatch_kind">python</field>
+        </record>
+
     </data>
 </odoo>

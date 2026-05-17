@@ -28,6 +28,7 @@
                 ref('topic_general_conversation'),
                 ref('topic_date_math'),
                 ref('topic_navigation'),
+                ref('topic_analytics'),
             ])]"/>
             <field name="system_prompt"># Identity
 You are the Ghaima Assistant, the AI companion built into the Ghaima ERP product. Ghaima is a Saudi B2B SaaS — modern Arabic/RTL interface, restaurant + retail + services verticals, built on Odoo.

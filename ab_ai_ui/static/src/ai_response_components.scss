@@ -520,3 +520,40 @@
     0%, 49%   { opacity: 1; }
     50%, 100% { opacity: 0; }
 }
+
+/* ── Chart block (<AiChart/>) ─────────────────────────────────────── */
+.ai-chart {
+    margin: 10px 0;
+    padding: 12px 14px;
+    background: var(--ghaima-bg, #F7F8FC);
+    border: 1px solid var(--ai-border);
+    border-radius: var(--ghaima-radius-md);
+}
+.ai-chart__title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #0F172A;
+    margin-bottom: 8px;
+}
+.ai-chart__canvas {
+    position: relative;
+    /* Chart.js needs a bounded box (maintainAspectRatio:false). */
+    height: 260px;
+    width: 100%;
+}
+.ai-chart__canvas canvas {
+    max-width: 100%;
+}
+.ai-chart__insight {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin: 10px 0 0;
+    font-size: 0.85rem;
+    color: var(--ai-muted);
+
+    .fa { color: var(--ghaima-blue); margin-top: 2px; }
+}
+.ai-chart--good  .ai-chart__title { border-inline-start: 3px solid var(--ai-good); padding-inline-start: 8px; }
+.ai-chart--warn  .ai-chart__title { border-inline-start: 3px solid var(--ai-warn); padding-inline-start: 8px; }
+.ai-chart--bad   .ai-chart__title { border-inline-start: 3px solid var(--ai-bad);  padding-inline-start: 8px; }

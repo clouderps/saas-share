@@ -51,6 +51,14 @@
                                             secondary="action.secondary or false"
                                             icon="action.icon or ''"/>
                         </div>
+                        <AiChart t-elif="isBlock(block, 'chart')"
+                                 chart="block.chart or 'line'"
+                                 title="block.title or ''"
+                                 x="block.x or []"
+                                 series="block.series or []"
+                                 unit="block.unit or ''"
+                                 insight="block.insight or ''"
+                                 tone="block.tone or ''"/>
                         <ToolTrace t-elif="isBlock(block, 'tool_trace')"
                                    calls="block.calls or []"/>
                         <SuggestionChips t-elif="isBlock(block, 'suggestion_chips')"

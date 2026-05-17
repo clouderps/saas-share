@@ -14,6 +14,7 @@ import { DataTable } from "../blocks/data_table";
 import { CalloutCard } from "../blocks/callout_card";
 import { AiActionButton } from "../blocks/action_button";
 import { ToolTrace } from "../blocks/tool_trace";
+import { AiChart } from "../blocks/ai_chart";
 
 /** <AiResponse/> — the single OWL component every AI surface should use.
  *
@@ -37,7 +38,7 @@ export class AiResponse extends Component {
     static components = {
         SkeletonShimmer, ErrorEnvelope, ProvenanceBar,
         AiText, AiMarkdown, SuggestionChips, KpiGrid, HighlightList, DataTable,
-        CalloutCard, AiActionButton, ToolTrace,
+        CalloutCard, AiActionButton, ToolTrace, AiChart,
     };
     static props = {
         envelope: { type: Object, optional: true },
