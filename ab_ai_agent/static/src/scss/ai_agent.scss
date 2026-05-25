@@ -962,3 +962,99 @@
     .o_ai_agent_msg__bubble code { font-family: ui-monospace, monospace; }
     // logical properties handle the rest automatically — no flips needed
 }
+
+// ─── Chatter inline panel (Path A: Ask AI alongside Log Note / Send Message)
+// ────────────────────────────────────────────────────────────────────────
+.o-mail-Chatter-aiInline {
+    display: flex;
+    flex-direction: column;
+    margin: var(--ai-step-2) 0 var(--ai-step-3);
+    border: 1px solid var(--ai-ghaima-line);
+    border-radius: var(--ai-radius-md);
+    background: white;
+    box-shadow: var(--ai-shadow-sm);
+    overflow: hidden;
+}
+
+.o-mail-Chatter-aiInline__bar {
+    display: flex;
+    align-items: center;
+    gap: var(--ai-step-2);
+    padding: var(--ai-step-2) var(--ai-step-4);
+    background: linear-gradient(90deg,
+        rgba(0, 95, 246, 0.08) 0%,
+        rgba(93, 216, 202, 0.04) 100%);
+    border-block-end: 1px solid var(--ai-ghaima-line);
+    font-size: 0.875rem;
+}
+
+[dir="rtl"] .o-mail-Chatter-aiInline__bar {
+    background: linear-gradient(270deg,
+        rgba(0, 95, 246, 0.08) 0%,
+        rgba(93, 216, 202, 0.04) 100%);
+}
+
+.o-mail-Chatter-aiInline__title {
+    display: inline-flex;
+    align-items: center;
+    font-weight: 700;
+    color: var(--ai-ghaima-navy, #0D00A2);
+    font-family: var(--ai-font-heading);
+    .fa-magic { color: var(--ai-ghaima-cyan, #5DD8CA); }
+}
+
+.o-mail-Chatter-aiInline__action {
+    color: var(--ai-ghaima-muted);
+    background: transparent;
+    border: none;
+    padding: 4px 8px;
+    border-radius: var(--ai-radius-sm);
+    transition: color 0.12s, background 0.12s;
+
+    &:hover, &:focus {
+        color: var(--ai-ghaima-blue, #005FF6);
+        background: rgba(0, 95, 246, 0.08);
+    }
+}
+
+.o-mail-Chatter-aiInline__body {
+    height: 360px;
+    display: flex;
+
+    // Compact the AI chat for inline context: no min-height, no
+    // rounded corners (parent handles it), thinner header padding.
+    .o_ai_agent_chat {
+        min-height: 0;
+        height: 100%;
+        flex: 1 1 auto;
+        border-radius: 0;
+        background: white;
+
+        // The inline panel already has its own header bar above, so
+        // hide the duplicated chat header (title / token meter /
+        // mute / close are redundant with the inline bar). Keep the
+        // agent chip though — users still need to switch agents.
+        .o_ai_agent_chat__header {
+            padding: var(--ai-step-2) var(--ai-step-4);
+            border-top-left-radius: 0;
+            border-top-right-radius: 0;
+
+            .o_ai_agent_chat__title,
+            .o_ai_agent_chat__subtitle {
+                display: none;
+            }
+        }
+
+        .o_ai_agent_chat__body {
+            padding: var(--ai-step-3) var(--ai-step-4);
+        }
+
+        .o_ai_agent_chat__footer {
+            padding: var(--ai-step-2) var(--ai-step-4);
+        }
+    }
+}
+
+@media (max-width: 767.98px) {
+    .o-mail-Chatter-aiInline__body { height: 320px; }
+}

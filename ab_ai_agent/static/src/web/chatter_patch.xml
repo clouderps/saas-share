@@ -1,23 +1,84 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
 
-    <!-- Inject "Ask AI" button into the Chatter top bar. Positioned
-         right after the Activity button, before the flex-grow spacer
-         that pushes the follow / attach widgets to the right edge. -->
+    <!-- ────────────────────────────────────────────────────────────
+         Inject "Ask AI" topbar button + inline AI panel.
+
+         The button toggles state.composerType between 'ai' and false,
+         the same toggle used by Send Message / Log Note. When 'ai' is
+         active, an inline <AiAgentChat/> mounts below the topbar with
+         hideSidebar=true so it fits in chatter width.
+
+         A guard on the native composer block prevents <Composer> from
+         rendering with type='ai' (it'd fall into the 'note' branch).
+         ──────────────────────────────────────────────────────────── -->
     <t t-name="ab_ai_agent.ChatterAskAIButton" t-inherit="mail.Chatter" t-inherit-mode="extension">
+
+        <!-- 1. Topbar button — toggles inline AI panel. Active styling
+                when state.composerType === 'ai'. -->
         <xpath expr="//span[hasclass('o-mail-Chatter-topbarGrow')]" position="before">
-            <button class="o-mail-Chatter-askAI btn btn-secondary text-nowrap me-1"
-                    t-att-class="{ 'my-2': !props.compactHeight }"
-                    t-on-click="onClickAskAI"
+            <button class="o-mail-Chatter-askAI btn text-nowrap me-1"
+                    t-att-class="{
+                        'btn-primary active': state.composerType === 'ai',
+                        'btn-secondary': state.composerType !== 'ai',
+                        'my-2': !props.compactHeight
+                    }"
+                    t-on-click="() => this.toggleComposer('ai')"
+                    t-att-disabled="!state.thread.canPostMessage and props.threadId"
                     title="Ask the AI agent about this record">
                 <i class="fa fa-magic me-1"/>
                 Ask AI
             </button>
         </xpath>
+
+        <!-- 2. Guard the native message/note composer block so it does
+                NOT render when composerType is 'ai'. Without this guard
+                it would set type='note' (the else branch) and mount a
+                Composer with an invalid AI type. -->
+        <xpath expr="//t[@t-if='state.composerType']" position="attributes">
+            <attribute name="t-if">state.composerType and state.composerType !== 'ai'</attribute>
+        </xpath>
+
+        <!-- 3. Inline AI panel — sibling of the message/note composer.
+                Shares the .o-mail-Chatter-top sticky frame so it sticks
+                to the top alongside the other composers. -->
+        <xpath expr="//div[hasclass('o-mail-Chatter-topbar')]" position="after">
+            <div t-if="state.composerType === 'ai' and state.thread and state.thread.id"
+                 class="o-mail-Chatter-aiInline">
+                <div class="o-mail-Chatter-aiInline__bar">
+                    <span class="o-mail-Chatter-aiInline__title">
+                        <i class="fa fa-magic me-2"/>
+                        <span>Ask AI</span>
+                    </span>
+                    <span class="flex-grow-1"/>
+                    <button type="button"
+                            class="o-mail-Chatter-aiInline__action btn btn-sm"
+                            t-on-click="onClickAskAIPopOut"
+                            title="Open in a full dialog">
+                        <i class="fa fa-external-link me-1"/>
+                        <span>Expand</span>
+                    </button>
+                    <button type="button"
+                            class="o-mail-Chatter-aiInline__action btn btn-sm"
+                            t-on-click="() => this.toggleComposer('ai')"
+                            title="Close AI panel">
+                        <i class="oi oi-close"/>
+                    </button>
+                </div>
+                <div class="o-mail-Chatter-aiInline__body">
+                    <AiAgentChat surface="'chatter'"
+                                 recordModel="state.thread.model"
+                                 recordId="state.thread.id"
+                                 recordName="state.thread.name or state.thread.display_name or ''"
+                                 hideSidebar="true"
+                                 onClose="() => this.toggleComposer('ai')"/>
+                </div>
+            </div>
+        </xpath>
+
     </t>
 
-    <!-- Dialog wrapper that mounts <AiAgentChat/> inside the standard
-         Odoo Dialog frame. -->
+    <!-- Dialog wrapper used by the Expand action (full-screen AI). -->
     <t t-name="ab_ai_agent.AiAgentChatDialog">
         <Dialog title="dialogTitle" size="'lg'" contentClass="'p-0'" footer="false">
             <AiAgentChat surface="'chatter'"
