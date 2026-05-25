@@ -37,6 +37,16 @@ class AIProviderService(models.AbstractModel):
           - If no active ai.provider.config exists, we also simulate
             (rather than raising UserError) so a fresh install doesn't
             crash every AI feature.
+
+        Prompt caching (T.1 Day 1, SAAS_AI_TOKEN_REDUCTION_SUMMARY.md):
+          - When ir.config_parameter `ab_ai_base.provider_cache_enabled`
+            is True, the system_prompt is threaded into the provider's
+            native system slot (Anthropic: `system` array w/
+            cache_control=ephemeral; OpenAI: `messages[0].role=system`,
+            automatic prefix cache when ≥1024 tokens). Saves 50–90 %
+            cost on cached tokens. Default off — when off, legacy
+            behavior (concatenation into user prompt) is preserved
+            byte-for-byte.
         """
         if self._is_simulation_mode():
             return self._simulate_call(reason='explicit_toggle')
@@ -47,20 +57,32 @@ class AIProviderService(models.AbstractModel):
             if not config:
                 return self._simulate_call(reason='no_provider_configured')
 
-        full_prompt = prompt
-        if system_prompt:
-            full_prompt = f"{system_prompt}\n\n{prompt}"
-        elif config.system_prompt:
-            full_prompt = f"{config.system_prompt}\n\n{prompt}"
+        effective_system = system_prompt or config.system_prompt or None
+
+        if self._provider_cache_enabled():
+            # Cache-friendly path: keep system separate so providers can
+            # mark it as a cacheable prefix.
+            user_prompt = prompt
+            system_for_handler = effective_system
+        else:
+            # Legacy path: merge into user prompt (byte-for-byte identical
+            # to pre-T.1 behavior).
+            if effective_system:
+                user_prompt = f"{effective_system}\n\n{prompt}"
+            else:
+                user_prompt = prompt
+            system_for_handler = None
 
         if image_data:
             response_text, usage = self._call_ai_api_with_image(
-                full_prompt, config, image_data, image_mimetype or 'image/png',
+                user_prompt, config, image_data, image_mimetype or 'image/png',
                 model_override=model_override,
+                system_prompt=system_for_handler,
             )
         else:
             response_text, usage = self._call_ai_api(
-                full_prompt, config, model_override=model_override,
+                user_prompt, config, model_override=model_override,
+                system_prompt=system_for_handler,
             )
         config.increment_usage(tokens=usage.get('total_tokens', 0))
         return response_text, usage
@@ -70,6 +92,28 @@ class AIProviderService(models.AbstractModel):
         icp = self.env['ir.config_parameter'].sudo()
         return str(icp.get_param('ab_ai_gateway.simulation', 'False')).lower() \
                 in ('1', 'true', 'yes')
+
+    def _provider_cache_enabled(self):
+        """True when provider-native prompt caching should be engaged.
+
+        Default False — when off, system_prompt is concatenated into the
+        user prompt (legacy behavior). When on, providers receive the
+        system_prompt in their native system slot and (for Anthropic) the
+        block is marked `cache_control: ephemeral` — 5-min TTL, 90 %
+        discount on cache reads, 25 % premium on cache writes."""
+        icp = self.env['ir.config_parameter'].sudo()
+        return str(icp.get_param('ab_ai_base.provider_cache_enabled', 'False')).lower() \
+                in ('1', 'true', 'yes')
+
+    def _cache_min_tokens(self, provider):
+        """Per-provider minimum prompt length (chars) before we bother
+        marking it cacheable. Anthropic requires ≥1024 tokens (~4096
+        chars) for Sonnet/Opus; smaller blocks are rejected silently and
+        we'd pay the 25 % write premium for nothing. Conservative."""
+        return {
+            'anthropic': 4096,   # ~1024 tokens
+            'openai':    4096,   # ~1024 tokens (automatic cache threshold)
+        }.get(provider, 4096)
 
     def _simulate_call(self, reason='explicit_toggle'):
         """Return a placeholder response without hitting any provider.
@@ -394,13 +438,19 @@ class AIProviderService(models.AbstractModel):
         except Exception as e:
             return {'success': False, 'message': str(e)}
 
-    def _call_ai_api(self, prompt, config, model_override=None):
+    def _call_ai_api(self, prompt, config, model_override=None, system_prompt=None):
         """Route to the appropriate provider API.
 
         ``model_override`` (Phase G.2): when non-empty, overrides the
         per-provider default model for this call only. Used by the
         gateway's class→model routing — the underlying provider config
         keeps its default for everything else.
+
+        ``system_prompt`` (T.1): when non-None, the caller has opted into
+        cache-friendly mode (see `_provider_cache_enabled`). Handlers
+        that support a native system slot use it directly; handlers
+        that don't fall back to internal concatenation so no content
+        is dropped.
 
         Returns:
             tuple: (response_text, usage_dict)
@@ -414,31 +464,41 @@ class AIProviderService(models.AbstractModel):
         handler = providers.get(config.ai_provider)
         if not handler:
             raise UserError(_('Unsupported AI provider: %s') % config.ai_provider)
-        return handler(prompt, config, model_override=model_override)
+        return handler(prompt, config, model_override=model_override,
+                       system_prompt=system_prompt)
 
     def _call_ai_api_with_image(self, prompt, config, image_data, image_mimetype,
-                                model_override=None):
+                                model_override=None, system_prompt=None):
         """Route to the appropriate provider with multimodal image support."""
         provider = config.ai_provider
         if provider == 'openai':
             return self._call_openai_vision(
                 prompt, config, image_data, image_mimetype,
-                model_override=model_override)
+                model_override=model_override, system_prompt=system_prompt)
         elif provider == 'anthropic':
             return self._call_claude_vision(
                 prompt, config, image_data, image_mimetype,
-                model_override=model_override)
+                model_override=model_override, system_prompt=system_prompt)
         elif provider == 'google':
             return self._call_gemini_vision(
                 prompt, config, image_data, image_mimetype,
-                model_override=model_override)
+                model_override=model_override, system_prompt=system_prompt)
         else:
             _logger.warning('Provider %s does not support vision, falling back to text', provider)
-            return self._call_ai_api(prompt, config, model_override=model_override)
+            return self._call_ai_api(prompt, config, model_override=model_override,
+                                     system_prompt=system_prompt)
 
-    def _call_openai(self, prompt, config, model_override=None):
-        """Call OpenAI API. Returns (text, usage_dict)."""
+    def _call_openai(self, prompt, config, model_override=None, system_prompt=None):
+        """Call OpenAI API. Returns (text, usage_dict).
+
+        T.1: when ``system_prompt`` is provided we put it in the system
+        role message; OpenAI's automatic prefix cache then kicks in once
+        the prefix ≥1024 tokens and is stable across requests (no opt-in
+        flag needed — usage response surfaces `cached_tokens`)."""
         model = model_override or config.openai_model
+        system_content = system_prompt or (
+            "You are a helpful assistant that returns only valid JSON."
+        )
         try:
             response = requests.post(
                 "https://api.openai.com/v1/chat/completions",
@@ -449,7 +509,7 @@ class AIProviderService(models.AbstractModel):
                 json={
                     "model": model,
                     "messages": [
-                        {"role": "system", "content": "You are a helpful assistant that returns only valid JSON."},
+                        {"role": "system", "content": system_content},
                         {"role": "user", "content": prompt},
                     ],
                     "temperature": config.temperature,
@@ -468,13 +528,22 @@ class AIProviderService(models.AbstractModel):
                 'model': model,
                 'provider': 'openai',
             }
+            details = api_usage.get('prompt_tokens_details') or {}
+            if details.get('cached_tokens'):
+                usage['cache_read_tokens'] = details['cached_tokens']
             return text, usage
         except requests.exceptions.RequestException as e:
             _logger.error("OpenAI API error: %s", e)
             raise UserError(_('OpenAI API Error: %s') % e)
 
-    def _call_gemini(self, prompt, config, model_override=None):
-        """Call Google Gemini API. Returns (text, usage_dict)."""
+    def _call_gemini(self, prompt, config, model_override=None, system_prompt=None):
+        """Call Google Gemini API. Returns (text, usage_dict).
+
+        T.1: Gemini supports a native ``systemInstruction`` slot — we
+        route ``system_prompt`` there when provided so the model treats
+        it correctly. (Gemini's explicit context caching is a separate
+        endpoint — not wired here; the system slot alone is the right
+        first step.)"""
         model = model_override or config.gemini_model
         try:
             url = "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s" % (
@@ -490,13 +559,16 @@ class AIProviderService(models.AbstractModel):
             # the JSON envelope, not hidden chain-of-thought.
             if (model or '').startswith('gemini-2.5'):
                 generation_config["thinkingConfig"] = {"thinkingBudget": 0}
+            payload = {
+                "contents": [{"parts": [{"text": prompt}]}],
+                "generationConfig": generation_config,
+            }
+            if system_prompt:
+                payload["systemInstruction"] = {"parts": [{"text": system_prompt}]}
             response = requests.post(
                 url,
                 headers={"Content-Type": "application/json"},
-                json={
-                    "contents": [{"parts": [{"text": prompt}]}],
-                    "generationConfig": generation_config,
-                },
+                json=payload,
                 timeout=config.timeout,
             )
             response.raise_for_status()
@@ -515,10 +587,41 @@ class AIProviderService(models.AbstractModel):
             _logger.error("Gemini API error: %s", e)
             raise UserError(_('Gemini API Error: %s') % e)
 
-    def _call_claude(self, prompt, config, model_override=None):
-        """Call Anthropic Claude API. Returns (text, usage_dict)."""
+    def _call_claude(self, prompt, config, model_override=None, system_prompt=None):
+        """Call Anthropic Claude API. Returns (text, usage_dict).
+
+        T.1 prompt caching: when ``system_prompt`` is supplied AND is
+        large enough to amortise the 25 % write premium, we send it as
+        a top-level `system` content array with ``cache_control:
+        ephemeral`` (5-min TTL). Subsequent calls with the same prefix
+        within the TTL window read at a 90 % discount — see
+        ``cache_read_input_tokens`` in the usage dict.
+        """
         model = model_override or config.claude_model
+        min_chars = self._cache_min_tokens('anthropic')
         try:
+            payload = {
+                "model": model,
+                "max_tokens": config.max_tokens,
+                "temperature": config.temperature,
+                "messages": [{"role": "user", "content": prompt}],
+            }
+            if system_prompt:
+                if len(system_prompt) >= min_chars and self._provider_cache_enabled():
+                    # Cache-friendly path — system is an array of content
+                    # blocks; the last block carries the cache_control
+                    # marker. Anthropic caches the longest cacheable
+                    # prefix that matches a prior request.
+                    payload["system"] = [{
+                        "type": "text",
+                        "text": system_prompt,
+                        "cache_control": {"type": "ephemeral"},
+                    }]
+                else:
+                    # Below cache threshold (or flag off): use the plain
+                    # string form — still gets the proper system role,
+                    # just no caching.
+                    payload["system"] = system_prompt
             response = requests.post(
                 "https://api.anthropic.com/v1/messages",
                 headers={
@@ -526,25 +629,31 @@ class AIProviderService(models.AbstractModel):
                     "anthropic-version": "2023-06-01",
                     "Content-Type": "application/json",
                 },
-                json={
-                    "model": model,
-                    "max_tokens": config.max_tokens,
-                    "temperature": config.temperature,
-                    "messages": [{"role": "user", "content": prompt}],
-                },
+                json=payload,
                 timeout=config.timeout,
             )
             response.raise_for_status()
             data = response.json()
             text = data['content'][0]['text'].strip()
             api_usage = data.get('usage', {})
+            input_t = api_usage.get('input_tokens', 0)
+            output_t = api_usage.get('output_tokens', 0)
+            cache_write = api_usage.get('cache_creation_input_tokens', 0) or 0
+            cache_read = api_usage.get('cache_read_input_tokens', 0) or 0
             usage = {
-                'prompt_tokens': api_usage.get('input_tokens', 0),
-                'completion_tokens': api_usage.get('output_tokens', 0),
-                'total_tokens': api_usage.get('input_tokens', 0) + api_usage.get('output_tokens', 0),
+                # Anthropic excludes cache reads/writes from input_tokens
+                # in the API response — fold them back in so the
+                # tenant-side meter still sees a true input total.
+                'prompt_tokens': input_t + cache_write + cache_read,
+                'completion_tokens': output_t,
+                'total_tokens': input_t + cache_write + cache_read + output_t,
                 'model': model,
                 'provider': 'anthropic',
             }
+            if cache_write:
+                usage['cache_write_tokens'] = cache_write
+            if cache_read:
+                usage['cache_read_tokens'] = cache_read
             return text, usage
         except requests.exceptions.RequestException as e:
             _logger.error("Claude API error: %s", e)
@@ -553,9 +662,18 @@ class AIProviderService(models.AbstractModel):
     # ── Vision / Multimodal methods ──
 
     def _call_openai_vision(self, prompt, config, image_data, image_mimetype,
-                            model_override=None):
+                            model_override=None, system_prompt=None):
         """Call OpenAI with image (GPT-4o vision). Returns (text, usage_dict)."""
         model = model_override or config.openai_model
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": [
+            {"type": "text", "text": prompt},
+            {"type": "image_url", "image_url": {
+                "url": f"data:{image_mimetype};base64,{image_data}",
+            }},
+        ]})
         try:
             response = requests.post(
                 "https://api.openai.com/v1/chat/completions",
@@ -565,12 +683,7 @@ class AIProviderService(models.AbstractModel):
                 },
                 json={
                     "model": model,
-                    "messages": [{"role": "user", "content": [
-                        {"type": "text", "text": prompt},
-                        {"type": "image_url", "image_url": {
-                            "url": f"data:{image_mimetype};base64,{image_data}",
-                        }},
-                    ]}],
+                    "messages": messages,
                     "temperature": config.temperature,
                     "max_tokens": config.max_tokens,
                 },
@@ -580,24 +693,51 @@ class AIProviderService(models.AbstractModel):
             data = response.json()
             text = data['choices'][0]['message']['content'].strip()
             api_usage = data.get('usage', {})
-            return text, {
+            usage = {
                 'prompt_tokens': api_usage.get('prompt_tokens', 0),
                 'completion_tokens': api_usage.get('completion_tokens', 0),
                 'total_tokens': api_usage.get('total_tokens', 0),
                 'model': model, 'provider': 'openai',
             }
+            details = api_usage.get('prompt_tokens_details') or {}
+            if details.get('cached_tokens'):
+                usage['cache_read_tokens'] = details['cached_tokens']
+            return text, usage
         except requests.exceptions.RequestException as e:
             _logger.error("OpenAI Vision error: %s", e)
             raise UserError(_('OpenAI Vision Error: %s') % e)
 
     def _call_claude_vision(self, prompt, config, image_data, image_mimetype,
-                            model_override=None):
+                            model_override=None, system_prompt=None):
         """Call Claude with image (multimodal). Returns (text, usage_dict)."""
         model = model_override or config.claude_model
         media_type = image_mimetype
         if media_type == 'image/jpg':
             media_type = 'image/jpeg'
+        min_chars = self._cache_min_tokens('anthropic')
         try:
+            payload = {
+                "model": model,
+                "max_tokens": config.max_tokens,
+                "temperature": config.temperature,
+                "messages": [{"role": "user", "content": [
+                    {"type": "image", "source": {
+                        "type": "base64",
+                        "media_type": media_type,
+                        "data": image_data,
+                    }},
+                    {"type": "text", "text": prompt},
+                ]}],
+            }
+            if system_prompt:
+                if len(system_prompt) >= min_chars and self._provider_cache_enabled():
+                    payload["system"] = [{
+                        "type": "text",
+                        "text": system_prompt,
+                        "cache_control": {"type": "ephemeral"},
+                    }]
+                else:
+                    payload["system"] = system_prompt
             response = requests.post(
                 "https://api.anthropic.com/v1/messages",
                 headers={
@@ -605,37 +745,34 @@ class AIProviderService(models.AbstractModel):
                     "anthropic-version": "2023-06-01",
                     "Content-Type": "application/json",
                 },
-                json={
-                    "model": model,
-                    "max_tokens": config.max_tokens,
-                    "temperature": config.temperature,
-                    "messages": [{"role": "user", "content": [
-                        {"type": "image", "source": {
-                            "type": "base64",
-                            "media_type": media_type,
-                            "data": image_data,
-                        }},
-                        {"type": "text", "text": prompt},
-                    ]}],
-                },
+                json=payload,
                 timeout=config.timeout,
             )
             response.raise_for_status()
             data = response.json()
             text = data['content'][0]['text'].strip()
             api_usage = data.get('usage', {})
-            return text, {
-                'prompt_tokens': api_usage.get('input_tokens', 0),
-                'completion_tokens': api_usage.get('output_tokens', 0),
-                'total_tokens': api_usage.get('input_tokens', 0) + api_usage.get('output_tokens', 0),
+            input_t = api_usage.get('input_tokens', 0)
+            output_t = api_usage.get('output_tokens', 0)
+            cache_write = api_usage.get('cache_creation_input_tokens', 0) or 0
+            cache_read = api_usage.get('cache_read_input_tokens', 0) or 0
+            usage = {
+                'prompt_tokens': input_t + cache_write + cache_read,
+                'completion_tokens': output_t,
+                'total_tokens': input_t + cache_write + cache_read + output_t,
                 'model': model, 'provider': 'anthropic',
             }
+            if cache_write:
+                usage['cache_write_tokens'] = cache_write
+            if cache_read:
+                usage['cache_read_tokens'] = cache_read
+            return text, usage
         except requests.exceptions.RequestException as e:
             _logger.error("Claude Vision error: %s", e)
             raise UserError(_('Claude Vision Error: %s') % e)
 
     def _call_gemini_vision(self, prompt, config, image_data, image_mimetype,
-                            model_override=None):
+                            model_override=None, system_prompt=None):
         """Call Gemini with image (multimodal). Returns (text, usage_dict)."""
         model = model_override or config.gemini_model
         try:
@@ -648,19 +785,22 @@ class AIProviderService(models.AbstractModel):
             }
             if (model or '').startswith('gemini-2.5'):
                 generation_config["thinkingConfig"] = {"thinkingBudget": 0}
+            payload = {
+                "contents": [{"parts": [
+                    {"text": prompt},
+                    {"inline_data": {
+                        "mime_type": image_mimetype,
+                        "data": image_data,
+                    }},
+                ]}],
+                "generationConfig": generation_config,
+            }
+            if system_prompt:
+                payload["systemInstruction"] = {"parts": [{"text": system_prompt}]}
             response = requests.post(
                 url,
                 headers={"Content-Type": "application/json"},
-                json={
-                    "contents": [{"parts": [
-                        {"text": prompt},
-                        {"inline_data": {
-                            "mime_type": image_mimetype,
-                            "data": image_data,
-                        }},
-                    ]}],
-                    "generationConfig": generation_config,
-                },
+                json=payload,
                 timeout=config.timeout,
             )
             response.raise_for_status()
@@ -776,18 +916,25 @@ class AIProviderService(models.AbstractModel):
             'count_ok': ok,
         }
 
-    def _call_local_llm(self, prompt, config, model_override=None):
-        """Call local LLM (Ollama or similar). Returns (text, usage_dict)."""
+    def _call_local_llm(self, prompt, config, model_override=None, system_prompt=None):
+        """Call local LLM (Ollama or similar). Returns (text, usage_dict).
+
+        Ollama accepts a top-level ``system`` field — we route
+        ``system_prompt`` there when supplied so the model template
+        applies it correctly."""
         model = model_override or config.local_llm_model
         try:
+            payload = {
+                "model": model,
+                "prompt": prompt,
+                "stream": False,
+                "options": {"temperature": config.temperature},
+            }
+            if system_prompt:
+                payload["system"] = system_prompt
             response = requests.post(
                 config.local_llm_endpoint,
-                json={
-                    "model": model,
-                    "prompt": prompt,
-                    "stream": False,
-                    "options": {"temperature": config.temperature},
-                },
+                json=payload,
                 timeout=config.timeout,
             )
             response.raise_for_status()
