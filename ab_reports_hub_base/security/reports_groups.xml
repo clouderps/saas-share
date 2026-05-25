@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <!-- ============================================================
+             Category — top-level group bucket in Settings > Users.
+             Shared by every bundle so all section groups appear under
+             one "Reports" header.
+             ============================================================ -->
+        <record id="module_category_reports" model="ir.module.category">
+            <field name="name">Reports</field>
+            <field name="description">Role + section access for the unified Reports app.</field>
+            <field name="sequence">85</field>
+        </record>
+
+        <!-- ============================================================
+             Role groups — orthogonal to sections.
+             ============================================================ -->
+        <record id="group_reports_user" model="res.groups">
+            <field name="name">User: Open Reports</field>
+            <field name="category_id" ref="module_category_reports"/>
+            <field name="comment">Can open and export reports.</field>
+        </record>
+
+        <record id="group_reports_manager" model="res.groups">
+            <field name="name">Manager: Configure Reports</field>
+            <field name="category_id" ref="module_category_reports"/>
+            <field name="implied_ids" eval="[(4, ref('group_reports_user'))]"/>
+            <field name="comment">User + edit report definitions.</field>
+        </record>
+
+    </data>
+
+    <!-- ============================================================
+         IMPLIED-GROUPS BRIDGE — re-applied on every upgrade so any
+         user with base.group_erp_manager auto-gets the reports
+         manager role. Sections are NOT implied here; each bundle
+         wires its own implication when it ships its section groups.
+         ============================================================ -->
+    <data noupdate="0">
+        <record id="base.group_erp_manager" model="res.groups">
+            <field name="implied_ids" eval="[
+                (4, ref('group_reports_manager')),
+            ]"/>
+        </record>
+    </data>
+</odoo>

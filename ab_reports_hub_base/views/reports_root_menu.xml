@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ============================================================
+         Top-level app icon — Reports.
+         A top-level menu with `web_icon` becomes a sidebar app.
+         Visible to any user with the base "Open Reports" group; the
+         bundle modules layer section groups on top so a user with
+         only e.g. group_section_resto sees the icon AND only the
+         Restaurant Operations section.
+         ============================================================ -->
+    <menuitem id="menu_reports_root"
+              name="Reports"
+              web_icon="ab_reports_hub_base,static/description/icon.png"
+              sequence="5"
+              groups="ab_reports_hub_base.group_reports_user"/>
+
+</odoo>
