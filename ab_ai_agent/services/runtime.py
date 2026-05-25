@@ -175,11 +175,73 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
             return envelope['response'], agent_run, envelope
 
         # Parse the LLM output. We support two protocols:
-        #   a) Provider-native tool calls when the gateway tool path
-        #      surfaces a structured tool_calls list (future).
-        #   b) JSON-action protocol: response text is a single JSON
-        #      object {"action": "tool" | "final", ...}. Same as
-        #      our existing ab_ai_chatbot.services.agent_loop.
+        #   a) Provider-native tool calls — when ab_ai_base surfaces a
+        #      structured ``usage['tool_calls']`` (OpenAI tool_calls /
+        #      Anthropic tool_use blocks). Flag-gated via
+        #      ``ab_ai_agent.native_tools_enabled``. Saves 600–1 200
+        #      tokens / turn and unlocks parallel tool calls.
+        #   b) JSON-action protocol — response text is a single JSON
+        #      object {"action": "tool" | "final", ...}. Legacy path,
+        #      identical to our pre-T.1/3 behavior. Used when the flag
+        #      is off OR when the model didn't emit native tool_calls.
+        native_calls = usage.get('tool_calls') or []
+        if native_calls:
+            # Native path: every call in the response is dispatched in
+            # order. Anthropic / OpenAI both support parallel tool use
+            # (multiple tool blocks in one response); we run them
+            # sequentially because the existing dispatcher / audit
+            # contract is per-call, and the typical pattern is still
+            # one tool per hop.
+            consumed_calls = []
+            for nc in native_calls:
+                tool_name = nc.get('name')
+                tool_record = _find_tool(tools, tool_name)
+                if not tool_record:
+                    transcript.append(
+                        f'Tool result: {{"error": "unknown_tool: {tool_name}"}}'
+                    )
+                    tool_calls_audit.append({
+                        'tool': tool_name, 'ok': False, 'error': 'unknown_tool',
+                    })
+                    on_event('tool_call', tool=tool_name, ok=False)
+                    consumed_calls.append((tool_name, False, None))
+                    continue
+                args = nc.get('arguments') or {}
+                on_event('tool_call', tool=tool_record.code, args=args)
+                tool_outcome = tool_dispatcher.dispatch(
+                    env, tool_record, args,
+                    agent=agent, agent_run=agent_run,
+                )
+                tool_calls_audit.append(tool_outcome)
+                consumed_calls.append((tool_record.code, tool_outcome.get('ok'),
+                                       tool_outcome))
+                # __end_message early termination — Odoo 19 native pattern.
+                if tool_outcome.get('ok') and tool_outcome.get('end_message'):
+                    final_text = tool_outcome['end_message']
+                    break
+            if final_text:
+                break
+            # Re-prompt: append every result so the next hop sees them
+            # together. We keep stringified results (the model parses
+            # them just like the legacy path) — a future refactor can
+            # switch to provider-native tool_result blocks for true
+            # parallel correlation, but that requires a messages[]
+            # transcript instead of a string.
+            for code, _ok, outcome in consumed_calls:
+                if not outcome:
+                    continue
+                transcript.append(
+                    'Tool result for `%s`: %s' % (
+                        code,
+                        _truncate(json.dumps(outcome.get('result'), default=str), 4000),
+                    )
+                )
+            transcript.append(
+                'Decide your next step. Either call another tool or '
+                'return a "final" action with your answer.'
+            )
+            continue
+
         parsed = _parse_response(response)
 
         if parsed.get('kind') == 'tool' and parsed.get('tool'):

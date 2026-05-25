@@ -15,7 +15,8 @@ class AIProviderService(models.AbstractModel):
     _description = 'AI Provider Service'
 
     def call(self, prompt, config=None, system_prompt=None,
-             image_data=None, image_mimetype=None, model_override=None):
+             image_data=None, image_mimetype=None, model_override=None,
+             tools=None):
         """Call AI provider with a prompt, optionally with an image.
 
         Args:
@@ -24,11 +25,22 @@ class AIProviderService(models.AbstractModel):
             system_prompt: Optional system prompt override. Uses config default if not provided.
             image_data: Optional base64-encoded image for vision/multimodal requests.
             image_mimetype: MIME type of the image (default: image/png).
+            tools: Optional list of unified tool schemas (the dicts produced
+                by ``ai.agent.tool.as_llm_schema()``). When supplied AND
+                ``ab_ai_agent.native_tools_enabled`` is True, providers
+                that support a native ``tools=`` slot receive them there
+                and surface back ``usage['tool_calls']`` for the runtime
+                to dispatch directly. When the flag is off (or the
+                provider doesn't support it) tools are ignored — the
+                runtime's legacy JSON-action protocol still works because
+                the schemas remain embedded in the system_prompt body.
 
         Returns:
             tuple: (response_text, usage_dict) where usage_dict has:
                 prompt_tokens, completion_tokens, total_tokens, model, provider
                 (`provider` is 'simulation' when no real call was made).
+                When the model decides to call a tool natively, also:
+                ``tool_calls`` = list[{name, arguments(dict), id}].
 
         Simulation (Phase 2 of SAAS_AI_PLAN.md):
           - If ir.config_parameter `ab_ai_gateway.simulation` is True,
@@ -47,6 +59,16 @@ class AIProviderService(models.AbstractModel):
             cost on cached tokens. Default off — when off, legacy
             behavior (concatenation into user prompt) is preserved
             byte-for-byte.
+
+        Native tools (T.1 Day 3, SAAS_AI_TOKEN_REDUCTION_SUMMARY.md):
+          - When ir.config_parameter `ab_ai_agent.native_tools_enabled`
+            is True AND `tools` is non-empty, OpenAI and Anthropic
+            receive the schemas in their provider-native slot and we
+            parse ``tool_calls`` from the response. Saves 600–1 200
+            tokens / turn (no JSON schema in the prompt body) and
+            unlocks parallel tool calls on supported providers.
+            Default off — when off, ``tools`` is ignored and the
+            runtime continues to use the JSON-action text protocol.
         """
         if self._is_simulation_mode():
             return self._simulate_call(reason='explicit_toggle')
@@ -73,6 +95,13 @@ class AIProviderService(models.AbstractModel):
                 user_prompt = prompt
             system_for_handler = None
 
+        # Native tools slot is engaged only when the flag is on AND the
+        # caller passed at least one tool schema. Vision/image path stays
+        # text-only — tool use during vision turns is rare and the
+        # provider matrix differs.
+        use_native_tools = bool(tools) and self._native_tools_enabled()
+        tools_for_handler = tools if use_native_tools else None
+
         if image_data:
             response_text, usage = self._call_ai_api_with_image(
                 user_prompt, config, image_data, image_mimetype or 'image/png',
@@ -83,6 +112,7 @@ class AIProviderService(models.AbstractModel):
             response_text, usage = self._call_ai_api(
                 user_prompt, config, model_override=model_override,
                 system_prompt=system_for_handler,
+                tools=tools_for_handler,
             )
         config.increment_usage(tokens=usage.get('total_tokens', 0))
         return response_text, usage
@@ -103,6 +133,21 @@ class AIProviderService(models.AbstractModel):
         discount on cache reads, 25 % premium on cache writes."""
         icp = self.env['ir.config_parameter'].sudo()
         return str(icp.get_param('ab_ai_base.provider_cache_enabled', 'False')).lower() \
+                in ('1', 'true', 'yes')
+
+    def _native_tools_enabled(self):
+        """True when the runtime should hand tools to the provider's
+        native ``tools=`` slot instead of dumping JSON-schema into the
+        system prompt body.
+
+        Default False — when off, ``tools`` passed to ``call()`` is
+        ignored and the runtime's JSON-action text protocol continues
+        to work because the schemas are still embedded in the prompt.
+        When on, OpenAI / Anthropic receive the schemas natively and
+        we parse ``tool_calls`` from the response — saves 600–1 200
+        tokens / turn and unlocks parallel tool calls."""
+        icp = self.env['ir.config_parameter'].sudo()
+        return str(icp.get_param('ab_ai_agent.native_tools_enabled', 'False')).lower() \
                 in ('1', 'true', 'yes')
 
     def _cache_min_tokens(self, provider):
@@ -438,7 +483,8 @@ class AIProviderService(models.AbstractModel):
         except Exception as e:
             return {'success': False, 'message': str(e)}
 
-    def _call_ai_api(self, prompt, config, model_override=None, system_prompt=None):
+    def _call_ai_api(self, prompt, config, model_override=None,
+                     system_prompt=None, tools=None):
         """Route to the appropriate provider API.
 
         ``model_override`` (Phase G.2): when non-empty, overrides the
@@ -451,6 +497,13 @@ class AIProviderService(models.AbstractModel):
         that support a native system slot use it directly; handlers
         that don't fall back to internal concatenation so no content
         is dropped.
+
+        ``tools`` (T.1/3): when non-None, the unified tool schemas (as
+        produced by ``ai.agent.tool.as_llm_schema``) are translated to
+        the provider's native ``tools=`` format. Providers that lack a
+        native tool slot (gemini text, local) silently ignore the
+        argument — the runtime's JSON-action text protocol still works
+        because the schemas remain embedded in the prompt body.
 
         Returns:
             tuple: (response_text, usage_dict)
@@ -465,7 +518,7 @@ class AIProviderService(models.AbstractModel):
         if not handler:
             raise UserError(_('Unsupported AI provider: %s') % config.ai_provider)
         return handler(prompt, config, model_override=model_override,
-                       system_prompt=system_prompt)
+                       system_prompt=system_prompt, tools=tools)
 
     def _call_ai_api_with_image(self, prompt, config, image_data, image_mimetype,
                                 model_override=None, system_prompt=None):
@@ -488,17 +541,39 @@ class AIProviderService(models.AbstractModel):
             return self._call_ai_api(prompt, config, model_override=model_override,
                                      system_prompt=system_prompt)
 
-    def _call_openai(self, prompt, config, model_override=None, system_prompt=None):
+    def _call_openai(self, prompt, config, model_override=None,
+                     system_prompt=None, tools=None):
         """Call OpenAI API. Returns (text, usage_dict).
 
         T.1: when ``system_prompt`` is provided we put it in the system
         role message; OpenAI's automatic prefix cache then kicks in once
         the prefix ≥1024 tokens and is stable across requests (no opt-in
-        flag needed — usage response surfaces `cached_tokens`)."""
+        flag needed — usage response surfaces `cached_tokens`).
+
+        T.1/3: when ``tools`` is provided, translate the unified schemas
+        to OpenAI's ``[{type:"function", function:{name, description,
+        parameters}}]`` form and surface ``tool_calls`` in the usage
+        dict (list of {name, arguments(dict), id}). The model can
+        parallel-call multiple tools per response."""
         model = model_override or config.openai_model
         system_content = system_prompt or (
             "You are a helpful assistant that returns only valid JSON."
         )
+        body = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system_content},
+                {"role": "user", "content": prompt},
+            ],
+            "temperature": config.temperature,
+            "max_tokens": config.max_tokens,
+        }
+        if tools:
+            body["tools"] = _tools_for_openai(tools)
+            # ``auto`` is OpenAI's default; we set it explicitly so the
+            # intent is auditable in HTTP traces. The model still picks
+            # whether to call a tool or answer in plain text.
+            body["tool_choice"] = "auto"
         try:
             response = requests.post(
                 "https://api.openai.com/v1/chat/completions",
@@ -506,20 +581,13 @@ class AIProviderService(models.AbstractModel):
                     "Authorization": "Bearer %s" % config.openai_api_key,
                     "Content-Type": "application/json",
                 },
-                json={
-                    "model": model,
-                    "messages": [
-                        {"role": "system", "content": system_content},
-                        {"role": "user", "content": prompt},
-                    ],
-                    "temperature": config.temperature,
-                    "max_tokens": config.max_tokens,
-                },
+                json=body,
                 timeout=config.timeout,
             )
             response.raise_for_status()
             data = response.json()
-            text = data['choices'][0]['message']['content'].strip()
+            choice = data['choices'][0]['message']
+            text = (choice.get('content') or '').strip()
             api_usage = data.get('usage', {})
             usage = {
                 'prompt_tokens': api_usage.get('prompt_tokens', 0),
@@ -531,12 +599,16 @@ class AIProviderService(models.AbstractModel):
             details = api_usage.get('prompt_tokens_details') or {}
             if details.get('cached_tokens'):
                 usage['cache_read_tokens'] = details['cached_tokens']
+            raw_calls = choice.get('tool_calls') or []
+            if raw_calls:
+                usage['tool_calls'] = _parse_openai_tool_calls(raw_calls)
             return text, usage
         except requests.exceptions.RequestException as e:
             _logger.error("OpenAI API error: %s", e)
             raise UserError(_('OpenAI API Error: %s') % e)
 
-    def _call_gemini(self, prompt, config, model_override=None, system_prompt=None):
+    def _call_gemini(self, prompt, config, model_override=None,
+                     system_prompt=None, tools=None):
         """Call Google Gemini API. Returns (text, usage_dict).
 
         T.1: Gemini supports a native ``systemInstruction`` slot — we
@@ -587,7 +659,8 @@ class AIProviderService(models.AbstractModel):
             _logger.error("Gemini API error: %s", e)
             raise UserError(_('Gemini API Error: %s') % e)
 
-    def _call_claude(self, prompt, config, model_override=None, system_prompt=None):
+    def _call_claude(self, prompt, config, model_override=None,
+                     system_prompt=None, tools=None):
         """Call Anthropic Claude API. Returns (text, usage_dict).
 
         T.1 prompt caching: when ``system_prompt`` is supplied AND is
@@ -596,6 +669,13 @@ class AIProviderService(models.AbstractModel):
         ephemeral`` (5-min TTL). Subsequent calls with the same prefix
         within the TTL window read at a 90 % discount — see
         ``cache_read_input_tokens`` in the usage dict.
+
+        T.1/3 native tools: when ``tools`` is supplied, translate to
+        Anthropic's ``[{name, description, input_schema}]`` form and
+        parse ``content[type=tool_use]`` blocks into
+        ``usage['tool_calls']``. The visible text is the
+        ``content[type=text]`` block (may be empty when the model goes
+        straight to a tool call).
         """
         model = model_override or config.claude_model
         min_chars = self._cache_min_tokens('anthropic')
@@ -622,6 +702,8 @@ class AIProviderService(models.AbstractModel):
                     # string form — still gets the proper system role,
                     # just no caching.
                     payload["system"] = system_prompt
+            if tools:
+                payload["tools"] = _tools_for_anthropic(tools)
             response = requests.post(
                 "https://api.anthropic.com/v1/messages",
                 headers={
@@ -634,7 +716,16 @@ class AIProviderService(models.AbstractModel):
             )
             response.raise_for_status()
             data = response.json()
-            text = data['content'][0]['text'].strip()
+            content_blocks = data.get('content') or []
+            text_parts = []
+            tool_uses = []
+            for block in content_blocks:
+                btype = block.get('type')
+                if btype == 'text':
+                    text_parts.append(block.get('text') or '')
+                elif btype == 'tool_use':
+                    tool_uses.append(block)
+            text = ''.join(text_parts).strip()
             api_usage = data.get('usage', {})
             input_t = api_usage.get('input_tokens', 0)
             output_t = api_usage.get('output_tokens', 0)
@@ -654,6 +745,8 @@ class AIProviderService(models.AbstractModel):
                 usage['cache_write_tokens'] = cache_write
             if cache_read:
                 usage['cache_read_tokens'] = cache_read
+            if tool_uses:
+                usage['tool_calls'] = _parse_anthropic_tool_uses(tool_uses)
             return text, usage
         except requests.exceptions.RequestException as e:
             _logger.error("Claude API error: %s", e)
@@ -916,7 +1009,8 @@ class AIProviderService(models.AbstractModel):
             'count_ok': ok,
         }
 
-    def _call_local_llm(self, prompt, config, model_override=None, system_prompt=None):
+    def _call_local_llm(self, prompt, config, model_override=None,
+                         system_prompt=None, tools=None):
         """Call local LLM (Ollama or similar). Returns (text, usage_dict).
 
         Ollama accepts a top-level ``system`` field — we route
@@ -954,3 +1048,114 @@ class AIProviderService(models.AbstractModel):
         except requests.exceptions.RequestException as e:
             _logger.error("Local LLM API error: %s", e)
             raise UserError(_('Local LLM Error: %s') % e)
+
+
+# ─── Native tools — schema translation + response parsing (T.1/3) ─────
+# Helpers live at module level so vision/streaming paths can reuse them
+# without re-pulling the AbstractModel record. They take the unified
+# tool-schema dict that ``ai.agent.tool.as_llm_schema()`` produces:
+#   {'name', 'description', 'parameters', 'is_write_action',
+#    'allow_end_message'}
+
+def _tools_for_openai(tools):
+    """Translate unified schemas → OpenAI ``tools=`` payload.
+
+    OpenAI: ``[{type:"function", function:{name, description, parameters}}]``.
+    Empty list when input is empty (caller should treat that as
+    "no tools" and omit the key entirely).
+    """
+    out = []
+    for t in (tools or []):
+        name = t.get('name')
+        if not name:
+            continue
+        out.append({
+            "type": "function",
+            "function": {
+                "name": name,
+                "description": (t.get('description') or '')[:1024],
+                "parameters": t.get('parameters') or {
+                    "type": "object", "properties": {}, "required": [],
+                },
+            },
+        })
+    return out
+
+
+def _tools_for_anthropic(tools):
+    """Translate unified schemas → Anthropic ``tools=`` payload.
+
+    Anthropic: ``[{name, description, input_schema}]``. Note that
+    Anthropic calls the parameters field ``input_schema`` (not
+    ``parameters``).
+    """
+    out = []
+    for t in (tools or []):
+        name = t.get('name')
+        if not name:
+            continue
+        out.append({
+            "name": name,
+            "description": (t.get('description') or '')[:1024],
+            "input_schema": t.get('parameters') or {
+                "type": "object", "properties": {}, "required": [],
+            },
+        })
+    return out
+
+
+def _parse_openai_tool_calls(raw_calls):
+    """Normalise OpenAI ``message.tool_calls`` → unified shape:
+    list of ``{id, name, arguments(dict)}``.
+
+    OpenAI sends arguments as a JSON STRING — we decode here so the
+    runtime dispatcher doesn't have to know which provider produced
+    the call. Malformed JSON degrades to ``{}`` (the dispatcher will
+    surface a tool error to the LLM).
+    """
+    out = []
+    for rc in raw_calls or []:
+        fn = rc.get('function') or {}
+        name = fn.get('name')
+        if not name:
+            continue
+        raw_args = fn.get('arguments')
+        if isinstance(raw_args, str):
+            try:
+                args = json.loads(raw_args)
+            except (ValueError, TypeError):
+                args = {}
+        elif isinstance(raw_args, dict):
+            args = raw_args
+        else:
+            args = {}
+        out.append({
+            'id': rc.get('id') or '',
+            'name': name,
+            'arguments': args,
+        })
+    return out
+
+
+def _parse_anthropic_tool_uses(blocks):
+    """Normalise Anthropic ``tool_use`` content blocks → unified shape.
+
+    Anthropic already returns ``input`` as a dict, so no JSON-string
+    decode is needed. ``id`` is the ``tool_use_id`` the API expects
+    in a follow-up tool_result block (we don't use that pattern yet —
+    the agent runtime does a transcript-based re-prompt — but we keep
+    it for the future native-conversation refactor).
+    """
+    out = []
+    for b in blocks or []:
+        if b.get('type') != 'tool_use':
+            continue
+        name = b.get('name')
+        if not name:
+            continue
+        out.append({
+            'id': b.get('id') or '',
+            'name': name,
+            'arguments': b.get('input') or {},
+        })
+    return out

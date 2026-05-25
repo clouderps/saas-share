@@ -60,6 +60,11 @@ def call_llm(env, agent, *, system_prompt, user_prompt, tools=None,
             _logger.warning('Gateway call failed (%s) — trying direct provider', e)
 
     # ── Path 2: direct provider via ab_ai_base ────────────────
+    # T.1/3 native tools: pass full unified schemas through. The provider
+    # service decides whether to use them — gated on
+    # ``ab_ai_agent.native_tools_enabled`` AND provider support. When
+    # the flag is off, ai_service ignores ``tools`` and the runtime's
+    # JSON-action text protocol stays in effect.
     Provider = env.get('ai.provider.service')
     if Provider is not None:
         try:
@@ -70,6 +75,7 @@ def call_llm(env, agent, *, system_prompt, user_prompt, tools=None,
                 image_data=image_data,
                 image_mimetype=image_mimetype,
                 model_override=None,    # no central routing without the gateway
+                tools=tools or None,
             )
             usage = dict(usage or {})
             usage.setdefault('request_id', request_id)
