@@ -54,7 +54,9 @@
     font-family: var(--ai-font-body);
     color: var(--ai-ghaima-ink);
     border-radius: var(--ai-radius-lg);
-    overflow: hidden;
+    // overflow: hidden removed — was clipping the AiAgentChip dropdown
+    // when users tried to switch agent. Noise overlay still respects
+    // the rounded shape via border-radius: inherit on ::before below.
     position: relative;
 
     // Subtle texture — a single SVG noise overlay, NOT a gradient.
@@ -62,6 +64,7 @@
         content: "";
         position: absolute;
         inset: 0;
+        border-radius: inherit;
         background-image: radial-gradient(circle at 20% 0%,
             rgba(0, 95, 246, 0.04), transparent 50%);
         pointer-events: none;
@@ -78,6 +81,14 @@
     padding: var(--ai-step-4) var(--ai-step-5);
     background: white;
     border-block-end: 1px solid var(--ai-ghaima-line);
+    // Bump above the body so the AiAgentChip dropdown paints OVER
+    // the message stream when opened. The `.o_ai_agent_chat > *`
+    // rule above gives every direct child z-index:1; we promote
+    // the header so its descendants (chip + dropdown) stack on top.
+    position: relative;
+    z-index: 10;
+    border-top-left-radius: var(--ai-radius-lg);
+    border-top-right-radius: var(--ai-radius-lg);
 
     .o_ai_agent_chat__title {
         font-family: var(--ai-font-heading);
@@ -360,6 +371,12 @@
     }
 }
 
+.o_ai_agent_chip_wrap {
+    // Make sure the chip wrap creates its own stacking context so
+    // the dropdown can lift above any sibling that paints later.
+    z-index: 20;
+}
+
 .o_ai_agent_chip_dropdown {
     position: absolute;
     inset-block-start: calc(100% + var(--ai-step-2));
@@ -371,7 +388,9 @@
     border-radius: var(--ai-radius-md);
     box-shadow: var(--ai-shadow-lg);
     overflow: hidden;
-    z-index: 100;
+    // High z-index so the picker wins over message bubbles, sidebar,
+    // and any embedded content with its own stacking context.
+    z-index: 1500;
 }
 
 .o_ai_agent_chip_option {
