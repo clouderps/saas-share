@@ -558,6 +558,15 @@ def _try_parse_report_payload(text):
     }
 
 
+def _csv_everywhere_enabled(env):
+    """T.1 Tactic 7 — when on, multi-row context blocks render as
+    pipe-delimited CSV instead of markdown bullets. Saves ~40 % tokens
+    on tabular data (no labels repeated per row). Default off."""
+    icp = env['ir.config_parameter'].sudo()
+    return str(icp.get_param('ab_ai_agent.csv_everywhere', 'False')).lower() \
+            in ('1', 'true', 'yes')
+
+
 def _business_snapshot_block(env):
     """Pre-fetch comprehensive counts + open-item summaries so the
     LLM has business-wide context before its first tool call.
@@ -565,9 +574,11 @@ def _business_snapshot_block(env):
     Each probe is wrapped in a savepoint — missing models/tables
     on this tenant just produce a "—" placeholder, never crash.
 
-    Output is markdown CSV-style for token efficiency (§3.7 pattern)."""
-    snippets = []
-
+    Renders as markdown bullets by default. When
+    ``ab_ai_agent.csv_everywhere`` is True, emits the same data as
+    pipe-delimited CSV (`section|metric|value|extra`), which the LLM
+    parses just as reliably but at ~40 % fewer tokens.
+    """
     def _safe_count(model, domain=None):
         try:
             with env.cr.savepoint(flush=False):
@@ -589,13 +600,15 @@ def _business_snapshot_block(env):
         except Exception:
             return None
 
-    today_iso = env.cr.mogrify("%s", (env['ir.fields.converter']._cached_today() if False else None,)) if False else ''
     from odoo import fields as _odoo_fields
     today = _odoo_fields.Date.context_today(env['res.users'])
     month_start = today.replace(day=1)
 
+    # Collect (section, metric, value, extra) tuples — value/extra may
+    # be None and are stripped in the render step.
+    facts = []
+
     # ── Sales ───────────────────────────────────────────────────
-    rows = []
     n_so_today = _safe_count('sale.order', [
         ('date_order', '>=', str(today)),
         ('state', 'in', ('sale', 'done')),
@@ -614,17 +627,17 @@ def _business_snapshot_block(env):
         ('state', 'in', ('sale', 'done')),
     ])
     if any(v is not None for v in (n_so_today, n_so_month)):
-        rows.append(f'- Sale orders confirmed today: {_fmt_count(n_so_today)} (total: {_fmt_money(amt_so_today)})')
-        rows.append(f'- Sale orders confirmed this month: {_fmt_count(n_so_month)} (total: {_fmt_money(amt_so_month)})')
-        rows.append(f'- Sale orders still in draft: {_fmt_count(n_so_draft)}')
+        facts.append(('sales', 'orders_today', n_so_today, amt_so_today))
+        facts.append(('sales', 'orders_month', n_so_month, amt_so_month))
+        facts.append(('sales', 'orders_draft', n_so_draft, None))
 
     # ── POS ─────────────────────────────────────────────────────
     n_pos_today = _safe_count('pos.order', [('date_order', '>=', str(today))])
     amt_pos_today = _safe_sum('pos.order', 'amount_total', [('date_order', '>=', str(today))])
     n_pos_sessions = _safe_count('pos.session', [('state', '=', 'opened')])
     if any(v is not None for v in (n_pos_today, n_pos_sessions)):
-        rows.append(f'- POS orders today: {_fmt_count(n_pos_today)} (total: {_fmt_money(amt_pos_today)})')
-        rows.append(f'- POS sessions currently open: {_fmt_count(n_pos_sessions)}')
+        facts.append(('pos', 'orders_today', n_pos_today, amt_pos_today))
+        facts.append(('pos', 'sessions_open', n_pos_sessions, None))
 
     # ── Invoices / AR ──────────────────────────────────────────
     n_inv_draft = _safe_count('account.move', [
@@ -643,42 +656,81 @@ def _business_snapshot_block(env):
         ('invoice_date_due', '<', str(today)),
     ])
     if any(v is not None for v in (n_inv_draft, n_inv_overdue)):
-        rows.append(f'- Customer invoices in draft: {_fmt_count(n_inv_draft)}')
-        rows.append(f'- Customer invoices overdue: {_fmt_count(n_inv_overdue)} (open balance: {_fmt_money(amt_inv_overdue)})')
+        facts.append(('invoice', 'draft', n_inv_draft, None))
+        facts.append(('invoice', 'overdue', n_inv_overdue, amt_inv_overdue))
 
     # ── Inventory ──────────────────────────────────────────────
     n_picking_todo = _safe_count('stock.picking', [
         ('state', 'in', ('assigned', 'confirmed')),
     ])
     if n_picking_todo is not None:
-        rows.append(f'- Stock pickings pending: {_fmt_count(n_picking_todo)}')
+        facts.append(('stock', 'pickings_pending', n_picking_todo, None))
 
     # ── HR ──────────────────────────────────────────────────────
     n_emp = _safe_count('hr.employee', [('active', '=', True)])
     n_leave_pending = _safe_count('hr.leave', [('state', '=', 'confirm')])
     if n_emp is not None:
-        rows.append(f'- Active employees: {_fmt_count(n_emp)}'
-                    + (f' · pending leave requests: {_fmt_count(n_leave_pending)}' if n_leave_pending is not None else ''))
+        facts.append(('hr', 'employees_active', n_emp, None))
+        if n_leave_pending is not None:
+            facts.append(('hr', 'leave_pending', n_leave_pending, None))
 
     # ── CRM ────────────────────────────────────────────────────
     n_lead_open = _safe_count('crm.lead', [('active', '=', True), ('type', '=', 'opportunity')])
     if n_lead_open is not None:
-        rows.append(f'- Open CRM opportunities: {_fmt_count(n_lead_open)}')
+        facts.append(('crm', 'opportunities_open', n_lead_open, None))
 
     # ── Customers ─────────────────────────────────────────────
     n_partner = _safe_count('res.partner', [('customer_rank', '>', 0)])
     if n_partner is not None:
-        rows.append(f'- Customers on file: {_fmt_count(n_partner)}')
+        facts.append(('customers', 'total', n_partner, None))
 
-    if not rows:
+    if not facts:
         return ''
-    return (
-        '## Live business snapshot\n'
-        + '\n'.join(rows)
-        + '\n\nUse these counts to ground overview answers. For exact '
-          'amounts or breakdowns by period/branch/product, call the '
-          'matching tool (`sales_totals`, `pl_summary`, `top_customers`, …).'
+
+    tail = (
+        '\n\nUse these counts to ground overview answers. For exact '
+        'amounts or breakdowns by period/branch/product, call the '
+        'matching tool (`sales_totals`, `pl_summary`, `top_customers`, …).'
     )
+
+    if _csv_everywhere_enabled(env):
+        # CSV form — single line per fact, pipe-delimited. No repeated
+        # labels. ~40 % fewer tokens than the markdown form.
+        lines = ['## Live business snapshot (CSV)',
+                 'section|metric|count|amount']
+        for section, metric, count, amount in facts:
+            count_s = '' if count is None else f'{int(count)}'
+            amount_s = '' if amount is None else f'{float(amount):.2f}'
+            lines.append(f'{section}|{metric}|{count_s}|{amount_s}')
+        return '\n'.join(lines) + tail
+
+    # Markdown form — legacy.
+    rows = []
+    for section, metric, count, amount in facts:
+        label = _SNAPSHOT_LABELS.get((section, metric), f'{section}.{metric}')
+        if amount is not None and count is not None:
+            rows.append(f'- {label}: {_fmt_count(count)} (total: {_fmt_money(amount)})')
+        elif count is not None:
+            rows.append(f'- {label}: {_fmt_count(count)}')
+        elif amount is not None:
+            rows.append(f'- {label}: {_fmt_money(amount)}')
+    return '## Live business snapshot\n' + '\n'.join(rows) + tail
+
+
+_SNAPSHOT_LABELS = {
+    ('sales', 'orders_today'):       'Sale orders confirmed today',
+    ('sales', 'orders_month'):       'Sale orders confirmed this month',
+    ('sales', 'orders_draft'):       'Sale orders still in draft',
+    ('pos', 'orders_today'):         'POS orders today',
+    ('pos', 'sessions_open'):        'POS sessions currently open',
+    ('invoice', 'draft'):            'Customer invoices in draft',
+    ('invoice', 'overdue'):          'Customer invoices overdue',
+    ('stock', 'pickings_pending'):   'Stock pickings pending',
+    ('hr', 'employees_active'):      'Active employees',
+    ('hr', 'leave_pending'):         'Pending leave requests',
+    ('crm', 'opportunities_open'):   'Open CRM opportunities',
+    ('customers', 'total'):          'Customers on file',
+}
 
 
 def _user_context_block(env):
