@@ -753,6 +753,60 @@ def _builtin_record_action(env, agent=None, reference=None, action=None, **_kw):
                      f'picking or payment matches "{ref}".'}
 
 
+# ─── T.2a — semantic search (pgvector keystone) ──────────────────────
+# One generic tool replaces three always-on context blocks once the
+# corresponding flags are flipped: ``_org_knowledge_block`` (today's
+# ai.chat.fact retrieval), ``_record_context_block`` (record dump),
+# and ``_business_snapshot_block`` (when each metric model gets an
+# embedding column). Calls ``ai.semantic.index.search`` and returns
+# pipe-CSV the LLM can parse cheaply.
+
+def _builtin_semantic_search(env, agent=None, model=None, query=None,
+                             limit=5, extra_domain=None,
+                             vector_col='ai_embedding',
+                             name_field='display_name',
+                             hint_fields=None,
+                             min_similarity=0.35, **_kw):
+    """Find records semantically similar to a natural-language query.
+
+    Args:
+      model:           Odoo model name, e.g. 'crm.lead', 'res.partner',
+                       'ai.chat.fact'. Must have an embedding column
+                       (provisioned via ``ai.semantic.index.provision``).
+      query:           the natural-language question / search text.
+      limit:           how many hits (1-20, default 5).
+      extra_domain:    optional Odoo domain ANDed with the result.
+      vector_col:      embedding column name (default 'ai_embedding';
+                       legacy 'embedding' for ai.chat.fact).
+      name_field:      display field, default 'display_name'.
+      hint_fields:     extra fields the LLM may want — list of names.
+                       Returned as part of each row's hints dict.
+      min_similarity:  cosine floor (0..1, default 0.35).
+
+    Returns:
+      ``{'rows': [...], 'csv': '...'}`` — the LLM should prefer 'csv'.
+    """
+    if not model or not query:
+        return {'error': 'model + query are required'}
+    Index = env.get('ai.semantic.index')
+    if Index is None:
+        return {'error': 'ai.semantic.index service not installed'}
+    try:
+        rows = Index.sudo().search(
+            model, query,
+            limit=int(limit), extra_domain=extra_domain,
+            vector_col=vector_col, name_field=name_field,
+            hint_fields=hint_fields or [],
+            min_similarity=float(min_similarity),
+        )
+    except Exception as e:
+        return {'error': f'semantic_search failed: {type(e).__name__}: {e}'}
+    csv = Index.sudo().to_csv(rows, hint_keys=hint_fields or None)
+    return {'rows': rows, 'csv': csv, 'count': len(rows), 'model': model}
+
+
+register('semantic_search', _builtin_semantic_search)
+
 register('date_reference', _builtin_date_reference)
 register('echo', _builtin_echo)
 register('record_action', _builtin_record_action)

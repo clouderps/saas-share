@@ -2,3 +2,4 @@
 
 from . import ai_config
 from . import ai_service
+from . import semantic_index

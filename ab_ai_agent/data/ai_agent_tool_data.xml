@@ -138,5 +138,21 @@
             <field name="dispatch_kind">python</field>
         </record>
 
+        <!-- ── T.2a — semantic search (pgvector keystone) ──────── -->
+        <!-- One tool replaces three always-on context blocks once the
+             matching flag (lazy_rag / record_context_on_demand / …) is
+             flipped. Default-installed but only useful for models that
+             have an embedding column (ai.chat.fact today; crm.lead,
+             res.partner, account.move follow once provisioned). -->
+
+        <record id="tool_semantic_search" model="ai.agent.tool">
+            <field name="name">Semantic Search (vector k-NN)</field>
+            <field name="code">semantic_search</field>
+            <field name="category">retrieval</field>
+            <field name="description">Find records semantically similar to a natural-language query (vector cosine search over pgvector). Use when the user references a record by paraphrase ("the deal with Acme construction", "leads that look like the one I closed last week", "policies about overtime") rather than an exact identifier. The result is a pipe-CSV `id|name|score|hint1|hint2` — cite ids in your answer, do not invent fields. model: technical model name (e.g. 'crm.lead', 'res.partner', 'ai.chat.fact'); query: the search text. Only models that have been embedded return useful results — when count=0, fall back to other tools.</field>
+            <field name="schema">{"type": "object", "properties": {"model": {"type": "string", "description": "Odoo model name, e.g. crm.lead"}, "query": {"type": "string"}, "limit": {"type": "number", "default": 5, "description": "1-20"}, "extra_domain": {"type": "array", "items": {"type": "array"}, "description": "Optional Odoo domain to AND with the result"}, "hint_fields": {"type": "array", "items": {"type": "string"}, "description": "Extra fields per row, e.g. ['email_from','state']"}}, "required": ["model", "query"]}</field>
+            <field name="dispatch_kind">python</field>
+        </record>
+
     </data>
 </odoo>
