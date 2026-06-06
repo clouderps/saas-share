@@ -35,6 +35,15 @@ _redis_prefix = 'odoo_session'
 _redis_ttl = 86400  # 24 hours
 
 
+def _session_key(prefix, sid):
+    """Build the Redis key for a session id, namespaced by the per-tenant
+    ``prefix`` (e.g. 'entity_5') so tenants/nodes sharing one Redis never
+    collide. Module-level + pure so it is unit-testable — the
+    RedisSessionStore that uses it lives inside the _setup_redis_session_store
+    closure and can't be imported directly."""
+    return f'{prefix}:{sid}'
+
+
 def _get_redis_client():
     """Get or create Redis client singleton."""
     global _redis_client
@@ -98,7 +107,7 @@ def _setup_redis_session_store():
             self.ttl = _redis_ttl
 
         def _key(self, sid):
-            return f'{self.prefix}:{sid}'
+            return _session_key(self.prefix, sid)
 
         def save(self, session):
             key = self._key(session.sid)
