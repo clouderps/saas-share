@@ -9,10 +9,9 @@
     <rect width="70" height="70" rx="16" fill="url(#g)"/>
     <rect x="1.25" y="1.25" width="67.5" height="67.5" rx="14.75" fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="1"/>
   </g>
-  <g id="glyph-printer">
-  <path d="M26 26v-8h18v8" stroke="#FFFFFF" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-  <rect x="20" y="26" width="30" height="14" rx="3" stroke="#FFFFFF" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M27 40h16v10H27z" stroke="#FFFFFF" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="43.5" cy="33" r="2.2" fill="#5DD8CA"/>
+  <g id="glyph-doc_chart">
+  <path d="M24 52V18h13l9 9v25z" stroke="#FFFFFF" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M37 18v9h9" stroke="#FFFFFF" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M30 45v-6M35 45V34M40 45v-3" stroke="#5DD8CA" stroke-width="2.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 </svg>
