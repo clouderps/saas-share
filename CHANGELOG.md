@@ -17,6 +17,9 @@
 
 ## Recent changes (since 2026-03-02)
 
+### 2026-06-10
+- `2b46944` feat(icons): Ghaima Squircle module icons — unified SVG identity + 140px PNG across all ab_*/bk_* modules
+
 ### 2026-05-25
 - `d2557e1` feat(ab_reports_hub_base): add shared Reports app kernel
 - `9e44de4` feat(ab_ai_base,ab_ai_agent): T.1/3 — provider-native tools slot
