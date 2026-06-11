@@ -23,7 +23,7 @@ class PrinterConfig(models.Model):
         [
             ('epos', 'ePOS-Print (Browser ↔ Printer, recommended)'),
             ('network', 'Network (TCP — server prints, on-prem only)'),
-            ('agent', 'Bridge Agent (LAN proxy for cloud Odoo)'),
+            ('agent', 'Bridge Agent (LAN proxy for cloud Ghaima)'),
             ('iot', 'IoT Box'),
             ('usb', 'USB / WebUSB'),
             ('bluetooth', 'Bluetooth'),
@@ -37,8 +37,8 @@ class PrinterConfig(models.Model):
             "printer's own HTTPS server. Works for any Epson/Star/Bixolon "
             "receipt printer with ePOS-Print enabled. No agent or LAN "
             "reachability needed from the cloud server.\n"
-            "Network: classic raw ESC/POS over TCP 9100 from the Odoo "
-            "process. Only works when Odoo is on the same LAN as the "
+            "Network: classic raw ESC/POS over TCP 9100 from the Ghaima "
+            "process. Only works when Ghaima is on the same LAN as the "
             "printer (on-prem deploys).\n"
             "Bridge Agent: a small daemon on a LAN PC executes the print "
             "on behalf of the cloud server."
@@ -54,7 +54,7 @@ class PrinterConfig(models.Model):
     )
     epos_use_https = fields.Boolean(
         string='ePOS over HTTPS', default=True,
-        help="Highly recommended. Required when the Odoo page itself is "
+        help="Highly recommended. Required when the Ghaima page itself is "
              "HTTPS (mixed-content blocks HTTPS→HTTP). The browser will "
              "prompt to trust the printer's self-signed certificate on "
              "first use — accept it once per browser profile.",
@@ -110,9 +110,9 @@ class PrinterConfig(models.Model):
     agent_id = fields.Many2one(
         'ab.printer.agent', string='Via Agent', ondelete='set null',
         help="Set this when the printer is on a LAN unreachable from the "
-             "Odoo server (typical for SaaS deployments). The bridge agent "
+             "Ghaima server (typical for SaaS deployments). The bridge agent "
              "running inside the LAN will pick up jobs and execute them locally. "
-             "Leave empty for on-prem deploys where Odoo can talk to the "
+             "Leave empty for on-prem deploys where Ghaima can talk to the "
              "printer directly.",
     )
     agent_online = fields.Boolean(
@@ -174,7 +174,7 @@ class PrinterConfig(models.Model):
                 'epos_config': self._get_browser_dispatch_config(),
                 'error': (
                     "ePOS prints must be dispatched from the operator's "
-                    "browser. The cloud Odoo cannot reach printers on "
+                    "browser. The cloud Ghaima server cannot reach printers on "
                     "private LANs directly. Use the POS receipt button, "
                     "or 'Test ePOS' on the printer form."
                 ),

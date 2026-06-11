@@ -167,7 +167,7 @@ class PrinterScannerController(http.Controller):
                 'success': False, 'needs_agent': True,
                 'subnet': subnet,
                 'error': (
-                    f'{subnet}.0/24 is a private LAN range. This Odoo server '
+                    f'{subnet}.0/24 is a private LAN range. This Ghaima server '
                     'cannot reach it directly. Register a Printer Bridge '
                     'Agent (Printers → Agents → New) and install it on a '
                     'PC inside that network. Once the agent is online, '

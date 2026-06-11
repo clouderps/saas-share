@@ -35,7 +35,7 @@ class PrinterJob(models.Model):
     agent_id = fields.Many2one(
         'ab.printer.agent', string='Via Agent', ondelete='set null',
         help='When set, this job is dispatched by the named LAN bridge '
-             'agent, not the Odoo server.',
+             'agent, not the Ghaima server.',
     )
     op_type = fields.Selection(
         [('print', 'Print'), ('test', 'Test Slip'), ('verify', 'Verify')],

@@ -157,7 +157,7 @@ function diagnoseFetchError(err, cfg) {
         if (cfg.use_https === false && window.location.protocol === "https:") {
             hints.push(
                 _t(
-                    "2. The Odoo page is HTTPS but the printer is HTTP. Mixed content is blocked — set 'ePOS over HTTPS' on the printer record.",
+                    "2. The Ghaima page is HTTPS but the printer is HTTP. Mixed content is blocked — set 'ePOS over HTTPS' on the printer record.",
                 ),
             );
         }
