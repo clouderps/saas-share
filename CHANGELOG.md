@@ -18,6 +18,9 @@
 ## Recent changes (since 2026-03-02)
 
 ### 2026-06-11
+- i18n(ab_printer_driver): re-point Bridge Agent selection msgid to "Bridge Agent (LAN proxy for cloud Ghaima)" after source debranding (Arabic unchanged).
+
+### 2026-06-11
 - chore(ab_printer_driver): debrand user-facing strings (Odoo → Ghaima) in printer help texts, selection labels, and connection errors.
 
 

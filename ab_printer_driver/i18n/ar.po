@@ -706,7 +706,7 @@ msgstr "شبكة (TCP — الخادم يطبع، محلي فقط)"
 
 #. module: ab_printer_driver
 #: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_mode__agent
-msgid "Bridge Agent (LAN proxy for cloud Odoo)"
+msgid "Bridge Agent (LAN proxy for cloud Ghaima)"
 msgstr "وكيل الربط (وسيط شبكة محلية لغيمة السحابي)"
 
 #. module: ab_printer_driver
