@@ -1,0 +1,16 @@
+# Arabic translation of ab_reports_hub_base
+# Generated 2026-06-11 — menu & window-action names (i18n pass).
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo 18.0 ab_reports_hub_base\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ar\n"
+"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 ? 4 : 5;\n"
+
+#. module: ab_reports_hub_base
+#: model:ir.ui.menu,name:ab_reports_hub_base.menu_reports_root
+msgid "Reports"
+msgstr "التقارير"
+

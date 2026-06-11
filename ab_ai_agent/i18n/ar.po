@@ -1,0 +1,107 @@
+# Arabic translation of ab_ai_agent
+# Generated 2026-06-11 — menu & window-action names (i18n pass).
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo 18.0 ab_ai_agent\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ar\n"
+"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 ? 4 : 5;\n"
+
+#. module: ab_ai_agent
+#: model:ir.ui.menu,name:ab_ai_agent.menu_ai_root
+msgid "AI"
+msgstr "الذكاء الاصطناعي"
+
+#. module: ab_ai_agent
+#: model:ir.actions.act_window,name:ab_ai_agent.action_ai_agent
+msgid "AI Agents"
+msgstr "وكلاء الذكاء الاصطناعي"
+
+#. module: ab_ai_agent
+#: model:ir.actions.act_window,name:ab_ai_agent.action_ai_usage_local_budget
+msgid "AI Budgets"
+msgstr "ميزانيات الذكاء الاصطناعي"
+
+#. module: ab_ai_agent
+#: model:ir.actions.act_window,name:ab_ai_agent.action_ai_usage_local_log
+msgid "AI Cost Center"
+msgstr "مركز تكلفة الذكاء الاصطناعي"
+
+#. module: ab_ai_agent
+#: model:ir.actions.act_window,name:ab_ai_agent.action_ai_usage_price_book
+msgid "AI Price Book"
+msgstr "دليل أسعار الذكاء الاصطناعي"
+
+#. module: ab_ai_agent
+#: model:ir.actions.act_window,name:ab_ai_agent.action_ai_agent_skill
+msgid "Agent Skills"
+msgstr "مهارات الوكلاء"
+
+#. module: ab_ai_agent
+#: model:ir.actions.act_window,name:ab_ai_agent.action_ai_agent_tool
+msgid "Agent Tools"
+msgstr "أدوات الوكلاء"
+
+#. module: ab_ai_agent
+#: model:ir.actions.act_window,name:ab_ai_agent.action_ai_agent_topic
+msgid "Agent Topics"
+msgstr "مواضيع الوكلاء"
+
+#. module: ab_ai_agent
+#: model:ir.ui.menu,name:ab_ai_agent.menu_ai_agents_section
+msgid "Agents"
+msgstr "الوكلاء"
+
+#. module: ab_ai_agent
+#: model:ir.ui.menu,name:ab_ai_agent.menu_ai_agent_list
+msgid "All Agents"
+msgstr "جميع الوكلاء"
+
+#. module: ab_ai_agent
+#: model:ir.ui.menu,name:ab_ai_agent.menu_ai_budgets
+msgid "Budgets"
+msgstr "الميزانيات"
+
+#. module: ab_ai_agent
+#: model:ir.ui.menu,name:ab_ai_agent.menu_ai_config
+msgid "Configuration"
+msgstr "التهيئة"
+
+#. module: ab_ai_agent
+#: model:ir.ui.menu,name:ab_ai_agent.menu_ai_cost_center
+msgid "Cost Center"
+msgstr "مركز التكلفة"
+
+#. module: ab_ai_agent
+#: model:ir.ui.menu,name:ab_ai_agent.menu_ai_ops
+msgid "Operations"
+msgstr "العمليات"
+
+#. module: ab_ai_agent
+#: model:ir.ui.menu,name:ab_ai_agent.menu_ai_pricebook
+msgid "Price Book"
+msgstr "دليل الأسعار"
+
+#. module: ab_ai_agent
+#: model:ir.actions.act_window,name:ab_ai_agent.action_ai_agent_run
+#: model:ir.ui.menu,name:ab_ai_agent.menu_ai_agent_run
+msgid "Run History"
+msgstr "سجل التشغيل"
+
+#. module: ab_ai_agent
+#: model:ir.ui.menu,name:ab_ai_agent.menu_ai_agent_skills
+msgid "Skills"
+msgstr "المهارات"
+
+#. module: ab_ai_agent
+#: model:ir.ui.menu,name:ab_ai_agent.menu_ai_agent_tools
+msgid "Tools"
+msgstr "الأدوات"
+
+#. module: ab_ai_agent
+#: model:ir.ui.menu,name:ab_ai_agent.menu_ai_agent_topics
+msgid "Topics"
+msgstr "المواضيع"
+

@@ -61,7 +61,7 @@ msgstr "مزوّد الذكاء الاصطناعي"
 #: model:ir.model,name:ab_ai_base.model_ai_provider_config
 #: model:ir.ui.menu,name:ab_ai_base.menu_ai_provider_config
 msgid "AI Provider Configuration"
-msgstr ""
+msgstr "تهيئة مزود الذكاء الاصطناعي"
 
 #. module: ab_ai_base
 #: model:ir.model,name:ab_ai_base.model_ai_provider_service
