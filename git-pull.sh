@@ -28,6 +28,7 @@ REPOS=(
     "saas-erp"
     "saas-accounting"
     "ghaima-api"
+    "payment-gateway"
     "saas-ai"
     "saas-approval"
     "saas-branches"
