@@ -18,6 +18,10 @@
 ## Recent changes (since 2026-03-02)
 
 ### 2026-06-11
+- i18n: **full field-label & selection-value Arabic pass** (2026-06-11) — every `ir.model.fields` label and selection value in tenant-facing modules translated (native-Odoo corpus + authored Saudi business Arabic); brand names / technical identifiers intentionally kept Latin.
+
+
+### 2026-06-11
 - i18n: **Arabic (ar.po) translations for menu & window-action names** — part of the cross-repo i18n pass (2026-06-11) closing the RTL-audit gap: custom app menus rendered English inside the Arabic UI. Standard Saudi business Arabic, loaded automatically on module update for ar_* languages.
 
 

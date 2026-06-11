@@ -102,7 +102,7 @@ msgstr "نشط"
 #. module: ab_ai_base
 #: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__claude_api_key
 msgid "Anthropic API Key"
-msgstr ""
+msgstr "مفتاح Anthropic API"
 
 #. module: ab_ai_base
 #. odoo-python
@@ -113,7 +113,7 @@ msgstr ""
 #. module: ab_ai_base
 #: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__ai_provider__anthropic
 msgid "Anthropic Claude"
-msgstr ""
+msgstr "Anthropic Claude"
 
 #. module: ab_ai_base
 #: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
@@ -123,27 +123,27 @@ msgstr ""
 #. module: ab_ai_base
 #: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__claude_model__claude-3-haiku-20240307
 msgid "Claude 3 Haiku"
-msgstr ""
+msgstr "Claude 3 Haiku"
 
 #. module: ab_ai_base
 #: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__claude_model__claude-3-opus-20240229
 msgid "Claude 3 Opus"
-msgstr ""
+msgstr "Claude 3 Opus"
 
 #. module: ab_ai_base
 #: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__claude_model__claude-3-sonnet-20240229
 msgid "Claude 3 Sonnet"
-msgstr ""
+msgstr "Claude 3 Sonnet"
 
 #. module: ab_ai_base
 #: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__claude_model__claude-3-5-haiku-20241022
 msgid "Claude 3.5 Haiku"
-msgstr ""
+msgstr "Claude 3.5 Haiku"
 
 #. module: ab_ai_base
 #: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__claude_model__claude-3-5-sonnet-20241022
 msgid "Claude 3.5 Sonnet (Latest)"
-msgstr ""
+msgstr "Claude 3.5 Sonnet (الأحدث)"
 
 #. module: ab_ai_base
 #. odoo-python
@@ -154,7 +154,7 @@ msgstr ""
 #. module: ab_ai_base
 #: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__claude_model
 msgid "Claude Model"
-msgstr ""
+msgstr "نموذج Claude"
 
 #. module: ab_ai_base
 #: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__company_id
@@ -164,7 +164,7 @@ msgstr "الشركة"
 #. module: ab_ai_base
 #: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__name
 msgid "Configuration Name"
-msgstr ""
+msgstr "اسم التهيئة"
 
 #. module: ab_ai_base
 #: model_terms:ir.actions.act_window,help:ab_ai_base.action_ai_provider_config
@@ -206,7 +206,7 @@ msgstr "أنشئ في"
 #. module: ab_ai_base
 #: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__system_prompt
 msgid "Default System Prompt"
-msgstr ""
+msgstr "موجه النظام الافتراضي"
 
 #. module: ab_ai_base
 #: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
@@ -221,27 +221,27 @@ msgstr "الاسم المعروض"
 #. module: ab_ai_base
 #: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__openai_model__gpt-3_5-turbo
 msgid "GPT-3.5 Turbo"
-msgstr ""
+msgstr "GPT-3.5 Turbo"
 
 #. module: ab_ai_base
 #: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__openai_model__gpt-4
 msgid "GPT-4"
-msgstr ""
+msgstr "GPT-4"
 
 #. module: ab_ai_base
 #: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__openai_model__gpt-4-turbo
 msgid "GPT-4 Turbo"
-msgstr ""
+msgstr "GPT-4 Turbo"
 
 #. module: ab_ai_base
 #: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__openai_model__gpt-4o
 msgid "GPT-4o (Latest)"
-msgstr ""
+msgstr "GPT-4o (الأحدث)"
 
 #. module: ab_ai_base
 #: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__openai_model__gpt-4o-mini
 msgid "GPT-4o Mini"
-msgstr ""
+msgstr "GPT-4o Mini"
 
 #. module: ab_ai_base
 #: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__gemini_model__gemini-1_5-flash
@@ -267,7 +267,7 @@ msgstr ""
 #. module: ab_ai_base
 #: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__gemini_model
 msgid "Gemini Model"
-msgstr ""
+msgstr "نموذج Gemini"
 
 #. module: ab_ai_base
 #: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__gemini_model__gemini-pro
@@ -287,7 +287,7 @@ msgstr ""
 #. module: ab_ai_base
 #: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__gemini_api_key
 msgid "Google AI API Key"
-msgstr ""
+msgstr "مفتاح Google AI API"
 
 #. module: ab_ai_base
 #. odoo-python
@@ -298,7 +298,7 @@ msgstr ""
 #. module: ab_ai_base
 #: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__ai_provider__google
 msgid "Google Gemini"
-msgstr ""
+msgstr "Google Gemini"
 
 #. module: ab_ai_base
 #: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
@@ -328,17 +328,17 @@ msgstr "آخر تحديث في"
 #. module: ab_ai_base
 #: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__last_used
 msgid "Last Used"
-msgstr ""
+msgstr "آخر استخدام "
 
 #. module: ab_ai_base
 #: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__ai_provider__local
 msgid "Local LLM"
-msgstr ""
+msgstr "نموذج لغوي محلي"
 
 #. module: ab_ai_base
 #: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__local_llm_endpoint
 msgid "Local LLM Endpoint"
-msgstr ""
+msgstr "نقطة نهاية النموذج المحلي"
 
 #. module: ab_ai_base
 #. odoo-python
@@ -354,7 +354,7 @@ msgstr ""
 #. module: ab_ai_base
 #: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__local_llm_model
 msgid "Local Model Name"
-msgstr ""
+msgstr "اسم النموذج المحلي"
 
 #. module: ab_ai_base
 #: model:res.groups,name:ab_ai_base.group_ai_manager
@@ -364,7 +364,7 @@ msgstr ""
 #. module: ab_ai_base
 #: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__max_tokens
 msgid "Max Tokens"
-msgstr ""
+msgstr "الحد الأقصى للرموز"
 
 #. module: ab_ai_base
 #: model:ir.model.fields,help:ab_ai_base.field_ai_provider_config__max_tokens
@@ -395,7 +395,7 @@ msgstr ""
 #. module: ab_ai_base
 #: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__ai_provider__openai
 msgid "OpenAI (ChatGPT)"
-msgstr ""
+msgstr "OpenAI (ChatGPT)"
 
 #. module: ab_ai_base
 #. odoo-python
@@ -406,7 +406,7 @@ msgstr ""
 #. module: ab_ai_base
 #: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__openai_api_key
 msgid "OpenAI API Key"
-msgstr ""
+msgstr "مفتاح OpenAI API"
 
 #. module: ab_ai_base
 #. odoo-python
@@ -417,7 +417,7 @@ msgstr ""
 #. module: ab_ai_base
 #: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__openai_model
 msgid "OpenAI Model"
-msgstr ""
+msgstr "نموذج OpenAI"
 
 #. module: ab_ai_base
 #: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
@@ -427,7 +427,7 @@ msgstr ""
 #. module: ab_ai_base
 #: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__timeout
 msgid "Request Timeout (seconds)"
-msgstr ""
+msgstr "مهلة الطلب (ثوانٍ)"
 
 #. module: ab_ai_base
 #: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__sequence
@@ -449,7 +449,7 @@ msgstr ""
 #. module: ab_ai_base
 #: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__temperature
 msgid "Temperature"
-msgstr ""
+msgstr "درجة الحرارة "
 
 #. module: ab_ai_base
 #: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
@@ -459,12 +459,12 @@ msgstr "اختبار الاتصال"
 #. module: ab_ai_base
 #: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__total_requests
 msgid "Total Requests"
-msgstr ""
+msgstr "إجمالي الطلبات"
 
 #. module: ab_ai_base
 #: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__total_tokens
 msgid "Total Tokens Used"
-msgstr ""
+msgstr "إجمالي الرموز المستخدمة"
 
 #. module: ab_ai_base
 #. odoo-python
@@ -541,3 +541,28 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
 msgid "sk-ant-..."
 msgstr ""
+
+#. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__fallback_provider_id
+msgid "Fallback provider"
+msgstr "المزود الاحتياطي"
+
+#. module: ab_ai_base
+#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__gemini_model__gemini-2_5-flash
+msgid "Gemini 2.5 Flash"
+msgstr "Gemini 2.5 Flash"
+
+#. module: ab_ai_base
+#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__gemini_model__gemini-2_5-pro
+msgid "Gemini 2.5 Pro"
+msgstr "Gemini 2.5 Pro"
+
+#. module: ab_ai_base
+#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__gemini_model__gemini-2_5-flash-lite
+msgid "Gemini 2.5 Flash Lite"
+msgstr "Gemini 2.5 Flash Lite"
+
+#. module: ab_ai_base
+#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__gemini_model__gemini-flash-latest
+msgid "Gemini Flash (latest)"
+msgstr "Gemini Flash (الأحدث)"

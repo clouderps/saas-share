@@ -3,10 +3,10 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Odoo 18.0 ab_printer_driver\n"
+"Language: ar\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: ar\n"
 "Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 ? 4 : 5;\n"
 
 #. module: ab_printer_driver
@@ -64,6 +64,697 @@ msgstr "فئات الطابعات"
 #. module: ab_printer_driver
 #: model:ir.actions.act_window,name:ab_printer_driver.action_printer_config
 #: model:ir.ui.menu,name:ab_printer_driver.menu_printer_driver_root
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__printer_count
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_category__printer_ids
 msgid "Printers"
 msgstr "الطابعات"
 
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__create_uid
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_category__create_uid
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__create_uid
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__create_uid
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__create_uid
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__create_uid
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_log__create_uid
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_scan_request__create_uid
+msgid "Created by"
+msgstr "أنشئ بواسطة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__create_date
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_category__create_date
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__create_date
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__create_date
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__create_date
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__create_date
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_log__create_date
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_scan_request__create_date
+msgid "Created on"
+msgstr "أنشئ في"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__write_uid
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_category__write_uid
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__write_uid
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__write_uid
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__write_uid
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__write_uid
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_log__write_uid
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_scan_request__write_uid
+msgid "Last Updated by"
+msgstr "آخر تحديث بواسطة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__write_date
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_category__write_date
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__write_date
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__write_date
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__write_date
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__write_date
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_log__write_date
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_scan_request__write_date
+msgid "Last Updated on"
+msgstr "آخر تحديث في"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__wizard_id
+msgid "Wizard"
+msgstr "المعالج"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__ip_address
+msgid "IP Address"
+msgstr "عنوان IP"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__port
+msgid "Port"
+msgstr "المنفذ"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__name
+msgid "Name"
+msgstr "الاسم"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__selected
+msgid "Selected"
+msgstr "محدد"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__response_time_ms
+msgid "Response (ms)"
+msgstr "الاستجابة (مللي ثانية)"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__id
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_category__id
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__id
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__id
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__id
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__id
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_log__id
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_scan_request__id
+msgid "ID"
+msgstr "المُعرف"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__display_name
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_category__display_name
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__display_name
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__display_name
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__display_name
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__display_name
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_log__display_name
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_scan_request__display_name
+msgid "Display Name"
+msgstr "اسم العرض "
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__sequence
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_category__sequence
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__sequence
+msgid "Sequence"
+msgstr "تسلسل "
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__paper_width_mm
+msgid "Paper Width"
+msgstr "عرض الورق"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__last_seen
+msgid "Last Verified"
+msgstr "آخر تحقق"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__verified
+msgid "ESC/POS Verified"
+msgstr "تم التحقق من ESC/POS"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__vendor
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__vendor
+msgid "Vendor"
+msgstr "المورّد "
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__mac
+msgid "MAC Address"
+msgstr "عنوان MAC"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__source
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_log__source
+msgid "Source"
+msgstr "المصدر"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__name
+msgid "Reference"
+msgstr "المرجع "
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__printer_config_id
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_log__printer_config_id
+msgid "Printer"
+msgstr "الطابعة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__payload_kind
+msgid "Payload Kind"
+msgstr "نوع الحمولة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__payload_b64
+msgid "Payload (base64)"
+msgstr "الحمولة (base64)"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__state
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__state
+msgid "Status"
+msgstr "الحالة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__priority
+msgid "Priority"
+msgstr "الأولوية"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__attempts
+msgid "Attempts"
+msgstr "المحاولات"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__max_attempts
+msgid "Max Attempts"
+msgstr "الحد الأقصى للمحاولات"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__last_error
+msgid "Last Error"
+msgstr "آخر خطأ"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__last_attempt_at
+msgid "Last Attempt"
+msgstr "آخر محاولة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__duration_ms
+msgid "Last Duration (ms)"
+msgstr "آخر مدة (مللي ثانية)"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__name
+msgid "Agent Name"
+msgstr "اسم الوكيل"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__token
+msgid "Auth Token"
+msgstr "رمز المصادقة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__location_hint
+msgid "Location / Branch"
+msgstr "الموقع / الفرع"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__version
+msgid "Agent Version"
+msgstr "إصدار الوكيل"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__agent_local_ip
+msgid "Agent LAN IP"
+msgstr "عنوان IP المحلي للوكيل"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__agent_subnet
+msgid "LAN Subnet"
+msgstr "الشبكة الفرعية المحلية"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__last_seen
+msgid "Last Seen"
+msgstr "آخر ظهور"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__online
+msgid "Online"
+msgstr "عبر الإنترنت "
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__note
+msgid "Notes"
+msgstr "الملاحظات"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_scan_request__agent_id
+msgid "Agent"
+msgstr "الوكيل"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_scan_request__params_json
+msgid "Scan Params (JSON)"
+msgstr "معاملات المسح (JSON)"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__state
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_scan_request__state
+msgid "State"
+msgstr "الولاية "
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_scan_request__result_json
+msgid "Result (JSON)"
+msgstr "النتيجة (JSON)"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_scan_request__error
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__state__error
+msgid "Error"
+msgstr "خطأ"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__claimed_at
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_scan_request__claimed_at
+msgid "Claimed At"
+msgstr "وقت الاستلام"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_scan_request__done_at
+msgid "Done At"
+msgstr "وقت الإتمام"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__epos_dev_id
+msgid "ePOS Device ID"
+msgstr "معرف جهاز ePOS"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__epos_use_https
+msgid "ePOS over HTTPS"
+msgstr "ePOS عبر HTTPS"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__epos_port
+msgid "ePOS Port"
+msgstr "منفذ ePOS"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__agent_id
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__agent_id
+msgid "Via Agent"
+msgstr "عبر الوكيل"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__agent_online
+msgid "Agent Online"
+msgstr "الوكيل متصل"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__op_type
+msgid "Operation"
+msgstr "العملية"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__subnet
+msgid "Subnet"
+msgstr "الشبكة الفرعية"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__port_mode
+msgid "Port Mode"
+msgstr "وضع المنفذ"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__timeout
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__timeout_ms
+msgid "Timeout (ms)"
+msgstr "المهلة (مللي ثانية)"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__do_banner_grab
+msgid "Identify vendor"
+msgstr "تحديد المورد"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__do_reverse_dns
+msgid "Resolve hostnames"
+msgstr "حل أسماء المضيفين"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__scan_duration_s
+msgid "Scan Duration S"
+msgstr "مدة المسح (ث)"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__scanned_count
+msgid "Scanned Count"
+msgstr "عدد الممسوح"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__found_count
+msgid "Found Count"
+msgstr "عدد النتائج"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__port_label
+msgid "Port Label"
+msgstr "تسمية المنفذ"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__open_ports
+msgid "Open Ports"
+msgstr "المنافذ المفتوحة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__mode_hint
+msgid "Mode"
+msgstr "الوضع"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__mac
+msgid "MAC"
+msgstr "MAC"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__hostname
+msgid "Hostname"
+msgstr "اسم المضيف"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__banner_excerpt
+msgid "Banner"
+msgstr "العارضة "
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_category__name
+msgid "Category Name"
+msgstr "اسم الفئة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_category__color
+msgid "Color"
+msgstr "اللون"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_category__printer_count
+msgid "Printer Count"
+msgstr "عدد الطابعات"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__name
+msgid "Printer Name"
+msgstr "اسم الطابعة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__category_id
+msgid "Category"
+msgstr "الفئة "
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__printer_mode
+msgid "Printer Mode"
+msgstr "وضع الطابعة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__printer_use
+msgid "Printer Use"
+msgstr "استخدام الطابعة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__printer_ip
+msgid "Printer IP"
+msgstr "عنوان IP للطابعة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__printer_port
+msgid "Printer Port"
+msgstr "منفذ الطابعة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__usb_vendor_id
+msgid "USB Vendor ID"
+msgstr "معرف مورد USB"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__usb_product_id
+msgid "USB Product ID"
+msgstr "معرف منتج USB"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__bluetooth_device_name
+msgid "Bluetooth Device Name"
+msgstr "اسم جهاز البلوتوث"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__enable_fallback
+msgid "Enable Fallback"
+msgstr "تفعيل الخيار الاحتياطي"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__retry_count
+msgid "Retry Count"
+msgstr "عدد إعادة المحاولات"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_log__printer_type
+msgid "Printer Type"
+msgstr "نوع الطابعة "
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_log__job_status
+msgid "Job Status"
+msgstr "حالة المهمة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_log__error_message
+msgid "Error Message"
+msgstr "رسالة الخطأ"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_log__duration
+msgid "Duration (s)"
+msgstr "المدة (ث)"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__scan_range_start
+msgid "Range Start"
+msgstr "بداية النطاق"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__scan_range_end
+msgid "Range End"
+msgstr "نهاية النطاق"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__detected_printer_ids
+msgid "Detected Printers"
+msgstr "الطابعات المكتشفة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_use__receipt
+msgid "Receipt Printer"
+msgstr "طابعة الإيصالات "
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__state__connected
+msgid "Connected"
+msgstr "متصل "
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__state__disconnected
+msgid "Disconnected"
+msgstr "غير متصل"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__state__printing
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_log__job_status__printing
+msgid "Printing"
+msgstr "جارٍ الطباعة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_log__job_status__pending
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_scan_request__state__pending
+msgid "Pending"
+msgstr "قيد الانتظار "
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__state__done
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_log__job_status__done
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_scan_request__state__done
+msgid "Done"
+msgstr "منتهي "
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__state__failed
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_log__job_status__failed
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_scan_request__state__failed
+msgid "Failed"
+msgstr "فشل"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_detect_wizard__state__draft
+msgid "Ready"
+msgstr "جاهز"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_detect_wizard__state__done
+msgid "Scan Complete"
+msgstr "اكتمل المسح"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_detect_wizard__port_mode__common
+msgid "Common (9100 + 631 + 515)"
+msgstr "شائع (9100 + 631 + 515)"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_detect_wizard__port_mode__all
+msgid "Full sweep (incl. 80 web UI)"
+msgstr "مسح كامل (يشمل واجهة الويب 80)"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_detect_wizard__port_mode__raw
+msgid "RAW / ESC-POS only (9100)"
+msgstr "RAW / ESC-POS فقط (9100)"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_detect_wizard__state__scanning
+msgid "Scanning…"
+msgstr "جارٍ المسح…"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_use__kitchen
+msgid "Kitchen / Order Printer"
+msgstr "طابعة المطبخ / الطلبات"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_use__document
+msgid "Document Printer (A4)"
+msgstr "طابعة المستندات (A4)"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_use__label
+msgid "Label Printer"
+msgstr "طابعة الملصقات"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_use__both
+msgid "Receipt & Kitchen"
+msgstr "الإيصال والمطبخ"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__paper_width_mm__58
+msgid "58 mm"
+msgstr "58 مم"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__paper_width_mm__80
+msgid "80 mm"
+msgstr "80 مم"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__paper_width_mm__a4
+msgid "A4"
+msgstr "A4"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__payload_kind__escpos
+msgid "Raw ESC/POS bytes"
+msgstr "بايتات ESC/POS خام"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__payload_kind__image
+msgid "JPEG/PNG image"
+msgstr "صورة JPEG/PNG"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__payload_kind__summary
+msgid "Structured order summary"
+msgstr "ملخص الطلب المنظم"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__state__queued
+msgid "Queued"
+msgstr "في صف الانتظار "
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__state__claimed
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_scan_request__state__claimed
+msgid "Claimed by Agent"
+msgstr "استلمه الوكيل"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_scan_request__state__expired
+msgid "Expired"
+msgstr "منتهي الصلاحية"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_mode__epos
+msgid "ePOS-Print (Browser ↔ Printer, recommended)"
+msgstr "ePOS-Print (المتصفح ↔ الطابعة، موصى به)"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_mode__network
+msgid "Network (TCP — server prints, on-prem only)"
+msgstr "شبكة (TCP — الخادم يطبع، محلي فقط)"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_mode__agent
+msgid "Bridge Agent (LAN proxy for cloud Odoo)"
+msgstr "وكيل الربط (وسيط شبكة محلية لأودو السحابي)"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_mode__iot
+msgid "IoT Box"
+msgstr "جهاز IoT "
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_mode__usb
+msgid "USB / WebUSB"
+msgstr "USB / WebUSB"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_mode__bluetooth
+msgid "Bluetooth"
+msgstr "بلوتوث"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_mode__auto
+msgid "Auto Detect"
+msgstr "اكتشاف تلقائي"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__op_type__print
+msgid "Print"
+msgstr "طباعة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__op_type__test
+msgid "Test Slip"
+msgstr "قسيمة اختبار"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__op_type__verify
+msgid "Verify"
+msgstr "تأكيد "
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__state__sending
+msgid "Sending"
+msgstr "جاري الإرسال"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__state__retrying
+msgid "Retrying"
+msgstr "إعادة المحاولة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__state__cancelled
+msgid "Cancelled"
+msgstr "تم الإلغاء "
