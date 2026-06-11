@@ -18,6 +18,10 @@
 ## Recent changes (since 2026-03-02)
 
 ### 2026-06-11
+- i18n: **SaaS portal & backend Arabic pass + KSA terminology review** (2026-06-11). ~2,900 strings authored/harvested for the 16 SaaS modules (menus, actions, fields, selections, portal templates, JS/code messages). KSA terminology applied platform-wide: الفوترة→الحسابات (native menu override in ab_ghaima_core_rebrand), Entity/الكيان→التطبيق, أودو→غيمة, لوحة المعلومات→لوحة البيانات, مرشح→تصفية. **Stale .pot files removed everywhere** — PoFileReader merge-gates po entries against the pot (obsoleting anything missing), which was silently dropping DB terms AND runtime JS code translations (the "JS reports not translating" bug). Code occurrences need a `:0` line suffix or the reader crashes on int(""). HTML email-template bodies deferred (need proper RTL email treatment).
+
+
+### 2026-06-11
 - i18n: **full field-label & selection-value Arabic pass** (2026-06-11) — every `ir.model.fields` label and selection value in tenant-facing modules translated (native-Odoo corpus + authored Saudi business Arabic); brand names / technical identifiers intentionally kept Latin.
 
 
