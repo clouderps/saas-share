@@ -42,7 +42,7 @@ _logger = logging.getLogger(__name__)
 
 class AISemanticIndex(models.AbstractModel):
     _name = 'ai.semantic.index'
-    _description = 'Generic semantic search over any Odoo model with an embedding column'
+    _description = 'Generic semantic search over any model with an embedding column'
 
     # ── Provisioning ───────────────────────────────────────────────
 

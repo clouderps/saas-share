@@ -131,7 +131,7 @@ Compare these numbers against the same period last month. Include % change. Form
             <field name="icon">fa-lightbulb-o</field>
             <field name="accent">gold</field>
             <field name="surfaces">chat</field>
-            <field name="user_prompt_template">Based on the state of the database right now, suggest the top 3 things I should do today as an operator. One actionable verb + an Odoo menu path per suggestion. Order by impact.</field>
+            <field name="user_prompt_template">Based on the state of the database right now, suggest the top 3 things I should do today as an operator. One actionable verb + a menu path per suggestion. Order by impact.</field>
         </record>
 
     </data>
