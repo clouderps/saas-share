@@ -85,3 +85,36 @@ class TestProviderFailureSurfaced(TransactionCase):
                 self.env, None, system_prompt='', user_prompt='hi')
         self.assertEqual(routed, 'sim')
         self.assertTrue(usage.get('simulated'))
+
+
+@tagged('post_install', '-at_install', 'ghaima_ai_agent')
+class TestSnapshotIsolation(TransactionCase):
+    """The pre-tool business snapshot must respect record rules — it reads
+    as the requesting user (no sudo), so a user who can't read sale.order
+    gets no sales figures in their prompt context (no cross-scope leak)."""
+
+    def test_snapshot_omits_data_user_cannot_read(self):
+        from odoo.addons.ab_ai_agent.services.runtime import (
+            _business_snapshot_block)
+        partner = self.env['res.partner'].create({'name': 'Snap Co'})
+        product = self.env['product.product'].create({'name': 'Snap P'})
+        so = self.env['sale.order'].create({
+            'partner_id': partner.id,
+            'order_line': [(0, 0, {
+                'product_id': product.id, 'product_uom_qty': 1})],
+        })
+        so.action_confirm()
+
+        # Admin sees the confirmed order (their scope includes it).
+        admin_block = _business_snapshot_block(self.env)
+        self.assertIn('Sale orders confirmed this month: 1', admin_block)
+
+        # A portal user, reading as themselves, is scoped by record rules to
+        # their own orders (none) — they must NOT see the company-wide figure.
+        portal = self.env['res.users'].create({
+            'name': 'Snap Portal', 'login': 'snap_portal',
+            'groups_id': [(6, 0, [self.env.ref('base.group_portal').id])],
+        })
+        portal_block = _business_snapshot_block(self.env(user=portal.id))
+        self.assertIn('Sale orders confirmed this month: 0', portal_block)
+        self.assertNotIn('Sale orders confirmed this month: 1', portal_block)

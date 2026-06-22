@@ -18,6 +18,7 @@
 ## Recent changes (since 2026-03-02)
 
 ### 2026-06-22
+- security(ab_ai_agent): **branch/record-rule isolation** — `_business_snapshot_block` (the pre-tool context injected into every agent prompt) now reads as the requesting user (dropped `.sudo()` from `_safe_count`/`_safe_sum`), so record rules + the `ab.branch.mixin` `_search` filter apply. A branch-scoped / low-privilege user gets only their own scope, never company-wide / cross-branch totals. Test proves it (admin sees the order, a portal user sees 0).
 - security(ab_ai_agent): hardened the agent against two findings, aligned to native Odoo 19 `ai` patterns (run tool bodies as the requesting user; raise on failure). `record_action` now matches a document EXACTLY (dropped the substring `ilike` fallback that could finalize the WRONG invoice) and calls `check_access('write')` as the requesting user before posting/confirming/validating. The LLM adapter (`llm_adapter.call_llm`) no longer masks a *configured* provider/gateway failure as a fake "simulation" success — it raises `AiProviderError` and the runtime finalizes the run `state='error'` (visible to monitoring); a truly unconfigured dev box still simulates. Added `ab_ai_agent/tests/` (was zero): record-action safety + provider-failure-surfaced — 9 tests green on a fresh tenant DB.
 
 ### 2026-06-11

@@ -660,12 +660,17 @@ def _business_snapshot_block(env):
     pipe-delimited CSV (`section|metric|value|extra`), which the LLM
     parses just as reliably but at ~40 % fewer tokens.
     """
+    # NOTE: reads run as the REQUESTING USER (no sudo) so record rules and
+    # the ab.branch.mixin _search filter apply — a branch-scoped or
+    # low-privilege user gets only their own scope in the snapshot, never
+    # company-wide / cross-branch totals. A model the user can't read just
+    # raises AccessError → caught → "—" placeholder.
     def _safe_count(model, domain=None):
         try:
             with env.cr.savepoint(flush=False):
                 if model not in env:
                     return None
-                return env[model].sudo().search_count(domain or [])
+                return env[model].search_count(domain or [])
         except Exception:
             return None
 
@@ -674,7 +679,7 @@ def _business_snapshot_block(env):
             with env.cr.savepoint(flush=False):
                 if model not in env:
                     return None
-                groups = env[model].sudo().read_group(
+                groups = env[model].read_group(
                     domain or [], [field], [],
                 )
                 return groups[0].get(field) if groups else None
