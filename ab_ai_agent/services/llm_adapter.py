@@ -18,6 +18,27 @@ import uuid
 _logger = logging.getLogger(__name__)
 
 
+class AiProviderError(Exception):
+    """A *configured* AI provider/gateway call failed.
+
+    Raised so the runtime finalizes the run as ``state='error'`` (visible to
+    monitoring) instead of silently degrading a real outage to the canned
+    simulation string and reporting it as a successful ``done`` answer.
+    """
+
+
+def _has_active_provider(env):
+    """True iff a real provider config is active — i.e. a failure is an
+    OUTAGE, not just an unconfigured dev box that should simulate."""
+    Cfg = env.get('ai.provider.config')
+    if Cfg is None:
+        return False
+    try:
+        return bool(Cfg.sudo().search_count([('active', '=', True)]))
+    except Exception:
+        return False
+
+
 def call_llm(env, agent, *, system_prompt, user_prompt, tools=None,
              temperature=None, max_tokens=2000, image_data=None,
              image_mimetype=None, model_class_hint=None):
@@ -35,6 +56,8 @@ def call_llm(env, agent, *, system_prompt, user_prompt, tools=None,
     temperature = temperature if temperature is not None else (
         agent.temperature() if agent else 0.3)
     model_class_hint = model_class_hint or (agent.model_class if agent else 'fast')
+
+    last_error = None
 
     # ── Path 1: central gateway via ab_ai_client ──────────────
     gateway = _try_get_gateway(env)
@@ -58,6 +81,7 @@ def call_llm(env, agent, *, system_prompt, user_prompt, tools=None,
             return response, usage, 'gateway'
         except Exception as e:
             _logger.warning('Gateway call failed (%s) — trying direct provider', e)
+            last_error = e
 
     # ── Path 2: direct provider via ab_ai_base ────────────────
     # T.1/3 native tools: pass full unified schemas through. The provider
@@ -82,9 +106,16 @@ def call_llm(env, agent, *, system_prompt, user_prompt, tools=None,
             usage['routed_via'] = 'direct'
             return response, usage, 'direct'
         except Exception as e:
-            _logger.warning('Direct provider call failed (%s) — simulating', e)
+            _logger.warning('Direct provider call failed (%s)', e)
+            last_error = e
 
-    # ── Path 3: simulation ─────────────────────────────────────
+    # A *configured* path failed (tenant gateway present, or an active
+    # ai.provider.config exists) — surface it as an error instead of
+    # masking a live outage as a successful simulated answer.
+    if last_error is not None and (gateway or _has_active_provider(env)):
+        raise AiProviderError(str(last_error))
+
+    # ── Path 3: simulation (nothing configured — dev / staging) ─
     response = (
         '[Simulated AI output — no gateway, no provider, simulation mode.] '
         'Configure ai.client.config (tenant) or ai.provider.config (central) '

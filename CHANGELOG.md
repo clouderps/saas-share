@@ -17,6 +17,9 @@
 
 ## Recent changes (since 2026-03-02)
 
+### 2026-06-22
+- security(ab_ai_agent): hardened the agent against two findings, aligned to native Odoo 19 `ai` patterns (run tool bodies as the requesting user; raise on failure). `record_action` now matches a document EXACTLY (dropped the substring `ilike` fallback that could finalize the WRONG invoice) and calls `check_access('write')` as the requesting user before posting/confirming/validating. The LLM adapter (`llm_adapter.call_llm`) no longer masks a *configured* provider/gateway failure as a fake "simulation" success — it raises `AiProviderError` and the runtime finalizes the run `state='error'` (visible to monitoring); a truly unconfigured dev box still simulates. Added `ab_ai_agent/tests/` (was zero): record-action safety + provider-failure-surfaced — 9 tests green on a fresh tenant DB.
+
 ### 2026-06-11
 - i18n(ab_printer_driver): re-point Bridge Agent selection msgid to "Bridge Agent (LAN proxy for cloud Ghaima)" after source debranding (Arabic unchanged).
 

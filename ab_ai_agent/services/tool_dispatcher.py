@@ -719,15 +719,14 @@ def _builtin_record_action(env, agent=None, reference=None, action=None, **_kw):
     for model, fnames, method, is_done in _RECORD_ACTION_SPECS:
         if model not in env:
             continue
-        rec = None
-        for op in ('=ilike', 'ilike'):
-            dom = ['|'] * (len(fnames) - 1) + [(f, op, ref) for f in fnames]
-            try:
-                rec = env[model].search(dom, limit=1)
-            except Exception:
-                rec = None
-            if rec:
-                break
+        # Exact (case-insensitive) match only. A substring `ilike` could
+        # finalize the WRONG record — "INV/2026/0004" must never resolve to
+        # "INV/2026/00045" and post it.
+        dom = ['|'] * (len(fnames) - 1) + [(f, '=ilike', ref) for f in fnames]
+        try:
+            rec = env[model].search(dom, limit=1)
+        except Exception:
+            rec = None
         if not rec:
             continue
         label = rec.display_name
@@ -740,6 +739,15 @@ def _builtin_record_action(env, agent=None, reference=None, action=None, **_kw):
         if is_done(rec):
             return {'message': f'{label} is already finalized — nothing to do.',
                     'already_done': True, 'action': descriptor}
+        # Enforce write access AS THE REQUESTING USER (env is not sudo here)
+        # so the agent can never finalize a record the user couldn't post
+        # through the UI. Mirrors native Odoo 19 AI, which runs tool bodies
+        # su=False precisely so record rules / ACLs still apply.
+        try:
+            rec.check_access('write')
+        except Exception as e:
+            return {'error': f'{label}: not permitted ({type(e).__name__}).',
+                    'action': descriptor}
         try:
             getattr(rec, method)()
         except Exception as e:

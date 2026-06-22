@@ -112,14 +112,33 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
         prompt_for_llm = "\n\n".join(transcript)
         on_event('thinking', run_id=agent_run.id, hop=hop + 1)
 
-        response, usage, routed_via = llm_adapter.call_llm(
-            env, agent,
-            system_prompt=system_prompt,
-            user_prompt=prompt_for_llm,
-            tools=llm_tool_schemas,
-            temperature=agent.temperature(),
-            max_tokens=2000,
-        )
+        try:
+            response, usage, routed_via = llm_adapter.call_llm(
+                env, agent,
+                system_prompt=system_prompt,
+                user_prompt=prompt_for_llm,
+                tools=llm_tool_schemas,
+                temperature=agent.temperature(),
+                max_tokens=2000,
+            )
+        except llm_adapter.AiProviderError as e:
+            # A configured provider/gateway failed — finalize as a real
+            # error so monitoring sees it; never present a fake answer.
+            envelope = _provider_error_envelope(locale)
+            agent_run.finalize(
+                state='error',
+                response=envelope['response'],
+                error=str(e)[:500],
+                latency_ms=int((time.perf_counter() - started_perf) * 1000),
+                tool_calls=tool_calls_audit,
+            )
+            on_event('done', run_id=agent_run.id, state='error')
+            agent_run.sudo().write({
+                'hops': hop + 1,
+                'cost_usd': cum_cost,
+                'routed_via': last_routed_via,
+            })
+            return envelope['response'], agent_run, envelope
         last_routed_via = routed_via
 
         # Persist a meter row per hop.
@@ -1141,6 +1160,27 @@ def _cost_capped_envelope(agent, spent, cap, locale):
             'blocks': [
                 {'type': 'callout', 'title': 'Cost cap reached', 'body': msg,
                  'tone': 'bad', 'icon': 'fa-shield'},
+            ],
+        },
+    }
+
+
+def _provider_error_envelope(locale):
+    if locale == 'ar':
+        msg = ('تعذّر الوصول إلى مزوّد الذكاء الاصطناعي، فلم يتم إنشاء إجابة. '
+               'حاول مرة أخرى لاحقًا أو تواصل مع المسؤول.')
+    else:
+        msg = ('The AI provider could not be reached, so no answer was '
+               'generated. Please try again shortly or contact your '
+               'administrator.')
+    return {
+        'response': msg,
+        'error': 'PROVIDER_ERROR',
+        'render': {
+            'layout': 'chat',
+            'blocks': [
+                {'type': 'callout', 'title': 'AI unavailable', 'body': msg,
+                 'tone': 'bad', 'icon': 'fa-exclamation-triangle'},
             ],
         },
     }
