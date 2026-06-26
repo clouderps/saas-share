@@ -13,9 +13,13 @@
 | `ab_printer_driver` | 18.0.2.0.0 | LGPL-3 | Printer Driver — Base printer driver — detect, verify, dispatch, log. Bridge agent for cloud-host |
 | `ab_redis_session` | 18.0.1.0.0 | LGPL-3 | Redis Session & Bus — Store Ghaima sessions and bus notifications in Redis for multi-node HA |
 | `ab_reports_hub_base` | 18.0.1.0.0 | LGPL-3 | AB Reports Hub — Base — Top-level Reports app icon + role groups, shared by tenant and central report bu |
-| `ab_s3_attachment` | 18.0.1.0.0 | LGPL-3 | S3 Attachment Storage — Store Ghaima filestore attachments on AWS S3 |
+| `ab_s3_attachment` | 18.0.1.0.1 | LGPL-3 | S3 Attachment Storage — Store Ghaima filestore attachments on AWS S3 |
 
 ## Recent changes (since 2026-03-02)
+
+### 2026-06-26
+- fix(ab_s3_attachment) **v18.0.1.0.1**: `_s3_migrate_local_to_s3` only migrated **non-field** attachments. `ir.attachment._search` injects an implicit `('res_field','=',False)` that hides field attachments (payment.method / res.partner / etc. images — the bulk of a fresh tenant's filestore), so the platform "Migrate to S3" silently moved ~24/536 on a real tenant. Now mentions `res_field` explicitly (`['&',('store_fname','!=',False),'|',('res_field','=',False),('res_field','!=',False)]`) so all local attachments migrate.
+- ops(s3): **per-tenant prefix isolation + cleanup** (2026-06-26). demo (entity_84) was cloned sharing fayia's `entity_69` prefix → demo's `@api.autovacuum _gc_s3_file_store` deleted fayia's backend-asset S3 objects (fayia backend 404'd). Regenerated fayia's bundles + repointed demo to its own `entity_84` (each tenant owns its prefix; cross-pollution now impossible). Provisioned **stones** onto S3 (ab_s3_attachment was uninstalled → ran on local filestore; installed + migrated 535 files to `entity_85`). Migrated **alshaya**'s 478 install-time local attachments to `entity_83`. Purged 12 orphan `s3.storage.quota` rows + 157 stranded S3 objects (~62 MB under removed entities 76/77/79/80/82). All four live tenants: unique prefix, 0 missing, HTTP 200.
 
 ### 2026-06-22
 - security(ab_ai_agent): **branch/record-rule isolation** — `_business_snapshot_block` (the pre-tool context injected into every agent prompt) now reads as the requesting user (dropped `.sudo()` from `_safe_count`/`_safe_sum`), so record rules + the `ab.branch.mixin` `_search` filter apply. A branch-scoped / low-privilege user gets only their own scope, never company-wide / cross-branch totals. Test proves it (admin sees the order, a portal user sees 0).
