@@ -14,7 +14,7 @@ Required ir.config_parameter keys:
 - ab_s3.secret_access_key = '...'
 - ab_s3.max_storage_bytes = 0 (0 = unlimited)
     """,
-    'version': '18.0.1.0.0',
+    'version': '18.0.1.0.1',
     'category': 'Technical',
     'author': 'Ghaima Tech',
     'license': 'LGPL-3',

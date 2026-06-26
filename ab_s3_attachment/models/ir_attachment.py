@@ -386,7 +386,15 @@ class IrAttachment(models.Model):
         if not self._is_s3_storage():
             return {'status': 'error', 'message': 'S3 not configured'}
 
-        attachments = self.search([('store_fname', '!=', False)])
+        # ir.attachment._search injects an implicit ('res_field', '=', False)
+        # which HIDES field attachments (e.g. payment.method/res.partner images)
+        # from a plain search — they are the bulk of a fresh tenant's filestore.
+        # Mention res_field explicitly so that filter is NOT injected, otherwise
+        # the migration silently skips them (only non-field attachments migrate).
+        attachments = self.search([
+            '&', ('store_fname', '!=', False),
+            '|', ('res_field', '=', False), ('res_field', '!=', False),
+        ])
         migrated = 0
         errors = 0
         for att in attachments:
