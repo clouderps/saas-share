@@ -1,0 +1,58 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* ab_s3_attachment
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-28 11:45+0000\n"
+"PO-Revision-Date: 2026-06-28 11:45+0000\n"
+"Last-Translator: Ghaima\n"
+"Language-Team: Arabic (Saudi Arabia)\n"
+"Language: ar_001\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: ab_s3_attachment
+#: model:ir.model,name:ab_s3_attachment.model_ir_attachment
+msgid "Attachment"
+msgstr "مرفق"
+
+#. module: ab_s3_attachment
+#. odoo-python
+#: code:addons/ab_s3_attachment/models/ir_attachment.py:0
+msgid "Failed to upload file to S3: %s"
+msgstr "فشل رفع الملف إلى S3: %s"
+
+#. module: ab_s3_attachment
+#. odoo-python
+#: code:addons/ab_s3_attachment/models/ir_attachment.py:0
+msgid "S3 storage is not properly configured."
+msgstr "لم يتم ضبط تخزين S3 بشكل صحيح."
+
+#. module: ab_s3_attachment
+#. odoo-python
+#: code:addons/ab_s3_attachment/models/ir_attachment.py:0
+msgid ""
+"Storage quota exceeded.\n"
+"\n"
+"Used: %.2f GB / %.2f GB\n"
+"Cannot upload %.2f MB.\n"
+"\n"
+"Please contact your administrator to increase storage."
+msgstr ""
+"تم تجاوز حصة التخزين.\n"
+"\n"
+"المستخدم: %.2f جيجابايت / %.2f جيجابايت\n"
+"لا يمكن رفع %.2f ميجابايت.\n"
+"\n"
+"يرجى التواصل مع مسؤول النظام لزيادة مساحة التخزين."
+
+#. module: ab_s3_attachment
+#. odoo-python
+#: code:addons/ab_s3_attachment/models/ir_attachment.py:0
+msgid "boto3 is not installed. Run: pip install boto3"
+msgstr "مكتبة boto3 غير مُثبَّتة. نفّذ: pip install boto3"
