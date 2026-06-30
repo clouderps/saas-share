@@ -61,7 +61,7 @@ class PrinterJob(models.Model):
             ('failed',    'Failed'),
             ('cancelled', 'Cancelled'),
         ],
-        string='Status', default='queued', tracking=True, index=True,
+        string='Status', default='queued', index=True,
     )
     claimed_at = fields.Datetime(string='Claimed At', readonly=True)
     priority = fields.Integer(string='Priority', default=10,
