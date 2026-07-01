@@ -86,7 +86,9 @@
         <field name="target">new</field>
     </record>
 
+    <!-- Under Settings ▸ Technical (admin-only tooling) -->
     <menuitem id="menu_api_root" name="API" sequence="95"
+              parent="base.menu_custom"
               groups="base.group_system"/>
     <menuitem id="menu_api_endpoints" name="Endpoints"
               parent="menu_api_root" action="action_api_endpoints" sequence="10"/>
