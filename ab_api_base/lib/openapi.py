@@ -63,7 +63,7 @@ def _operation(entry, path_params):
     return op
 
 
-def build_openapi_spec(entries, title='CloudERPs API', version='1.0.0',
+def build_openapi_spec(entries, title='Ghaima APIs', version='1.0.0',
                        description='', server_url='/'):
     paths = {}
     tag_names = []

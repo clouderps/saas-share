@@ -117,7 +117,7 @@ class ApiDocsController(http.Controller):
         icp = env['ir.config_parameter'].sudo()
         spec = build_openapi_spec(
             list(merged.values()),
-            title=icp.get_param('ab_api.docs_title', 'CloudERPs API'),
+            title=icp.get_param('ab_api.docs_title', 'Ghaima APIs'),
             version=icp.get_param('ab_api.docs_version', '1.0.0'),
             description=icp.get_param(
                 'ab_api.docs_description',
@@ -144,7 +144,7 @@ _SWAGGER_HTML = """<!DOCTYPE html>
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>CloudERPs API Docs</title>
+  <title>Ghaima APIs</title>
   <link rel="stylesheet" href="/ab_api_base/static/lib/swagger-ui/swagger-ui.css"/>
   <style>
     body { margin: 0; background: #fafafa; }
