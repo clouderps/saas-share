@@ -6,7 +6,7 @@
               name="AI"
               parent="base.menu_administration"
               sequence="90"
-              groups="group_ai_manager"/>
+              groups="group_ai_manager,base.group_system"/>
 
     <menuitem id="menu_ai_provider_config"
               name="AI Provider Configuration"
