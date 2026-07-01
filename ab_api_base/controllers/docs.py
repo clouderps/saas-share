@@ -71,6 +71,17 @@ _PARAM_RE = re.compile(
 _BODY_METHODS = {'POST', 'PUT', 'PATCH', 'DELETE'}
 
 
+def _extract_doc(fn):
+    """(summary, description) from the handler's own docstring, if any."""
+    try:
+        doc = (inspect.getdoc(inspect.unwrap(fn)) or '').strip()
+    except (OSError, TypeError):
+        return '', ''
+    if not doc:
+        return '', ''
+    return doc.split('\n', 1)[0].strip(), doc
+
+
 def _extract_params(fn):
     """Best-effort: pull body-field names from the handler's source."""
     try:
@@ -118,10 +129,12 @@ def _discover_api_entries(env, prefixes):
             params = _extract_params(fn)
             if params:
                 req_ex = {k: '' for k in params}
+        summary, description = _extract_doc(fn)
         out.append({
             'path': path, 'methods': methods, 'scope': None,
             'auth': 'public' if is_public else 'token',
-            'summary': '', 'description': '', 'tags': _tags_from_path(path),
+            'summary': summary, 'description': description,
+            'tags': _tags_from_path(path),
             'deprecated': False, 'module': module,
             'request_example': req_ex, 'response_example': None,
         })
