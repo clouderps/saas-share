@@ -136,16 +136,16 @@ class ApiDocsController(http.Controller):
         return Response(_SWAGGER_HTML, headers=[('Content-Type', 'text/html')])
 
 
-# Swagger UI from a pinned CDN build pointed at our spec.
-# ponytail: CDN keeps this a single file; vendor swagger-ui-dist into
-# static/ if a tenant must run air-gapped.
+# Swagger UI assets vendored locally under static/lib/swagger-ui/ (Odoo serves
+# them at /ab_api_base/static/...), so the docs render fully offline / air-gapped.
+# Pinned to swagger-ui-dist@5.17.14.
 _SWAGGER_HTML = """<!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>CloudERPs API Docs</title>
-  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui.css"/>
+  <link rel="stylesheet" href="/ab_api_base/static/lib/swagger-ui/swagger-ui.css"/>
   <style>
     body { margin: 0; background: #fafafa; }
     .topbar { display: none; }
@@ -153,7 +153,7 @@ _SWAGGER_HTML = """<!DOCTYPE html>
 </head>
 <body>
   <div id="swagger-ui"></div>
-  <script src="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui-bundle.js" crossorigin></script>
+  <script src="/ab_api_base/static/lib/swagger-ui/swagger-ui-bundle.js"></script>
   <script>
     window.onload = function () {
       window.ui = SwaggerUIBundle({
