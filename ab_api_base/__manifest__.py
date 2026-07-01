@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'CloudERPs API Base',
-    'version': '18.0.1.5.0',
+    'version': '18.0.1.6.0',
     'category': 'Technical',
     'summary': 'Unified API seam: one token, one decorator, auto OpenAPI/Swagger docs',
     'description': """
@@ -34,8 +34,12 @@ time, so this module stays free of any business-domain dependency.
     'external_dependencies': {
         'python': ['pyjwt'],
     },
-    'data': [],
+    'data': [
+        'security/ir.model.access.csv',
+        'views/ab_api_endpoint_views.xml',
+    ],
+    'post_init_hook': 'post_init',
     'installable': True,
     'auto_install': False,
-    'application': False,
+    'application': True,
 }

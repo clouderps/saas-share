@@ -141,6 +141,28 @@ def _discover_api_entries(env, prefixes):
     return out
 
 
+def collect_endpoints(env):
+    """Merged endpoint entries for THIS server: auto-discovered from the live
+    routing map, overridden by explicit @api_route registrations, enriched by
+    register_doc overlays. Shared by the OpenAPI spec and the ab.api.endpoint
+    backend list."""
+    merged = {e['path']: e for e in _discover_api_entries(env, _doc_prefixes(env))}
+    installed = _installed_modules(env)
+    for e in ENDPOINT_REGISTRY:
+        if not e['module'] or e['module'] in installed:
+            merged[e['path']] = dict(e)  # copy — never mutate the shared registry
+    for path, entry in merged.items():
+        ov = DOC_OVERLAY.get(path)
+        if not ov:
+            continue
+        for k in ('summary', 'description', 'request_example', 'response_example'):
+            if ov.get(k) is not None:
+                entry[k] = ov[k]
+        if ov.get('tags'):
+            entry['tags'] = ov['tags']
+    return list(merged.values())
+
+
 class ApiDocsController(http.Controller):
 
     @http.route('/api/v1/openapi.json', type='http', auth='public',
@@ -150,27 +172,9 @@ class ApiDocsController(http.Controller):
         if not _docs_enabled(env):
             return Response('Not found', status=404)
 
-        # Auto-discovered from the live routing map (instance-scoped)...
-        merged = {e['path']: e for e in _discover_api_entries(env, _doc_prefixes(env))}
-        # ...overridden by explicit @api_route entries (richer metadata).
-        installed = _installed_modules(env)
-        for e in ENDPOINT_REGISTRY:
-            if not e['module'] or e['module'] in installed:
-                merged[e['path']] = dict(e)  # copy — never mutate the shared registry
-        # ...enriched with doc overlays (params via request_example + response_example).
-        for path, entry in merged.items():
-            ov = DOC_OVERLAY.get(path)
-            if not ov:
-                continue
-            for k in ('summary', 'description', 'request_example', 'response_example'):
-                if ov.get(k) is not None:
-                    entry[k] = ov[k]
-            if ov.get('tags'):
-                entry['tags'] = ov['tags']
-
         icp = env['ir.config_parameter'].sudo()
         spec = build_openapi_spec(
-            list(merged.values()),
+            collect_endpoints(env),
             title=icp.get_param('ab_api.docs_title', 'Ghaima APIs'),
             version=icp.get_param('ab_api.docs_version', '1.0.0'),
             description=icp.get_param(

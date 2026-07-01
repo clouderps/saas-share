@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_ab_api_endpoint_list" model="ir.ui.view">
+        <field name="name">ab.api.endpoint.list</field>
+        <field name="model">ab.api.endpoint</field>
+        <field name="arch" type="xml">
+            <list string="API Endpoints" create="0" delete="0" edit="0">
+                <header>
+                    <button name="action_refresh" type="object" string="Refresh from server" class="btn-primary"/>
+                </header>
+                <field name="tag"/>
+                <field name="http_methods"/>
+                <field name="path"/>
+                <field name="summary"/>
+                <field name="scope"/>
+                <field name="auth_mode"/>
+                <field name="is_public"/>
+                <field name="module" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_ab_api_endpoint_form" model="ir.ui.view">
+        <field name="name">ab.api.endpoint.form</field>
+        <field name="model">ab.api.endpoint</field>
+        <field name="arch" type="xml">
+            <form string="API Endpoint" create="0" edit="0">
+                <sheet>
+                    <widget name="web_ribbon" title="Public" bg_color="text-bg-success" invisible="not is_public"/>
+                    <group>
+                        <group>
+                            <field name="http_methods"/>
+                            <field name="path"/>
+                            <field name="tag"/>
+                        </group>
+                        <group>
+                            <field name="scope"/>
+                            <field name="auth_mode"/>
+                            <field name="is_public"/>
+                            <field name="module"/>
+                        </group>
+                    </group>
+                    <group string="Summary">
+                        <field name="summary" nolabel="1"/>
+                    </group>
+                    <group string="Description — what to do with this endpoint">
+                        <field name="description" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_ab_api_endpoint_search" model="ir.ui.view">
+        <field name="name">ab.api.endpoint.search</field>
+        <field name="model">ab.api.endpoint</field>
+        <field name="arch" type="xml">
+            <search string="API Endpoints">
+                <field name="path"/>
+                <field name="summary"/>
+                <field name="module"/>
+                <field name="scope"/>
+                <filter name="public" string="Public" domain="[('is_public','=',True)]"/>
+                <filter name="protected" string="Requires token" domain="[('is_public','=',False)]"/>
+                <group expand="0" string="Group By">
+                    <filter name="g_tag" string="Group" context="{'group_by':'tag'}"/>
+                    <filter name="g_scope" string="Scope" context="{'group_by':'scope'}"/>
+                    <filter name="g_module" string="Module" context="{'group_by':'module'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Opening the menu refreshes from the live routing map, then shows the list -->
+    <record id="action_api_endpoints" model="ir.actions.server">
+        <field name="name">API Endpoints</field>
+        <field name="model_id" ref="model_ab_api_endpoint"/>
+        <field name="state">code</field>
+        <field name="code">action = env['ab.api.endpoint'].action_refresh()</field>
+    </record>
+
+    <record id="action_api_swagger" model="ir.actions.act_url">
+        <field name="name">API Documentation (Swagger)</field>
+        <field name="url">/api/v1/docs</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem id="menu_api_root" name="API" sequence="95"
+              groups="base.group_system"/>
+    <menuitem id="menu_api_endpoints" name="Endpoints"
+              parent="menu_api_root" action="action_api_endpoints" sequence="10"/>
+    <menuitem id="menu_api_docs" name="Documentation (Swagger)"
+              parent="menu_api_root" action="action_api_swagger" sequence="20"/>
+
+</odoo>
