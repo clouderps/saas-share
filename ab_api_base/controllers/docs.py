@@ -17,6 +17,7 @@ Gated by the ``ab_api.expose_docs`` system parameter (default enabled).
 
 import re
 import json
+import inspect
 import logging
 
 from odoo import http, SUPERUSER_ID
@@ -61,6 +62,31 @@ def _tags_from_path(path):
     return [segs[0]] if segs else ['default']
 
 
+# Body params are read in handlers as `data.get('x')` / `body.get('x')` /
+# `kwargs.get('x')` etc. — auto-extract those names from the handler source so
+# every endpoint shows its fields even without an explicit register_doc.
+_PARAM_RE = re.compile(
+    r'\b(?:data|body|kwargs|params|payload|post|req_data|json_data)'
+    r'\.get\(\s*[\'"]([A-Za-z_]\w*)[\'"]')
+_BODY_METHODS = {'POST', 'PUT', 'PATCH', 'DELETE'}
+
+
+def _extract_params(fn):
+    """Best-effort: pull body-field names from the handler's source."""
+    try:
+        src = inspect.getsource(inspect.unwrap(fn))
+    except (OSError, TypeError):
+        return []
+    seen = []
+    for m in _PARAM_RE.finditer(src):
+        name = m.group(1)
+        if name not in seen:
+            seen.append(name)
+        if len(seen) >= 30:
+            break
+    return seen
+
+
 def _discover_api_entries(env, prefixes):
     """Walk this server's live routing map and emit registry-shaped entries
     for every route under the configured API prefixes. Only installed
@@ -87,12 +113,17 @@ def _discover_api_entries(env, prefixes):
         if len(parts) > 2 and parts[0] == 'odoo':
             module = parts[2]
         is_public = any(marker in path for marker in _PUBLIC_PATH_MARKERS)
+        req_ex = None
+        if set(methods) & _BODY_METHODS:
+            params = _extract_params(fn)
+            if params:
+                req_ex = {k: '' for k in params}
         out.append({
             'path': path, 'methods': methods, 'scope': None,
             'auth': 'public' if is_public else 'token',
             'summary': '', 'description': '', 'tags': _tags_from_path(path),
             'deprecated': False, 'module': module,
-            'request_example': None, 'response_example': None,
+            'request_example': req_ex, 'response_example': None,
         })
     return out
 
