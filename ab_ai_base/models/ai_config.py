@@ -4,6 +4,8 @@ from odoo import models, fields, api, _
 from odoo.exceptions import ValidationError, UserError
 import logging
 
+from ..lib import fernet as fernet_lib
+
 _logger = logging.getLogger(__name__)
 
 
@@ -53,10 +55,20 @@ class AIProviderConfig(models.Model):
         default='gpt-4o-mini'
     )
     
+    # Write-only plaintext input. Encrypted into *_encrypted on write and
+    # then blanked at rest — see create()/write(). "Leave empty to keep the
+    # stored key" is the intended UX (mirrors ab_aws_saas_dns.aws.config).
     openai_api_key = fields.Char(
         string='OpenAI API Key',
-        help='Your OpenAI API key from https://platform.openai.com/api-keys'
+        help='Your OpenAI API key from https://platform.openai.com/api-keys. '
+             'Stored encrypted — leave empty to keep the existing key.'
     )
+    openai_api_key_encrypted = fields.Text(
+        string='OpenAI API Key (encrypted)', readonly=True, copy=False,
+        help='Fernet-encrypted OpenAI API key. Decrypted only when calling '
+             'the provider.'
+    )
+    has_openai_key = fields.Boolean(compute='_compute_has_keys')
     
     # Google Gemini Settings
     # 2.0 variants ('gemini-2.0-flash-001' / 'gemini-2.0-flash-lite-001')
@@ -77,8 +89,15 @@ class AIProviderConfig(models.Model):
     
     gemini_api_key = fields.Char(
         string='Google AI API Key',
-        help='Your Google AI API key from https://makersuite.google.com/app/apikey'
+        help='Your Google AI API key from https://makersuite.google.com/app/apikey. '
+             'Stored encrypted — leave empty to keep the existing key.'
     )
+    gemini_api_key_encrypted = fields.Text(
+        string='Google AI API Key (encrypted)', readonly=True, copy=False,
+        help='Fernet-encrypted Google AI key. Decrypted only when calling '
+             'the provider.'
+    )
+    has_gemini_key = fields.Boolean(compute='_compute_has_keys')
     
     # Anthropic Claude Settings
     claude_model = fields.Selection(
@@ -95,8 +114,15 @@ class AIProviderConfig(models.Model):
     
     claude_api_key = fields.Char(
         string='Anthropic API Key',
-        help='Your Anthropic API key from https://console.anthropic.com/'
+        help='Your Anthropic API key from https://console.anthropic.com/. '
+             'Stored encrypted — leave empty to keep the existing key.'
     )
+    claude_api_key_encrypted = fields.Text(
+        string='Anthropic API Key (encrypted)', readonly=True, copy=False,
+        help='Fernet-encrypted Anthropic key. Decrypted only when calling '
+             'the provider.'
+    )
+    has_claude_key = fields.Boolean(compute='_compute_has_keys')
     
     # Local LLM Settings
     local_llm_endpoint = fields.Char(
@@ -170,9 +196,17 @@ class AIProviderConfig(models.Model):
         default=lambda self: self.env.company
     )
 
-    @api.constrains('ai_provider', 'openai_api_key', 'gemini_api_key', 'claude_api_key')
+    @api.constrains(
+        'ai_provider', 'openai_api_key', 'gemini_api_key', 'claude_api_key',
+        'openai_api_key_encrypted', 'gemini_api_key_encrypted',
+        'claude_api_key_encrypted',
+    )
     def _check_api_key(self):
-        """Validate that API key is provided for selected provider"""
+        """Validate that API key is provided for selected provider.
+
+        create()/write() blank the plaintext input after encrypting it, so
+        the check must accept either a pending plaintext value or a stored
+        ciphertext."""
         # Bypass key validation when global simulation toggle is on —
         # ops may want to save a config skeleton with empty keys for
         # later, and simulation mode never hits the provider anyway.
@@ -181,12 +215,76 @@ class AIProviderConfig(models.Model):
                 in ('1', 'true', 'yes'):
             return
         for config in self:
-            if config.ai_provider == 'openai' and not config.openai_api_key:
+            if config.ai_provider == 'openai' and not (
+                    config.openai_api_key or config.openai_api_key_encrypted):
                 raise ValidationError(_('OpenAI API Key is required when using OpenAI provider'))
-            elif config.ai_provider == 'google' and not config.gemini_api_key:
+            elif config.ai_provider == 'google' and not (
+                    config.gemini_api_key or config.gemini_api_key_encrypted):
                 raise ValidationError(_('Google AI API Key is required when using Gemini provider'))
-            elif config.ai_provider == 'anthropic' and not config.claude_api_key:
+            elif config.ai_provider == 'anthropic' and not (
+                    config.claude_api_key or config.claude_api_key_encrypted):
                 raise ValidationError(_('Anthropic API Key is required when using Claude provider'))
+
+    # ------------------------------------------------------------------
+    # Encryption at rest — provider keys are Fernet-encrypted on write and
+    # decrypted only at the point of a provider call. Pattern mirrors
+    # ab_aws_saas_dns.aws.config.
+    # ------------------------------------------------------------------
+
+    # Plaintext input field -> encrypted storage column.
+    _ENCRYPTED_KEY_FIELDS = {
+        'openai_api_key': 'openai_api_key_encrypted',
+        'gemini_api_key': 'gemini_api_key_encrypted',
+        'claude_api_key': 'claude_api_key_encrypted',
+    }
+
+    @api.depends('openai_api_key_encrypted', 'gemini_api_key_encrypted',
+                 'claude_api_key_encrypted')
+    def _compute_has_keys(self):
+        for record in self:
+            record.has_openai_key = bool(record.openai_api_key_encrypted)
+            record.has_gemini_key = bool(record.gemini_api_key_encrypted)
+            record.has_claude_key = bool(record.claude_api_key_encrypted)
+
+    def _encrypt_key_vals(self, vals):
+        """Move any *non-empty* plaintext key in ``vals`` into its encrypted
+        column and blank the plaintext so it never lands in the DB.
+
+        An absent or empty value leaves the stored (encrypted) key untouched
+        — this is the 'leave empty to keep the existing key' UX and mirrors
+        ab_aws_saas_dns.aws.config. It deliberately does not offer a
+        clear-via-blank path (which would risk wiping a key if a client ever
+        re-sent an empty value for an untouched field)."""
+        for plain_field, enc_field in self._ENCRYPTED_KEY_FIELDS.items():
+            if vals.get(plain_field):
+                vals[enc_field] = fernet_lib.encrypt(self.env, vals[plain_field])
+                # Never persist the plaintext.
+                vals[plain_field] = ''
+        return vals
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            self._encrypt_key_vals(vals)
+        return super().create(vals_list)
+
+    def write(self, vals):
+        self._encrypt_key_vals(vals)
+        return super().write(vals)
+
+    def _get_decrypted_key(self, plain_field):
+        """Return the decrypted provider key for ``plain_field``
+        (one of openai_api_key / gemini_api_key / claude_api_key).
+
+        Falls back to any legacy plaintext still sitting in the column so
+        the switch is seamless even before the migration runs."""
+        self.ensure_one()
+        enc_field = self._ENCRYPTED_KEY_FIELDS[plain_field]
+        ciphertext = self[enc_field]
+        if ciphertext:
+            return fernet_lib.decrypt(self.env, ciphertext)
+        # Legacy / pre-migration plaintext fallback.
+        return self[plain_field] or ''
 
     @api.constrains('fallback_provider_id')
     def _check_no_fallback_loop(self):

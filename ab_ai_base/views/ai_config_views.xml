@@ -69,6 +69,7 @@
                                 </group>
                                 <group>
                                     <field name="openai_api_key" password="True" placeholder="sk-..."/>
+                                    <field name="has_openai_key" string="Key stored (encrypted)" readonly="1"/>
                                 </group>
                             </group>
                         </page>
@@ -87,6 +88,7 @@
                                 </group>
                                 <group>
                                     <field name="gemini_api_key" password="True" placeholder="AIza..."/>
+                                    <field name="has_gemini_key" string="Key stored (encrypted)" readonly="1"/>
                                 </group>
                             </group>
                         </page>
@@ -105,6 +107,7 @@
                                 </group>
                                 <group>
                                     <field name="claude_api_key" password="True" placeholder="sk-ant-..."/>
+                                    <field name="has_claude_key" string="Key stored (encrypted)" readonly="1"/>
                                 </group>
                             </group>
                         </page>

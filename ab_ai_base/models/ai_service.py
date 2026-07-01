@@ -294,7 +294,7 @@ class AIProviderService(models.AbstractModel):
             with requests.post(
                 "https://api.openai.com/v1/chat/completions",
                 headers={
-                    "Authorization": "Bearer %s" % config.openai_api_key,
+                    "Authorization": "Bearer %s" % config._get_decrypted_key('openai_api_key'),
                     "Content-Type": "application/json",
                 },
                 json=payload,
@@ -433,7 +433,7 @@ class AIProviderService(models.AbstractModel):
             response = requests.post(
                 "https://api.openai.com/v1/chat/completions",
                 headers={
-                    "Authorization": "Bearer %s" % config.openai_api_key,
+                    "Authorization": "Bearer %s" % config._get_decrypted_key('openai_api_key'),
                     "Content-Type": "application/json",
                 },
                 json={
@@ -578,7 +578,7 @@ class AIProviderService(models.AbstractModel):
             response = requests.post(
                 "https://api.openai.com/v1/chat/completions",
                 headers={
-                    "Authorization": "Bearer %s" % config.openai_api_key,
+                    "Authorization": "Bearer %s" % config._get_decrypted_key('openai_api_key'),
                     "Content-Type": "application/json",
                 },
                 json=body,
@@ -619,7 +619,7 @@ class AIProviderService(models.AbstractModel):
         model = model_override or config.gemini_model
         try:
             url = "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s" % (
-                model, config.gemini_api_key
+                model, config._get_decrypted_key('gemini_api_key')
             )
             generation_config = {
                 "temperature": config.temperature,
@@ -707,7 +707,7 @@ class AIProviderService(models.AbstractModel):
             response = requests.post(
                 "https://api.anthropic.com/v1/messages",
                 headers={
-                    "x-api-key": config.claude_api_key,
+                    "x-api-key": config._get_decrypted_key('claude_api_key'),
                     "anthropic-version": "2023-06-01",
                     "Content-Type": "application/json",
                 },
@@ -771,7 +771,7 @@ class AIProviderService(models.AbstractModel):
             response = requests.post(
                 "https://api.openai.com/v1/chat/completions",
                 headers={
-                    "Authorization": "Bearer %s" % config.openai_api_key,
+                    "Authorization": "Bearer %s" % config._get_decrypted_key('openai_api_key'),
                     "Content-Type": "application/json",
                 },
                 json={
@@ -834,7 +834,7 @@ class AIProviderService(models.AbstractModel):
             response = requests.post(
                 "https://api.anthropic.com/v1/messages",
                 headers={
-                    "x-api-key": config.claude_api_key,
+                    "x-api-key": config._get_decrypted_key('claude_api_key'),
                     "anthropic-version": "2023-06-01",
                     "Content-Type": "application/json",
                 },
@@ -870,7 +870,7 @@ class AIProviderService(models.AbstractModel):
         model = model_override or config.gemini_model
         try:
             url = "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s" % (
-                model, config.gemini_api_key
+                model, config._get_decrypted_key('gemini_api_key')
             )
             generation_config = {
                 "temperature": config.temperature,
@@ -967,7 +967,7 @@ class AIProviderService(models.AbstractModel):
         model = "gemini-embedding-001"
         base_url = (
             "https://generativelanguage.googleapis.com/v1beta/models/"
-            "%s:embedContent?key=%s" % (model, config.gemini_api_key)
+            "%s:embedContent?key=%s" % (model, config._get_decrypted_key('gemini_api_key'))
         )
         if len(texts) > 100:
             raise UserError(_('Embedding batch too large (max 100 per call).'))
