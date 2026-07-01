@@ -22,7 +22,7 @@ import logging
 from odoo import http, SUPERUSER_ID
 from odoo.http import request, Response
 
-from .api import ENDPOINT_REGISTRY
+from .api import ENDPOINT_REGISTRY, DOC_OVERLAY
 from ..lib.openapi import build_openapi_spec
 
 _logger = logging.getLogger(__name__)
@@ -112,7 +112,17 @@ class ApiDocsController(http.Controller):
         installed = _installed_modules(env)
         for e in ENDPOINT_REGISTRY:
             if not e['module'] or e['module'] in installed:
-                merged[e['path']] = e
+                merged[e['path']] = dict(e)  # copy — never mutate the shared registry
+        # ...enriched with doc overlays (params via request_example + response_example).
+        for path, entry in merged.items():
+            ov = DOC_OVERLAY.get(path)
+            if not ov:
+                continue
+            for k in ('summary', 'description', 'request_example', 'response_example'):
+                if ov.get(k) is not None:
+                    entry[k] = ov[k]
+            if ov.get('tags'):
+                entry['tags'] = ov['tags']
 
         icp = env['ir.config_parameter'].sudo()
         spec = build_openapi_spec(

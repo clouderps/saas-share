@@ -52,6 +52,11 @@ _logger = logging.getLogger(__name__)
 # List of endpoint metadata dicts for OpenAPI generation.
 ENDPOINT_REGISTRY = []
 
+# path -> doc-enrichment overlay {summary, description, tags, request_example,
+# response_example}. Lets any module attach params/examples to an
+# auto-discovered route WITHOUT rewriting its @http.route to @api_route.
+DOC_OVERLAY = {}
+
 # scope (str) -> callable(payload: dict, sudo_env) -> Response|None
 #   Return an error Response to reject, or None to allow. The validator owns
 #   the env switch (`request.update_env(user=uid)`) and any request stamping
@@ -78,6 +83,17 @@ def register_service_resolver(fn):
 def register_admin_check(config_param):
     """Register the ir.config_parameter key holding the admin bearer token."""
     _ADMIN_TOKEN_PARAM[0] = config_param
+
+
+def register_doc(path, summary=None, description=None, tags=None,
+                 request_example=None, response_example=None):
+    """Attach OpenAPI doc metadata (params via request_example, and a
+    response_example) to an existing route by path — so Swagger shows what to
+    send and what comes back, with no change to the route's decorator."""
+    DOC_OVERLAY[path] = {
+        'summary': summary, 'description': description, 'tags': tags,
+        'request_example': request_example, 'response_example': response_example,
+    }
 
 
 # --------------------------------------------------------------------------
