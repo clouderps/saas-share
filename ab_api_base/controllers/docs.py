@@ -34,7 +34,7 @@ _logger = logging.getLogger(__name__)
 # requiring bearerAuth so "Authorize" in Swagger applies the token.
 _PUBLIC_PATH_MARKERS = (
     '/auth/login', '/auth/pin-token', '/auth/refresh',
-    '/openapi.json', '/docs', '/redoc',
+    '/openapi.json', '/docs', '/redoc', '/guide',
     '/verify-pin', '/device-auth', '/device-features',
     '/webhook/', '/sim/pay',
 )
