@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
-"""Human-readable API guide: /api/v1/guide.
+"""Human-readable API reference: /api/v1/guide.
 
 Rendered from the same ``collect_endpoints`` data as the OpenAPI spec, so
 it is always in sync with the modules installed on THIS server — a tenant
-shows its tenant APIs, the central server shows its central APIs. It adds
-what Swagger doesn't show well: how the pieces fit together (system +
-auth-flow diagrams), which credential opens which door, and copy-paste
-curl examples per auth mode.
+shows its tenant APIs, the central server shows its central APIs.
+
+Layout follows the developer-portal standard the team referenced
+(docs.geidea.net / ReadMe-style, see docs/apis at the workspace root):
+a sticky sidebar with search + grouped endpoint navigation, a content
+column with per-endpoint documentation, and a code column with generated
+cURL and response samples — all in the Ghaima brand palette.
 
 Developer-facing and deliberately English/LTR, like the Swagger UI it
 sits next to. Gated by the same ``ab_api.expose_docs`` parameter.
@@ -21,9 +24,11 @@ from odoo.http import request, Response
 from .docs import collect_endpoints, _docs_enabled
 
 METHOD_ORDER = {'GET': 0, 'POST': 1, 'PUT': 2, 'PATCH': 3, 'DELETE': 4}
+_BODY_METHODS = {'POST', 'PUT', 'PATCH', 'DELETE'}
 
 AUTH_LABEL = {
-    'public':  ('Public', 'No credentials — login, docs, webhooks, simulators.'),
+    'public':  ('Public', 'No credentials — login, onboarding, webhooks, '
+                'the dev payment simulator and these docs.'),
     'token':   ('Bearer JWT', 'User access token from the login endpoint '
                 '(POS scope on tenants, billing scope on central).'),
     'service': ('Service JWT', 'Per-tenant machine token (payment middleware '
@@ -173,7 +178,7 @@ _PAYMENT_SVG = """
 """
 
 
-_CURL = {
+_CURL_QUICKSTART = {
     'tenant': """# 1 · login (creates/binds the device, returns the POS-scope JWT)
 curl -X POST {base}/api/v1/auth/login \\
   -H 'Content-Type: application/json' \\
@@ -205,217 +210,162 @@ curl -X POST {base}/api/v1/ai/status \\
 }
 
 
-def _endpoint_card(e):
+# --------------------------------------------------------------------------
+# Per-endpoint sample generation
+# --------------------------------------------------------------------------
+
+def _auth_header_for(e):
+    path = e['path']
+    if path.startswith('/api/v1/ai/'):
+        return "-H 'X-Entity-Token: <entity_token>'"
+    if path.startswith('/api/v1/saas/internal/'):
+        return "-H 'X-Saas-Service-Token: <service_token>'"
+    auth = e.get('auth') or 'token'
+    if auth == 'public':
+        return ''
+    placeholder = {'token': '<access_token>', 'service': '<service_jwt>',
+                   'admin': '<admin_token>'}.get(auth, '<token>')
+    return "-H 'Authorization: Bearer %s'" % placeholder
+
+
+def _sample_body(e):
+    """Best-effort JSON body from the extracted request fields."""
+    ex = e.get('request_example')
+    if not isinstance(ex, dict) or not ex:
+        return {}
+    return {k: (v if v not in ('', None) else '…') for k, v in ex.items()}
+
+
+def _curl_for(e, base):
+    methods = sorted(e.get('methods') or ['POST'],
+                     key=lambda m: METHOD_ORDER.get(m, 9))
+    m = 'POST' if 'POST' in methods else methods[0]
+    url = base + e['path'].replace('<', '{').replace('>', '}')
+    lines = ['curl -X %s %s' % (m, url)] if m != 'GET' else ['curl %s' % url]
+    auth_h = _auth_header_for(e)
+    if auth_h:
+        lines.append('  ' + auth_h)
+    if m in _BODY_METHODS:
+        body = _sample_body(e)
+        if e.get('route_type') == 'json':
+            body = {'jsonrpc': '2.0', 'method': 'call', 'params': body}
+        lines.append("  -H 'Content-Type: application/json'")
+        payload = json.dumps(body, indent=2, ensure_ascii=False, default=str)
+        lines.append("  -d '%s'" % payload)
+    return ' \\\n'.join(lines)
+
+
+def _response_sample(e):
+    resp = e.get('response_example')
+    if resp:
+        return _pretty(resp)
+    if e['path'].startswith('/api/v1/saas/payment'):
+        return '{\n  "ok": true,\n  "…": "…"\n}'
+    if e.get('route_type') == 'json':
+        return ('{\n  "jsonrpc": "2.0",\n  "id": null,\n'
+                '  "result": {\n    "success": true,\n    "…": "…"\n  }\n}')
+    return '{\n  "success": true,\n  "data": { "…": "…" },\n  "request_id": "…"\n}'
+
+
+# --------------------------------------------------------------------------
+# HTML building blocks
+# --------------------------------------------------------------------------
+
+def _anchor(e):
+    slug = e['path'].strip('/').replace('/', '-')
+    slug = ''.join(c if c.isalnum() or c == '-' else '' for c in slug)
+    return 'ep-' + slug
+
+
+def _title_of(e):
+    summary = (e.get('summary') or '').strip().rstrip('.')
+    if summary:
+        return summary
+    # fall back to the last meaningful path segments
+    segs = [s for s in e['path'].split('/') if s and not s.startswith('<')]
+    return ' / '.join(segs[2:]) or e['path']
+
+
+def _nav_item(e):
+    methods = sorted(e.get('methods') or ['POST'],
+                     key=lambda m: METHOD_ORDER.get(m, 9))
+    m = methods[0] if len(methods) == 1 else (
+        'POST' if 'POST' in methods else methods[0])
+    short = e['path'].replace('/api/v1', '') or e['path']
+    return ('<a class="nav-ep" href="#%s" data-q="%s">'
+            '<span class="m m-%s">%s</span><span class="lbl">%s</span></a>'
+            % (_anchor(e), _esc((e['path'] + ' ' + (e.get('summary') or '')).lower()),
+               m.lower(), m, _esc(short)))
+
+
+def _fields_table(e):
+    ex = e.get('request_example')
+    if isinstance(ex, dict) and ex:
+        rows = ''.join(
+            '<tr><td><code>%s</code></td><td>%s</td></tr>'
+            % (_esc(k), _esc(v) if v not in ('', None)
+               else '<span class="dim">—</span>')
+            for k, v in ex.items())
+        return ('<h4>Body parameters</h4>'
+                '<table class="fields"><thead><tr><th>Field</th>'
+                '<th>Example</th></tr></thead><tbody>%s</tbody></table>' % rows)
+    if ex:
+        return '<h4>Request example</h4><pre class="light">%s</pre>' % _esc(_pretty(ex))
+    return ''
+
+
+def _endpoint_article(e, base):
     methods = sorted(e.get('methods') or ['POST'],
                      key=lambda m: METHOD_ORDER.get(m, 9))
     chips = ''.join('<span class="m m-%s">%s</span>' % (m.lower(), m)
                     for m in methods)
     auth = e.get('auth') or 'token'
-    scope = e.get('scope')
     auth_txt = AUTH_LABEL.get(auth, (auth, ''))[0]
-    if scope:
-        auth_txt += ' · scope %s' % scope
-    summary = e.get('summary') or ''
-    desc = e.get('description') or ''
+    if e.get('scope'):
+        auth_txt += ' · scope %s' % e['scope']
+    desc = (e.get('description') or '').strip()
+    summary = (e.get('summary') or '').strip()
     if desc == summary:
         desc = ''
-    body = []
-    req = e.get('request_example')
-    if isinstance(req, dict) and req:
-        rows = ''.join(
-            '<tr><td><code>%s</code></td><td>%s</td></tr>'
-            % (_esc(k), _esc(v) if v not in ('', None) else
-               '<span class="dim">—</span>')
-            for k, v in req.items())
-        body.append('<h4>Request fields</h4>'
-                    '<table class="fields"><thead><tr><th>Field</th>'
-                    '<th>Example</th></tr></thead><tbody>%s</tbody></table>'
-                    % rows)
-    elif req:
-        body.append('<h4>Request example</h4><pre>%s</pre>' % _esc(_pretty(req)))
-    resp = e.get('response_example')
-    if resp:
-        body.append('<h4>Response example</h4><pre>%s</pre>' % _esc(_pretty(resp)))
-    if not resp:
-        body.append('<p class="dim">Response: standard envelope '
-                    '<code>{"success": true, "data": …}</code> (or '
-                    '<code>{"ok": true, …}</code> for payment middleware) — '
-                    'errors carry <code>error</code> + <code>code</code> and '
-                    'a matching 4xx/5xx status.</p>')
-    dep = ' <span class="dep">deprecated</span>' if e.get('deprecated') else ''
-    return (
-        '<details class="ep"><summary>%s<code class="path">%s</code>'
-        '<span class="auth">%s</span>%s<span class="sum">%s</span></summary>'
-        '<div class="ep-body">%s%s<p class="dim">Module: <code>%s</code></p>'
-        '</div></details>'
-        % (chips, _esc(e['path']), _esc(auth_txt), dep, _esc(summary),
-           ('<p>%s</p>' % _esc(desc).replace('\n', '<br/>')) if desc else '',
-           ''.join(body), _esc(e.get('module') or '—')))
-
-
-class ApiGuideController(http.Controller):
-
-    @http.route('/api/v1/guide', type='http', auth='public', csrf=False)
-    def api_guide(self, **kwargs):
-        env = request.env(user=SUPERUSER_ID)
-        if not _docs_enabled(env):
-            return Response('Not found', status=404)
-        base = request.httprequest.host_url.rstrip('/')
-        return Response(build_guide_html(env, base_url=base),
-                        headers=[('Content-Type', 'text/html; charset=utf-8')])
-
-
-_PAGE_TMPL = """<!DOCTYPE html>
-<html lang="en" dir="ltr">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>{title} — Developer Guide</title>
-<style>
-  :root {{
-    --blue: #005FF6; --navy: #0D00A2; --cyan: #5DD8CA; --bg: #F7F8FC;
-    --ink: #1c2434; --dim: #5f6b7a; --line: #e3e8f2; --card: #ffffff;
-    --radius: 12px; --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  }}
-  * {{ box-sizing: border-box; }}
-  body {{ margin: 0; background: var(--bg); color: var(--ink);
-         font: 15px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }}
-  header {{ background: var(--navy); color: #fff; padding: 2.2rem 1.5rem 2rem; }}
-  header .wrap, main {{ max-width: 980px; margin-inline: auto; }}
-  header h1 {{ margin: 0 0 .35rem; font-size: 1.6rem; letter-spacing: -.01em; }}
-  header p {{ margin: 0; color: #c9d4ff; max-width: 46rem; }}
-  header nav {{ margin-top: 1rem; display: flex; gap: .6rem; flex-wrap: wrap; }}
-  header nav a {{ color: #fff; text-decoration: none; border: 1px solid #4a55c8;
-                  border-radius: 999px; padding: .28rem .9rem; font-size: .85rem; }}
-  header nav a:hover {{ background: var(--blue); border-color: var(--blue); }}
-  main {{ padding: 1.5rem; }}
-  h2 {{ font-size: 1.2rem; margin: 2.2rem 0 .8rem; letter-spacing: -.01em; }}
-  h3 {{ font-size: 1.05rem; margin: 1.8rem 0 .6rem; }}
-  .card {{ background: var(--card); border: 1px solid var(--line);
-           border-radius: var(--radius); padding: 1.1rem 1.25rem; }}
-  .card + .card {{ margin-top: .8rem; }}
-  figure {{ margin: 0; padding: .5rem 0; overflow-x: auto; }}
-  figure svg {{ min-width: 640px; width: 100%; height: auto; }}
-  figcaption {{ color: var(--dim); font-size: .85rem; padding-top: .3rem; }}
-  table {{ border-collapse: collapse; width: 100%; font-size: .92rem; }}
-  td, th {{ border-top: 1px solid var(--line); padding: .5rem .6rem;
-            text-align: start; vertical-align: top; }}
-  thead th {{ border-top: 0; color: var(--dim); font-weight: 600;
-              font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; }}
-  pre {{ background: #0e1524; color: #dce7ff; border-radius: 10px;
-         padding: .9rem 1rem; overflow-x: auto; font: .84rem/1.55 var(--mono); }}
-  code {{ font-family: var(--mono); font-size: .88em; }}
-  .toc {{ display: flex; flex-wrap: wrap; gap: .45rem; margin: .8rem 0 0; }}
-  .toc a {{ text-decoration: none; color: var(--navy); background: #fff;
-            border: 1px solid var(--line); border-radius: 999px;
-            padding: .22rem .75rem; font-size: .85rem; }}
-  .toc a span {{ color: var(--dim); }}
-  .toc a:hover {{ border-color: var(--blue); color: var(--blue); }}
-  section {{ scroll-margin-top: 1rem; }}
-  .count {{ color: var(--dim); font-weight: 400; font-size: .85rem; }}
-  details.ep {{ background: var(--card); border: 1px solid var(--line);
-                border-radius: 10px; margin: .45rem 0; overflow: hidden; }}
-  details.ep > summary {{ list-style: none; cursor: pointer; display: flex;
-      align-items: center; gap: .55rem; padding: .55rem .8rem; flex-wrap: wrap; }}
-  details.ep > summary::-webkit-details-marker {{ display: none; }}
-  details.ep[open] > summary {{ border-bottom: 1px solid var(--line); }}
-  .ep-body {{ padding: .8rem 1rem 1rem; }}
-  .ep-body h4 {{ margin: .8rem 0 .35rem; font-size: .82rem; color: var(--dim);
-                 text-transform: uppercase; letter-spacing: .04em; }}
-  .m {{ font: 700 .72rem/1 var(--mono); border-radius: 6px; padding: .3rem .45rem;
-        color: #fff; min-width: 3.2em; text-align: center; }}
-  .m-get {{ background: #0b7a53; }} .m-post {{ background: var(--blue); }}
-  .m-put {{ background: #9a6700; }} .m-patch {{ background: #9a6700; }}
-  .m-delete {{ background: #b3261e; }}
-  code.path {{ font-size: .88rem; word-break: break-all; }}
-  .auth {{ font-size: .72rem; color: var(--navy); background: #eef3ff;
-           border-radius: 999px; padding: .18rem .6rem; white-space: nowrap; }}
-  .dep {{ font-size: .72rem; color: #b3261e; background: #fdecea;
-          border-radius: 999px; padding: .18rem .6rem; }}
-  .sum {{ color: var(--dim); font-size: .85rem; flex-basis: 100%; }}
-  .dim {{ color: var(--dim); }}
-  table.fields {{ margin-top: .2rem; }}
-  footer {{ color: var(--dim); font-size: .82rem; text-align: center;
-            padding: 2.5rem 1rem 2rem; }}
-  @media (prefers-color-scheme: dark) {{
-    :root {{ --bg: #10141f; --ink: #e5eaf5; --dim: #98a4b8; --line: #29324a;
-             --card: #171d2d; }}
-    header {{ background: #0a0836; }}
-    .toc a {{ background: var(--card); color: #aab8ff; }}
-    .auth {{ background: #1b2340; color: #aab8ff; }}
-    .m-get {{ background: #0e8f62; }}
-  }}
-</style>
-</head>
-<body>
-<header><div class="wrap">
-  <h1>{title} — Developer Guide</h1>
-  <p>{flavor_line} All {count} endpoints below are generated from this
-     server's live routing table, so what you read here is exactly what is
-     deployed.</p>
-  <nav>
-    <a href="/api/v1/docs">Swagger UI (try it out)</a>
-    <a href="/api/v1/openapi.json">OpenAPI spec (JSON)</a>
-    <a href="#auth">Authentication</a>
-    <a href="#endpoints">Endpoint reference</a>
-  </nav>
-</div></header>
-<main>
-  <h2>How the pieces fit together</h2>
-  <div class="card"><figure>{system_svg}
-    <figcaption>Every client company gets its own tenant Odoo. Mobile apps
-    talk to their tenant for selling and to central for activation, billing
-    and AI. Payments flow tenant → central → Geidea and come back as
-    webhooks.</figcaption></figure></div>
-
-  <h2 id="auth">Authentication</h2>
-  <div class="card"><figure>{auth_svg}
-    <figcaption>Login once per device, send the access token as
-    <code>Authorization: Bearer …</code> on every call, renew with the
-    refresh token. Access tokens expire after ~1 hour, refresh tokens after
-    ~30 days.</figcaption></figure></div>
-  <div class="card">
-    <table><thead><tr><th>Credential</th><th>What it opens</th></tr></thead>
-    <tbody>{auth_rows}
-    <tr><td><strong>X-Entity-Token</strong></td><td>AI gateway endpoints
-      (<code>/api/v1/ai/*</code>) — per-entity token issued by the platform.</td></tr>
-    <tr><td><strong>X-Saas-Service-Token</strong></td><td>Internal KPI push
-      (<code>/api/v1/saas/internal/*</code>) — per-tenant pre-shared token.</td></tr>
-    </tbody></table>
+    dep = ('<span class="dep">deprecated</span>'
+           if e.get('deprecated') else '')
+    envelope_note = ('JSON-RPC envelope — wrap the body in '
+                     '<code>{"jsonrpc": "2.0", "method": "call", '
+                     '"params": {…}}</code>.'
+                     if e.get('route_type') == 'json' else '')
+    return '''
+<article class="ep" id="%(anchor)s" data-q="%(q)s">
+  <div class="ep-doc">
+    <h3>%(title)s %(dep)s</h3>
+    <div class="urlbar">%(chips)s<code>%(path)s</code></div>
+    <p class="meta"><span class="auth">%(auth)s</span>
+      <span class="mod">module <code>%(module)s</code></span></p>
+    %(desc)s
+    %(envelope)s
+    %(fields)s
   </div>
-  <div class="card"><h3 style="margin-top:.2rem">Quick start</h3>
-    <pre>{curl}</pre></div>
-
-  {payment_svg_section}
-
-  <h2 id="endpoints">Endpoint reference</h2>
-  <p class="dim">Grouped by area. Click an endpoint for its request fields
-     and response shape. <code>POST</code> bodies are JSON; endpoints marked
-     <em>Public</em> need no token.</p>
-  <nav class="toc">{toc}</nav>
-  {sections}
-</main>
-<footer>Generated live from the installed API modules · also available as
-  <a href="/api/v1/docs">Swagger UI</a> and
-  <a href="/api/v1/openapi.json">OpenAPI JSON</a> ·
-  disable with system parameter <code>ab_api.expose_docs</code></footer>
-</body>
-</html>"""
-
-# The payment diagram only makes sense where payment routes exist; injected
-# as a full section (heading + card) or empty string.
-_PAYMENT_SECTION = """
-  <h2>Payment link flow</h2>
-  <div class="card"><figure>%s
-    <figcaption>The tenant never talks to Geidea directly — central holds
-    the credentials, creates the checkout session and fans the webhook back
-    out to the tenant, which raises a bus event the POS listens to.</figcaption>
-  </figure></div>
-"""
-
-
-def _render_payment(svg):
-    return _PAYMENT_SECTION % svg if svg else ''
+  <div class="ep-code">
+    <div class="panel"><div class="panel-h"><span>cURL</span>
+      <button class="copy" type="button">Copy</button></div>
+      <pre>%(curl)s</pre></div>
+    <div class="panel"><div class="panel-h"><span>Response</span></div>
+      <pre>%(resp)s</pre></div>
+  </div>
+</article>''' % {
+        'anchor': _anchor(e),
+        'q': _esc((e['path'] + ' ' + summary).lower()),
+        'title': _esc(_title_of(e)),
+        'dep': dep,
+        'chips': chips,
+        'path': _esc(e['path']),
+        'auth': _esc(auth_txt),
+        'module': _esc(e.get('module') or '—'),
+        'desc': ('<p>%s</p>' % _esc(desc).replace('\n', '<br/>')) if desc else '',
+        'envelope': ('<p class="note">%s</p>' % envelope_note) if envelope_note else '',
+        'fields': _fields_table(e),
+        'curl': _esc(_curl_for(e, base)),
+        'resp': _esc(_response_sample(e)),
+    }
 
 
 def build_guide_html(env, base_url=''):
@@ -426,21 +376,24 @@ def build_guide_html(env, base_url=''):
     entries.sort(key=lambda e: e['path'])
     flavor = _flavor([e['path'] for e in entries])
     icp = env['ir.config_parameter'].sudo()
-    title = icp.get_param('ab_api.docs_title', 'Ghaima APIs')
+    title = icp.get_param('ab_api.docs_title', 'Gahima APIs')
+    base = base_url or 'https://<server>'
 
     groups = {}
     for e in entries:
         tag = (e.get('tags') or ['other'])[0]
         groups.setdefault(tag, []).append(e)
 
-    toc = ''.join('<a href="#g-%s">%s <span>%d</span></a>'
-                  % (_esc(t), _esc(t), len(g))
-                  for t, g in sorted(groups.items()))
-    sections = ''.join(
-        '<section id="g-%s"><h3>%s <span class="count">%d endpoints</span></h3>%s</section>'
-        % (_esc(t), _esc(t.replace('-', ' ').title()), len(g),
-           ''.join(_endpoint_card(e) for e in g))
-        for t, g in sorted(groups.items()))
+    nav_groups, sections = [], []
+    for tag, grp in sorted(groups.items()):
+        gtitle = tag.replace('-', ' ').replace('_', ' ').title()
+        nav_groups.append(
+            '<div class="group"><div class="g-title">%s</div>%s</div>'
+            % (_esc(gtitle), ''.join(_nav_item(e) for e in grp)))
+        sections.append(
+            '<h2 class="g-head" id="g-%s">%s <span class="count">%d</span></h2>%s'
+            % (_esc(tag), _esc(gtitle), len(grp),
+               ''.join(_endpoint_article(e, base) for e in grp)))
 
     auth_rows = ''.join(
         '<tr><td><strong>%s</strong></td><td>%s</td></tr>' % (label, desc)
@@ -457,14 +410,315 @@ def build_guide_html(env, base_url=''):
                    'server.',
     }[flavor]
 
-    curl = _CURL[flavor].format(base=base_url or 'https://<server>')
-
     has_payment = any(e['path'].startswith(('/api/v1/saas/payment',
                                             '/api/v1/pos/gahima_pay'))
                       for e in entries)
-    payment_section = _render_payment(_PAYMENT_SVG) if has_payment else ''
+    payment_section = ('''
+  <section class="prose" id="payment-flow">
+    <h2>Payment link flow</h2>
+    <figure>%s<figcaption>The tenant never talks to Geidea directly —
+      central holds the credentials, creates the checkout session and fans
+      the webhook back out to the tenant, which raises a bus event the POS
+      listens to.</figcaption></figure>
+  </section>''' % _PAYMENT_SVG) if has_payment else ''
+    payment_nav = ('<a href="#payment-flow">Payment link flow</a>'
+                   if has_payment else '')
 
-    return _PAGE_TMPL.replace('{payment_svg_section}', payment_section).format(
-        title=_esc(title), flavor_line=flavor_line, count=len(entries),
-        system_svg=_SYSTEM_SVG, auth_svg=_AUTH_SVG,
-        auth_rows=auth_rows, curl=_esc(curl), toc=toc, sections=sections)
+    page = (_PAGE_TMPL
+            .replace('__TITLE__', _esc(title))
+            .replace('__FLAVOR_LINE__', flavor_line)
+            .replace('__COUNT__', str(len(entries)))
+            .replace('__SYSTEM_SVG__', _SYSTEM_SVG)
+            .replace('__AUTH_SVG__', _AUTH_SVG)
+            .replace('__AUTH_ROWS__', auth_rows)
+            .replace('__QUICKSTART__',
+                     _esc(_CURL_QUICKSTART[flavor].format(base=base)))
+            .replace('__PAYMENT_SECTION__', payment_section)
+            .replace('__PAYMENT_NAV__', payment_nav)
+            .replace('__NAV_GROUPS__', ''.join(nav_groups))
+            .replace('__SECTIONS__', ''.join(sections)))
+    return page
+
+
+class ApiGuideController(http.Controller):
+
+    @http.route('/api/v1/guide', type='http', auth='public', csrf=False)
+    def api_guide(self, **kwargs):
+        env = request.env(user=SUPERUSER_ID)
+        if not _docs_enabled(env):
+            return Response('Not found', status=404)
+        base = request.httprequest.host_url.rstrip('/')
+        return Response(build_guide_html(env, base_url=base),
+                        headers=[('Content-Type', 'text/html; charset=utf-8')])
+
+
+# --------------------------------------------------------------------------
+# Page template — token-substituted (no str.format, CSS/JS braces stay raw).
+# --------------------------------------------------------------------------
+
+_PAGE_TMPL = """<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>__TITLE__ — API Reference</title>
+<style>
+  :root {
+    --blue: #005FF6; --navy: #0D00A2; --cyan: #5DD8CA; --bg: #ffffff;
+    --bg2: #F7F8FC; --ink: #1c2434; --dim: #5f6b7a; --line: #e3e8f2;
+    --code-bg: #0e1524; --code-ink: #dce7ff; --sidebar-w: 300px;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 70px; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+
+  /* ---------- top bar ---------- */
+  .top { position: fixed; inset-inline: 0; top: 0; z-index: 30; height: 56px;
+         background: var(--navy); color: #fff; display: flex; align-items: center;
+         gap: 1rem; padding-inline: 1.1rem; }
+  .brand { display: flex; align-items: center; gap: .6rem; font-weight: 700;
+           font-size: 1.02rem; letter-spacing: -.01em; }
+  .brand .dot { width: 22px; height: 22px; border-radius: 7px;
+                background: linear-gradient(135deg, var(--blue), var(--cyan)); }
+  .brand small { font-weight: 400; color: #b9c4ff; }
+  .top nav { margin-inline-start: auto; display: flex; gap: .4rem; }
+  .top nav a { color: #dfe5ff; text-decoration: none; font-size: .86rem;
+               padding: .3rem .8rem; border-radius: 999px; }
+  .top nav a.act, .top nav a:hover { background: rgba(255,255,255,.14); color: #fff; }
+
+  /* ---------- shell ---------- */
+  .shell { display: flex; padding-top: 56px; }
+
+  /* ---------- sidebar ---------- */
+  aside { width: var(--sidebar-w); flex: none; position: sticky; top: 56px;
+          height: calc(100vh - 56px); overflow-y: auto; background: var(--bg2);
+          border-inline-end: 1px solid var(--line); padding: 1rem .9rem 2rem; }
+  .search { position: sticky; top: 0; background: var(--bg2); padding-bottom: .6rem; }
+  .search input { width: 100%; border: 1px solid var(--line); border-radius: 8px;
+                  background: var(--bg); color: var(--ink);
+                  padding: .5rem .75rem; font-size: .9rem; }
+  .search input:focus { outline: 2px solid var(--blue); outline-offset: 1px; border-color: var(--blue); }
+  .group { margin-top: 1.05rem; }
+  .g-title { font-size: .72rem; font-weight: 700; letter-spacing: .08em;
+             text-transform: uppercase; color: var(--dim); padding: .2rem .5rem; }
+  aside a { display: flex; align-items: center; gap: .5rem; color: var(--ink);
+            text-decoration: none; font-size: .86rem; border-radius: 7px;
+            padding: .32rem .5rem; }
+  aside a:hover { background: #e9eefb; }
+  aside a.on { background: #e2eaff; color: var(--navy); font-weight: 600; }
+  aside a .lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  aside .hid { display: none; }
+
+  /* ---------- method chips ---------- */
+  .m { font: 700 .66rem/1 var(--mono); border-radius: 5px; padding: .25rem .4rem;
+       color: #fff; min-width: 3.4em; text-align: center; flex: none; }
+  .m-get { background: #0b7a53; } .m-post { background: var(--blue); }
+  .m-put { background: #9a6700; } .m-patch { background: #9a6700; }
+  .m-delete { background: #b3261e; }
+
+  /* ---------- main ---------- */
+  main { flex: 1; min-width: 0; padding: 1.6rem 2rem 4rem; max-width: 1160px; }
+  .prose { max-width: 860px; }
+  h1 { font-size: 1.7rem; margin: .4rem 0 .5rem; letter-spacing: -.015em; }
+  h2 { font-size: 1.25rem; margin: 2.4rem 0 .7rem; letter-spacing: -.01em; }
+  h2.g-head { border-top: 1px solid var(--line); padding-top: 1.6rem;
+              margin-top: 2.6rem; }
+  .count { color: var(--dim); font-weight: 400; font-size: .85rem; }
+  figure { margin: .8rem 0 0; padding: 1rem; background: var(--bg2);
+           border: 1px solid var(--line); border-radius: 12px; overflow-x: auto; }
+  figure svg { min-width: 640px; width: 100%; height: auto; }
+  figcaption { color: var(--dim); font-size: .85rem; padding-top: .5rem; }
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+  td, th { border-top: 1px solid var(--line); padding: .5rem .6rem;
+           text-align: start; vertical-align: top; }
+  thead th { border-top: 0; color: var(--dim); font-weight: 600; font-size: .78rem;
+             text-transform: uppercase; letter-spacing: .05em; }
+  pre { background: var(--code-bg); color: var(--code-ink); border-radius: 10px;
+        padding: .9rem 1rem; overflow-x: auto; font: .82rem/1.6 var(--mono);
+        margin: 0; }
+  pre.light { background: var(--bg2); color: var(--ink);
+              border: 1px solid var(--line); }
+  code { font-family: var(--mono); font-size: .88em; }
+  .dim { color: var(--dim); }
+  .card { background: var(--bg); border: 1px solid var(--line);
+          border-radius: 12px; padding: 1rem 1.2rem; margin-top: .8rem; }
+
+  /* ---------- endpoint article: doc + code columns ---------- */
+  article.ep { display: grid; grid-template-columns: minmax(0, 1fr) 400px;
+               gap: 1.6rem; padding: 1.7rem 0; border-top: 1px solid var(--line); }
+  article.ep:first-of-type { border-top: 0; }
+  .ep-doc h3 { margin: 0 0 .6rem; font-size: 1.08rem; letter-spacing: -.01em; }
+  .urlbar { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
+            background: var(--bg2); border: 1px solid var(--line);
+            border-radius: 9px; padding: .45rem .7rem; }
+  .urlbar code { font-size: .86rem; word-break: break-all; }
+  .meta { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap;
+          margin: .6rem 0 0; }
+  .auth { font-size: .72rem; color: var(--navy); background: #eef3ff;
+          border-radius: 999px; padding: .2rem .65rem; white-space: nowrap; }
+  .mod { color: var(--dim); font-size: .78rem; }
+  .dep { font-size: .7rem; color: #b3261e; background: #fdecea;
+         border-radius: 999px; padding: .18rem .6rem; vertical-align: middle; }
+  .note { color: var(--dim); font-size: .88rem; background: var(--bg2);
+          border-inline-start: 3px solid var(--cyan); border-radius: 6px;
+          padding: .5rem .8rem; }
+  .ep-doc h4 { margin: 1.1rem 0 .35rem; font-size: .78rem; color: var(--dim);
+               text-transform: uppercase; letter-spacing: .05em; }
+  .ep-code { min-width: 0; position: sticky; top: 70px; align-self: start; }
+  .ep-code .panel { position: relative; margin-bottom: .8rem; }
+  .panel-h { display: flex; justify-content: space-between; align-items: center;
+             background: #1b2436; color: #9fb0d0; font: 600 .72rem/1 var(--mono);
+             text-transform: uppercase; letter-spacing: .07em;
+             border-radius: 10px 10px 0 0; padding: .5rem .9rem; }
+  .panel-h + pre { border-radius: 0 0 10px 10px; }
+  .copy { background: none; border: 1px solid #3a4763; color: #9fb0d0;
+          border-radius: 6px; font: .7rem var(--mono); padding: .2rem .55rem;
+          cursor: pointer; }
+  .copy:hover { color: #fff; border-color: #6b7ca3; }
+
+  footer { color: var(--dim); font-size: .82rem; padding: 2rem;
+           border-top: 1px solid var(--line); text-align: center; }
+
+  @media (max-width: 1080px) {
+    article.ep { grid-template-columns: 1fr; }
+    .ep-code { position: static; }
+  }
+  @media (max-width: 820px) {
+    aside { display: none; }
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #10141f; --bg2: #171d2d; --ink: #e5eaf5; --dim: #98a4b8;
+            --line: #29324a; --code-bg: #0b1020; }
+    .top { background: #0a0836; }
+    aside a:hover { background: #1e2740; }
+    aside a.on { background: #223055; color: #aab8ff; }
+    .auth { background: #1b2340; color: #aab8ff; }
+    .m-get { background: #0e8f62; }
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="dot"></span>__TITLE__ <small>· API Reference</small></div>
+  <nav>
+    <a class="act" href="/api/v1/guide">Reference</a>
+    <a href="/api/v1/docs">Swagger</a>
+    <a href="/api/v1/openapi.json">OpenAPI</a>
+  </nav>
+</header>
+<div class="shell">
+<aside>
+  <div class="search"><input id="q" type="search"
+       placeholder="Search endpoints…" autocomplete="off"/></div>
+  <div class="group"><div class="g-title">Getting started</div>
+    <a href="#welcome">Welcome</a>
+    <a href="#system">How it fits together</a>
+    <a href="#auth">Authentication</a>
+    <a href="#quickstart">Quick start</a>
+    __PAYMENT_NAV__
+  </div>
+  __NAV_GROUPS__
+</aside>
+<main>
+  <section class="prose" id="welcome">
+    <h1>__TITLE__</h1>
+    <p>__FLAVOR_LINE__ All <strong>__COUNT__ endpoints</strong> below are
+       generated from this server's live routing table, so what you read
+       here is exactly what is deployed. Prefer to experiment? Open the
+       <a href="/api/v1/docs">Swagger UI</a> and hit endpoints directly.</p>
+  </section>
+
+  <section class="prose" id="system">
+    <h2>How the pieces fit together</h2>
+    <figure>__SYSTEM_SVG__<figcaption>Every client company gets its own
+      tenant Odoo. Mobile apps talk to their tenant for selling and to
+      central for activation, billing and AI. Payments flow tenant →
+      central → Geidea and come back as webhooks.</figcaption></figure>
+  </section>
+
+  <section class="prose" id="auth">
+    <h2>Authentication</h2>
+    <figure>__AUTH_SVG__<figcaption>Login once per device, send the access
+      token as <code>Authorization: Bearer …</code> on every call, renew
+      with the refresh token. Access tokens expire after ~1 hour, refresh
+      tokens after ~30 days.</figcaption></figure>
+    <div class="card">
+      <table><thead><tr><th>Credential</th><th>What it opens</th></tr></thead>
+      <tbody>__AUTH_ROWS__
+      <tr><td><strong>X-Entity-Token</strong></td><td>AI gateway endpoints
+        (<code>/api/v1/ai/*</code>) — per-entity token issued by the
+        platform.</td></tr>
+      <tr><td><strong>X-Saas-Service-Token</strong></td><td>Internal KPI push
+        (<code>/api/v1/saas/internal/*</code>) — per-tenant pre-shared
+        token.</td></tr>
+      </tbody></table>
+    </div>
+  </section>
+
+  <section class="prose" id="quickstart">
+    <h2>Quick start</h2>
+    <div class="panel"><div class="panel-h"><span>cURL</span>
+      <button class="copy" type="button">Copy</button></div>
+    <pre>__QUICKSTART__</pre></div>
+  </section>
+  __PAYMENT_SECTION__
+
+  __SECTIONS__
+</main>
+</div>
+<footer>Generated live from the installed API modules · also available as
+  <a href="/api/v1/docs">Swagger UI</a> and
+  <a href="/api/v1/openapi.json">OpenAPI JSON</a> ·
+  disable with system parameter <code>ab_api.expose_docs</code></footer>
+<script>
+(function () {
+  // sidebar search — filters endpoint links and hides emptied groups
+  var q = document.getElementById('q');
+  var links = Array.prototype.slice.call(document.querySelectorAll('aside a.nav-ep'));
+  var groups = Array.prototype.slice.call(document.querySelectorAll('aside .group'));
+  q.addEventListener('input', function () {
+    var v = q.value.trim().toLowerCase();
+    links.forEach(function (a) {
+      a.classList.toggle('hid', v && (a.getAttribute('data-q') || '').indexOf(v) === -1);
+    });
+    groups.forEach(function (g) {
+      var eps = g.querySelectorAll('a.nav-ep');
+      if (!eps.length) return; // getting-started group stays
+      var any = Array.prototype.some.call(eps, function (a) {
+        return !a.classList.contains('hid');
+      });
+      g.classList.toggle('hid', !any);
+    });
+  });
+
+  // scrollspy — highlight the nav link of the section in view
+  var map = {};
+  links.forEach(function (a) { map[a.getAttribute('href').slice(1)] = a; });
+  var current = null;
+  var obs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (!en.isIntersecting) return;
+      var a = map[en.target.id];
+      if (!a) return;
+      if (current) current.classList.remove('on');
+      a.classList.add('on');
+      current = a;
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  document.querySelectorAll('article.ep').forEach(function (el) { obs.observe(el); });
+
+  // copy buttons
+  document.querySelectorAll('button.copy').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var pre = b.closest('.panel').querySelector('pre');
+      navigator.clipboard.writeText(pre.textContent).then(function () {
+        b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 1200);
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>"""

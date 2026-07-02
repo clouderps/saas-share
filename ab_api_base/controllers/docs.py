@@ -137,6 +137,9 @@ def _discover_api_entries(env, prefixes):
             'tags': _tags_from_path(path),
             'deprecated': False, 'module': module,
             'request_example': req_ex, 'response_example': None,
+            # type='json' routes need the JSON-RPC envelope — the guide's
+            # generated curl samples depend on knowing which.
+            'route_type': (getattr(fn, 'routing', None) or {}).get('type', 'http'),
         })
     return out
 
@@ -175,7 +178,7 @@ class ApiDocsController(http.Controller):
         icp = env['ir.config_parameter'].sudo()
         spec = build_openapi_spec(
             collect_endpoints(env),
-            title=icp.get_param('ab_api.docs_title', 'Ghaima APIs'),
+            title=icp.get_param('ab_api.docs_title', 'Gahima APIs'),
             version=icp.get_param('ab_api.docs_version', '1.0.0'),
             description=icp.get_param(
                 'ab_api.docs_description',
@@ -202,7 +205,7 @@ _SWAGGER_HTML = """<!DOCTYPE html>
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Ghaima APIs</title>
+  <title>Gahima APIs</title>
   <link rel="stylesheet" href="/ab_api_base/static/lib/swagger-ui/swagger-ui.css"/>
   <style>
     body { margin: 0; background: #fafafa; }
