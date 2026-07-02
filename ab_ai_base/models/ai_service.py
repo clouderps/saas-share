@@ -930,9 +930,10 @@ class AIProviderService(models.AbstractModel):
         config = config or self.env['ai.provider.config'].search(
             [('active', '=', True)], limit=1,
         )
-        if not config:
-            raise UserError(_('No active AI provider configured.'))
-        if self._is_simulation_mode():
+        # Simulation answers even with no provider row — same contract as
+        # call()/stream_call(), which fall back to simulation instead of
+        # erroring when nothing is configured.
+        if self._is_simulation_mode() or not config:
             # Deterministic pseudo-vectors so tests / dev flows still work.
             import hashlib
             vectors = []
