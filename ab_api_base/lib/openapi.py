@@ -64,7 +64,12 @@ def _operation(entry, path_params):
 
 
 def build_openapi_spec(entries, title='Ghaima APIs', version='1.0.0',
-                       description='', server_url='/'):
+                       description='', server_url='/', servers=None,
+                       environment=None):
+    """``servers`` is a list of ``{'url', 'description'}`` dicts (production +
+    sandbox); when omitted it falls back to the single ``server_url``.
+    ``environment`` ('sandbox'/'production') is surfaced as ``info.x-environment``
+    so a client of the spec knows which host served it."""
     paths = {}
     tag_names = []
     for entry in entries:
@@ -78,14 +83,17 @@ def build_openapi_spec(entries, title='Ghaima APIs', version='1.0.0',
             if tag not in tag_names:
                 tag_names.append(tag)
 
+    info = {
+        'title': title,
+        'version': version,
+        'description': description or 'Unified CloudERPs REST API.',
+    }
+    if environment:
+        info['x-environment'] = environment
     return {
         'openapi': '3.1.0',
-        'info': {
-            'title': title,
-            'version': version,
-            'description': description or 'Unified CloudERPs REST API.',
-        },
-        'servers': [{'url': server_url}],
+        'info': info,
+        'servers': servers or [{'url': server_url}],
         'tags': [{'name': t} for t in sorted(tag_names)],
         'paths': paths,
         'components': {
@@ -105,8 +113,27 @@ def build_openapi_spec(entries, title='Ghaima APIs', version='1.0.0',
                     'properties': {
                         'success': {'type': 'boolean'},
                         'data': {'type': 'object'},
-                        'error': {'type': 'string'},
-                        'code': {'type': 'string'},
+                        'error': {'type': 'string',
+                                  'description': 'Human-readable message (only when success=false)'},
+                        'code': {'type': 'string',
+                                 'description': 'Stable machine code, e.g. NOT_FOUND, SANDBOX_READ_ONLY'},
+                        'meta': {
+                            'type': 'object',
+                            'description': 'environment (sandbox/production) + optional pagination',
+                            'properties': {
+                                'environment': {'type': 'string',
+                                                'enum': ['production', 'sandbox']},
+                                'pagination': {
+                                    'type': 'object',
+                                    'properties': {
+                                        'total': {'type': 'integer'},
+                                        'limit': {'type': 'integer'},
+                                        'offset': {'type': 'integer'},
+                                        'has_more': {'type': 'boolean'},
+                                    },
+                                },
+                            },
+                        },
                         'request_id': {'type': 'string'},
                     },
                     'required': ['success'],

@@ -410,6 +410,18 @@ def build_guide_html(env, base_url=''):
                    'server.',
     }[flavor]
 
+    # Environments: production + sandbox base URLs (config-driven, same defaults
+    # as the OpenAPI servers block). Lets a reader point their calls at either.
+    prod_url = icp.get_param('ab_api.server_production_url', 'https://www.ghaima.sa')
+    sandbox_url = icp.get_param('ab_api.server_sandbox_url', 'https://demo.ghaima.sa')
+    flavor_line += (
+        '<p style="margin-top:.8rem">'
+        '<strong>Environments.</strong> Production <code>%s</code> — live data. '
+        'Sandbox <code>%s</code> — safe for testing; reads work, but '
+        'state-changing billing/provisioning calls are disabled. Every response '
+        'carries <code>meta.environment</code> so you always know which one answered.'
+        '</p>' % (_esc(prod_url), _esc(sandbox_url)))
+
     has_payment = any(e['path'].startswith(('/api/v1/saas/payment',
                                             '/api/v1/pos/gahima_pay'))
                       for e in entries)

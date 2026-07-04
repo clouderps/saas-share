@@ -8,7 +8,7 @@ tenant-side ab_mobile_pos_api and the DBCLOUD-side
 ab_mobile_saas_billing_api. No models, no views, no routes —
 import-only.
     """,
-    'version': '18.0.1.0.0',
+    'version': '18.0.1.1.0',
     'category': 'Technical',
     'author': 'Ghaima Tech',
     'license': 'LGPL-3',

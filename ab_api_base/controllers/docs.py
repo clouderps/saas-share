@@ -25,8 +25,25 @@ from odoo.http import request, Response
 
 from .api import ENDPOINT_REGISTRY, DOC_OVERLAY
 from ..lib.openapi import build_openapi_spec
+from odoo.addons.ab_mobile_api_common.controllers.common import current_environment
 
 _logger = logging.getLogger(__name__)
+
+
+def _api_servers(env, current_env):
+    """Production + sandbox base URLs for the OpenAPI ``servers`` block.
+    The environment currently serving the spec is listed first so Swagger's
+    'Try it out' defaults to it."""
+    icp = env['ir.config_parameter'].sudo()
+    prod = icp.get_param('ab_api.server_production_url', 'https://www.ghaima.sa')
+    sandbox = icp.get_param('ab_api.server_sandbox_url', 'https://demo.ghaima.sa')
+    servers = [
+        {'url': prod, 'description': 'Production'},
+        {'url': sandbox, 'description': 'Sandbox — safe test environment (demo data)'},
+    ]
+    if current_env == 'sandbox':
+        servers.reverse()
+    return servers
 
 
 # Paths that are reachable without a bearer token (login/onboarding, docs,
@@ -176,6 +193,7 @@ class ApiDocsController(http.Controller):
             return Response('Not found', status=404)
 
         icp = env['ir.config_parameter'].sudo()
+        current_env = current_environment()
         spec = build_openapi_spec(
             collect_endpoints(env),
             title=icp.get_param('ab_api.docs_title', 'Gahima APIs'),
@@ -183,7 +201,11 @@ class ApiDocsController(http.Controller):
             description=icp.get_param(
                 'ab_api.docs_description',
                 'Auto-generated from this server\'s installed API modules. '
-                'Click Authorize and paste a Bearer token to try endpoints.'),
+                'Click Authorize and paste a Bearer token to try endpoints. '
+                'Pick Production or Sandbox in the Servers dropdown — sandbox '
+                '(demo.ghaima.sa) is safe for testing.'),
+            servers=_api_servers(env, current_env),
+            environment=current_env,
         )
         return Response(json.dumps(spec, default=str),
                         headers=[('Content-Type', 'application/json'),
@@ -194,7 +216,16 @@ class ApiDocsController(http.Controller):
         env = request.env(user=SUPERUSER_ID)
         if not _docs_enabled(env):
             return Response('Not found', status=404)
-        return Response(_SWAGGER_HTML, headers=[('Content-Type', 'text/html')])
+        current_env = current_environment()
+        if current_env == 'sandbox':
+            banner = ('<div class="env-banner env-sandbox">SANDBOX'
+                      ' &middot; demo.ghaima.sa — safe test environment,'
+                      ' state-changing calls are disabled</div>')
+        else:
+            banner = ('<div class="env-banner env-production">PRODUCTION'
+                      ' &middot; www.ghaima.sa — calls affect live data</div>')
+        html = _SWAGGER_HTML.replace('{{ env_banner }}', banner)
+        return Response(html, headers=[('Content-Type', 'text/html')])
 
 
 # Swagger UI assets vendored locally under static/lib/swagger-ui/ (Odoo serves
@@ -210,9 +241,14 @@ _SWAGGER_HTML = """<!DOCTYPE html>
   <style>
     body { margin: 0; background: #fafafa; }
     .topbar { display: none; }
+    .env-banner { font: 600 13px/1.4 system-ui, sans-serif; color: #fff;
+      padding: 8px 16px; text-align: center; letter-spacing: .04em; }
+    .env-sandbox { background: #b45309; }
+    .env-production { background: #0D00A2; }
   </style>
 </head>
 <body>
+  {{ env_banner }}
   <div id="swagger-ui"></div>
   <script src="/ab_api_base/static/lib/swagger-ui/swagger-ui-bundle.js"></script>
   <script>
