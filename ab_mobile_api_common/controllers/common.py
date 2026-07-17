@@ -110,31 +110,49 @@ def paginate(total, limit=None, offset=0, default_limit=50, max_limit=200):
         total = max(0, int(total))
     except (TypeError, ValueError):
         total = 0
+    page = (offset // limit) + 1
+    total_pages = (total + limit - 1) // limit  # ceil
+    has_next = (offset + limit) < total
     return limit, offset, {
         'total': total,
         'limit': limit,
         'offset': offset,
-        'has_more': (offset + limit) < total,
+        'page': page,
+        'total_pages': total_pages,
+        'has_more': has_next,       # kept for existing clients
+        'has_next': has_next,
+        'has_previous': offset > 0,
     }
 
 
 def api_response(data=None, error=None, code=None, status=200, request_id=None,
-                 meta=None):
+                 meta=None, message=None, errors=None):
     """Standardized JSON API response with CORS headers.
 
-    Shape: ``{success, [data], [error], [code], meta, [request_id]}``.
-    ``meta`` always carries ``environment`` (sandbox/production) so a client
-    knows which environment answered; caller-supplied ``meta`` (e.g.
-    ``{'pagination': ...}``) is merged on top. Pass ``request_id`` to echo a
-    correlation id; the X-Request-ID header is set on the response too.
+    Shape: ``{success, [data], [error], [message], [code], [errors], meta,
+    [request_id]}``. ``message`` is the human-readable field the clients read
+    (mirrors ``error`` on failure unless an explicit message is given; carries
+    a success note when passed). ``error`` is kept as a legacy alias so
+    existing parsers keep working. ``errors`` is an optional list of
+    field-level validation errors (``[{field, message}, ...]``).
+
+    ``meta`` always carries ``environment`` (sandbox/production); caller
+    ``meta`` (e.g. ``{'pagination': ...}``) is merged on top. Pass
+    ``request_id`` to echo a correlation id (also set as X-Request-ID header).
     """
     body = {'success': error is None}
     if data is not None:
         body['data'] = data
     if error is not None:
         body['error'] = error
+    # `message`: explicit wins; else mirror the error string on failure.
+    msg = message if message is not None else error
+    if msg is not None:
+        body['message'] = msg
     if code is not None:
         body['code'] = code
+    if errors:
+        body['errors'] = errors
     resp_meta = {}
     try:
         resp_meta['environment'] = current_environment()

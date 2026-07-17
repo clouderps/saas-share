@@ -43,6 +43,38 @@ class TestMobileApiCommon(TransactionCase):
         self.assertEqual(body['request_id'], 'req-123')
         self.assertEqual(resp.headers.get('X-Request-ID'), 'req-123')
 
+    def test_api_response_error_mirrors_message(self):
+        # spec envelope: error responses carry both `error` (legacy) + `message`
+        resp = common.api_response(error='nope', code='E_AUTH', status=401)
+        body = json.loads(resp.get_data(as_text=True))
+        self.assertEqual(body['message'], 'nope')
+        self.assertEqual(body['error'], 'nope')
+
+    def test_api_response_explicit_message_and_errors(self):
+        resp = common.api_response(
+            error='Validation failed', code='VALIDATION',
+            message='Please fix the highlighted fields', status=422,
+            errors=[{'field': 'email', 'message': 'invalid'}])
+        body = json.loads(resp.get_data(as_text=True))
+        self.assertEqual(body['message'], 'Please fix the highlighted fields')
+        self.assertEqual(body['errors'], [{'field': 'email', 'message': 'invalid'}])
+
+    def test_api_response_success_has_no_message_or_errors(self):
+        body = json.loads(common.api_response(data={'x': 1}).get_data(as_text=True))
+        self.assertNotIn('message', body)
+        self.assertNotIn('errors', body)
+
+    def test_paginate_meta_fields(self):
+        _, _, meta = common.paginate(95, 20, 0)
+        self.assertEqual(meta['page'], 1)
+        self.assertEqual(meta['total_pages'], 5)
+        self.assertTrue(meta['has_next'])
+        self.assertFalse(meta['has_previous'])
+        _, _, meta = common.paginate(95, 20, 80)
+        self.assertEqual(meta['page'], 5)
+        self.assertFalse(meta['has_next'])
+        self.assertTrue(meta['has_previous'])
+
     def test_cors_preflight(self):
         resp = common.cors_preflight()
         self.assertEqual(resp.status_code, 200)
