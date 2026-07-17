@@ -27,6 +27,19 @@ def _openapi_path(odoo_path):
     return _CONVERTER_RE.sub(repl, odoo_path), params
 
 
+_ENVELOPE_REF = {'$ref': '#/components/schemas/ApiEnvelope'}
+
+
+def _envelope_response(description, example=None):
+    # Every endpoint returns the ApiEnvelope shape — $ref it so codegen
+    # (Flutter/openapi-generator) produces one real response type instead of
+    # `dynamic`. Example is layered on top of the schema when available.
+    content = {'application/json': {'schema': _ENVELOPE_REF}}
+    if example is not None:
+        content['application/json']['example'] = example
+    return {'description': description, 'content': content}
+
+
 def _operation(entry, path_params):
     security = [] if entry['auth'] == 'public' else [{'bearerAuth': []}]
     op = {
@@ -36,8 +49,10 @@ def _operation(entry, path_params):
         'x-scope': entry['scope'],
         'x-auth': entry['auth'],
         'responses': {
-            '200': {'description': 'Success (envelope: {success:true, data})'},
-            '401': {'description': 'Unauthenticated / invalid token'},
+            '200': _envelope_response('Success (envelope: {success:true, data})',
+                                      entry['response_example']),
+            '401': _envelope_response('Unauthenticated / invalid token'),
+            '500': _envelope_response('Server error (envelope: {success:false, code:SERVER_ERROR})'),
         },
     }
     if entry['description']:
@@ -55,10 +70,6 @@ def _operation(entry, path_params):
         op['requestBody'] = {
             'required': True,
             'content': {'application/json': {'example': entry['request_example']}},
-        }
-    if entry['response_example'] is not None:
-        op['responses']['200']['content'] = {
-            'application/json': {'example': entry['response_example']},
         }
     return op
 

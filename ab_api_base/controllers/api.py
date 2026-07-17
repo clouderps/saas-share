@@ -282,9 +282,12 @@ def api_route(path, methods=('POST',), scope=None, auth='token', summary='',
                 return err
             try:
                 return func(*args, **kwargs)
-            except Exception as e:
+            except Exception:
+                # ponytail: never leak str(exception) to clients — log it, hand
+                # back the correlation id (already in meta.request_id) for support.
                 _logger.exception('api: handler crashed route=%s', path)
-                return api_response(error=str(e), code='SERVER_ERROR', status=500)
+                return api_response(error='Internal server error',
+                                    code='SERVER_ERROR', status=500)
 
         ENDPOINT_REGISTRY.append({
             'path': path,

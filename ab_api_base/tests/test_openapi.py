@@ -48,3 +48,15 @@ class TestOpenApiBuilder(unittest.TestCase):
         self.assertEqual(
             op['requestBody']['content']['application/json']['example'],
             {'config_id': 1})
+
+    def test_responses_ref_envelope(self):
+        # ApiEnvelope must be $ref'd by responses, else codegen sees `dynamic`.
+        spec = build_openapi_spec([self._entry(response_example={'success': True})])
+        op = spec['paths']['/api/v1/pos/order/create']['post']
+        for status in ('200', '401', '500'):
+            self.assertEqual(
+                op['responses'][status]['content']['application/json']['schema'],
+                {'$ref': '#/components/schemas/ApiEnvelope'})
+        self.assertEqual(
+            op['responses']['200']['content']['application/json']['example'],
+            {'success': True})
