@@ -107,6 +107,11 @@ _LIFECYCLES_HTML = """<!DOCTYPE html>
   .seqmap-legend .lg{width:24px;border-top:2px solid var(--ink-soft);display:inline-block;}
   .seqmap-legend .lg.res{border-top-style:dashed;border-color:var(--ink-faint);}
   .seqmap-legend .lg.cross{border-top-width:3px;border-color:var(--warn);}
+  .seqmap-legend .lg.err{border-top-style:dashed;border-color:var(--err);}
+  .seqmap-legend .lg.ok{border-top-style:dashed;border-color:var(--ok);}
+  .lock{font:700 9.5px/1 var(--mono);letter-spacing:.06em;color:var(--central);background:var(--central-bg);padding:4px 7px;border-radius:6px;text-transform:uppercase;}
+  .subgrid{display:grid;gap:14px;}
+  @media (min-width:680px){.subgrid{grid-template-columns:1fr 1fr;}}
   .steps{display:flex;flex-direction:column;gap:14px;}
   .step{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
   .step>.bar{display:flex;align-items:center;gap:11px;flex-wrap:wrap;padding:13px 16px;border-bottom:1px solid var(--line);background:var(--surface-2);}
@@ -161,7 +166,8 @@ _LIFECYCLES_HTML = """<!DOCTYPE html>
     </ol>
     <div class="grp">Reference</div>
     <ol>
-      <li><a href="#tokens"><span class="n">&middot;</span>Tokens &amp; scope</a></li>
+      <li><a href="#refresh"><span class="n">&#8635;</span>Refresh &amp; expiry</a></li>
+        <li><a href="#tokens"><span class="n">&middot;</span>Tokens &amp; scope</a></li>
       <li><a href="/api/v1/docs"><span class="n">&#8599;</span>Swagger</a></li>
     </ol>
   </nav>
@@ -211,26 +217,36 @@ _LIFECYCLES_HTML = """<!DOCTYPE html>
 </svg></div><div class="seqmap-legend"><span><i class="lg req"></i>request</span><span><i class="lg res"></i>response</span><span><i class="lg cross"></i>cross-server call</span></div></div>
       <div class="steps">
         <article class="step">
-          <div class="bar"><span class="sn">01</span><span class="method post">POST</span><span class="path">/api/v1/saas/auth/login</span><span class="desc">exchange credentials for a token</span></div>
-          <div class="body pair">
-            <div><div class="io-label"><span class="pip req"></span>Request</div>
-<pre class="code"><span class="b">{</span>
+          <div class="bar"><span class="sn">01</span><span class="method post">POST</span><span class="path">/api/v1/saas/auth/login &middot; .../login_by_client_number</span><span class="desc">two ways to sign in &mdash; same token out</span></div>
+          <div class="body">
+            <div class="subgrid">
+              <div><div class="io-label"><span class="pip req"></span>Option A &middot; email + password</div>
+<pre class="code"><span class="c">// POST /api/v1/saas/auth/login</span>
+<span class="b">{</span>
   <span class="k">"login"</span>: <span class="s">"owner@company.sa"</span>,
   <span class="k">"password"</span>: <span class="s">"&bull;&bull;&bull;&bull;&bull;&bull;"</span>,
   <span class="k">"device_uid"</span>: <span class="s">"ios-4F9A"</span>
 <span class="b">}</span></pre></div>
-            <div><div class="io-label"><span class="pip res"></span>Response <span class="status ok">200</span></div>
+              <div><div class="io-label"><span class="pip req"></span>Option B &middot; client number (+ optional PIN)</div>
+<pre class="code"><span class="c">// POST .../login_by_client_number</span>
+<span class="b">{</span>
+  <span class="k">"client_number"</span>: <span class="s">"CL-00000003"</span>,
+  <span class="k">"pin"</span>: <span class="s">"246810"</span>,        <span class="c">// optional</span>
+  <span class="k">"device_uid"</span>: <span class="s">"ios-4F9A"</span>
+<span class="b">}</span></pre></div>
+            </div>
+            <div><div class="io-label"><span class="pip res"></span>Response <span class="status ok">200</span> &middot; identical shape from either login</div>
 <pre class="code"><span class="b">{</span> <span class="k">"success"</span>:<span class="n">true</span>, <span class="k">"data"</span>:<span class="b">{</span>
-  <span class="k">"access_token"</span>:<span class="s">"eyJhbGci..."</span>,
-  <span class="k">"refresh_token"</span>:<span class="s">"..."</span>,
-  <span class="k">"expires_in"</span>:<span class="n">3600</span>,
-  <span class="k">"partner_id"</span>:<span class="n">17</span>,
-  <span class="k">"name"</span>:<span class="s">"Company Admin"</span>
+  <span class="k">"access_token"</span>:<span class="s">"eyJhbGci..."</span>,     <span class="c">// send as Bearer on every call below</span>
+  <span class="k">"refresh_token"</span>:<span class="s">"...(64 hex)..."</span>,   <span class="c">// renews the session - see Session lifecycle</span>
+  <span class="k">"expires_in"</span>:<span class="n">3600</span>, <span class="k">"token_type"</span>:<span class="s">"Bearer"</span>,
+  <span class="k">"partner_id"</span>:<span class="n">17</span>, <span class="k">"saas_client_number"</span>:<span class="s">"CL-00000003"</span>
 <span class="b">}}</span></pre></div>
           </div>
         </article>
+        <div class="note info" style="margin:14px 0"><span class="ic">&#8505;</span><div><b>From here on, every request carries the token.</b> Put it in the header &mdash; <span class="path">Authorization: Bearer &lt;access_token&gt;</span> &mdash; on steps 2&ndash;5 and every other <span class="path">/me/*</span> call (tenant detail, resources, users, apps, dashboard). It is scoped to <span class="path">partner_id&nbsp;17</span>, so it only ever returns <b>this</b> customer's instances &mdash; another partner's data is unreachable with it.</div></div>
         <article class="step">
-          <div class="bar"><span class="sn">02</span><span class="method get">GET</span><span class="path">/api/v1/saas/me/tenants</span><span class="desc">the multi-instance list &mdash; with KPIs baked in</span></div>
+          <div class="bar"><span class="sn">02</span><span class="method get">GET</span><span class="path">/api/v1/saas/me/tenants</span><span class="lock">Bearer</span><span class="desc">the multi-instance list &mdash; with KPIs baked in</span></div>
           <div class="body">
             <div><div class="io-label"><span class="pip res"></span>Response <span class="status ok">200</span> &middot; one card per instance</div>
 <pre class="code"><span class="b">{</span> <span class="k">"success"</span>:<span class="n">true</span>, <span class="k">"data"</span>:<span class="b">{</span>
@@ -249,7 +265,7 @@ _LIFECYCLES_HTML = """<!DOCTYPE html>
           </div>
         </article>
         <article class="step">
-          <div class="bar"><span class="sn">03</span><span class="method get">GET</span><span class="path">/api/v1/saas/me/dashboard/aggregate</span><span class="desc">totals across every instance</span></div>
+          <div class="bar"><span class="sn">03</span><span class="method get">GET</span><span class="path">/api/v1/saas/me/dashboard/aggregate</span><span class="lock">Bearer</span><span class="desc">totals across every instance</span></div>
           <div class="body"><div><div class="io-label"><span class="pip res"></span>Response <span class="status ok">200</span></div>
 <pre class="code"><span class="b">{</span> <span class="k">"data"</span>:<span class="b">{</span>
   <span class="k">"tenant_count"</span>:<span class="n">1</span>, <span class="k">"covered_tenants"</span>:<span class="n">1</span>, <span class="k">"stale_tenants"</span>:<span class="n">1</span>,
@@ -259,7 +275,7 @@ _LIFECYCLES_HTML = """<!DOCTYPE html>
 <span class="b">}}</span></pre></div></div>
         </article>
         <article class="step">
-          <div class="bar"><span class="sn">04</span><span class="method get">GET</span><span class="path">/api/v1/saas/me/tenants/9/{detail &middot; resources &middot; users &middot; apps}</span><span class="desc">four reads build the instance screen</span></div>
+          <div class="bar"><span class="sn">04</span><span class="method get">GET</span><span class="path">/api/v1/saas/me/tenants/9/{detail &middot; resources &middot; users &middot; apps}</span><span class="lock">Bearer</span><span class="desc">four reads build the instance screen</span></div>
           <div class="body pair">
             <div><div class="io-label"><span class="pip res"></span>/detail + /resources</div>
 <pre class="code"><span class="c">// /detail</span>
@@ -281,7 +297,7 @@ _LIFECYCLES_HTML = """<!DOCTYPE html>
           </div>
         </article>
         <article class="step">
-          <div class="bar"><span class="sn">05</span><span class="method post">POST</span><span class="path">/api/v1/saas/me/tenants/9/access</span><span class="desc">open the instance &mdash; one-time secure login</span></div>
+          <div class="bar"><span class="sn">05</span><span class="method post">POST</span><span class="path">/api/v1/saas/me/tenants/9/access</span><span class="lock">Bearer</span><span class="desc">open the instance &mdash; one-time secure login</span></div>
           <div class="body pair">
             <div><div class="io-label"><span class="pip req"></span>Request</div>
 <pre class="code"><span class="b">{</span> <span class="k">"device_uid"</span>: <span class="s">"ios-4F9A"</span> <span class="b">}</span>
@@ -343,11 +359,11 @@ _LIFECYCLES_HTML = """<!DOCTYPE html>
           </div>
         </article>
         <article class="step">
-          <div class="bar"><span class="sn">02</span><span class="method post">POST</span><span class="path">/api/v1/pos/session/open</span><span class="desc">start the till</span></div>
+          <div class="bar"><span class="sn">02</span><span class="method post">POST</span><span class="path">/api/v1/pos/session/open</span><span class="lock">Bearer</span><span class="desc">start the till</span></div>
           <div class="body"><div class="note info"><span class="ic">i</span><div>The token already resolves cashier + config, so the app sends <span class="path">{ config_id, opening_balance }</span> and gets back the <span class="path">session_id</span> &mdash; reused for every order in the shift.</div></div></div>
         </article>
         <article class="step">
-          <div class="bar"><span class="sn">03</span><span class="method post">POST</span><span class="path">/api/v1/pos/order/create</span><span class="desc">ring a sale</span></div>
+          <div class="bar"><span class="sn">03</span><span class="method post">POST</span><span class="path">/api/v1/pos/order/create</span><span class="lock">Bearer</span><span class="desc">ring a sale</span></div>
           <div class="body pair">
             <div><div class="io-label"><span class="pip req"></span>Request</div>
 <pre class="code"><span class="b">{</span> <span class="k">"session_id"</span>:<span class="n">88</span>,
@@ -360,7 +376,7 @@ _LIFECYCLES_HTML = """<!DOCTYPE html>
           </div>
         </article>
         <article class="step">
-          <div class="bar"><span class="sn">04</span><span class="method post">POST</span><span class="path">/api/v1/pos/session/close</span><span class="desc">cash up &amp; Z-report</span></div>
+          <div class="bar"><span class="sn">04</span><span class="method post">POST</span><span class="path">/api/v1/pos/session/close</span><span class="lock">Bearer</span><span class="desc">cash up &amp; Z-report</span></div>
           <div class="body"><div class="note info"><span class="ic">i</span><div>Draft orders are auto-cancelled, the till is reconciled, and a cash summary is returned. If a mutation fails mid-close the whole call rolls back &mdash; a retry can't double-post.</div></div></div>
         </article>
       </div>
@@ -390,7 +406,7 @@ _LIFECYCLES_HTML = """<!DOCTYPE html>
 </svg></div><div class="seqmap-legend"><span><i class="lg req"></i>request</span><span><i class="lg res"></i>response</span><span><i class="lg cross"></i>cross-server call</span></div></div>
       <div class="steps">
         <article class="step">
-          <div class="bar"><span class="sn">01</span><span class="method post">POST</span><span class="path">/api/v1/dashboard/list</span><span class="desc">which boards this user can open</span></div>
+          <div class="bar"><span class="sn">01</span><span class="method post">POST</span><span class="path">/api/v1/dashboard/list</span><span class="lock">Bearer</span><span class="desc">which boards this user can open</span></div>
           <div class="body"><div><div class="io-label"><span class="pip res"></span>Response <span class="status ok">200</span> &middot; verified live</div>
 <pre class="code"><span class="b">{</span> <span class="k">"data"</span>:<span class="b">{</span> <span class="k">"dashboards"</span>:<span class="b">[</span>
    <span class="b">{</span> <span class="k">"code"</span>:<span class="s">"pos_main"</span>, <span class="k">"name"</span>:<span class="s">"POS Performance"</span> <span class="b">}</span>,
@@ -398,7 +414,7 @@ _LIFECYCLES_HTML = """<!DOCTYPE html>
 <span class="b">]</span> <span class="b">}}</span></pre></div></div>
         </article>
         <article class="step">
-          <div class="bar"><span class="sn">02</span><span class="method post">POST</span><span class="path">/api/v1/dashboard/data</span><span class="desc">widgets for one board</span></div>
+          <div class="bar"><span class="sn">02</span><span class="method post">POST</span><span class="path">/api/v1/dashboard/data</span><span class="lock">Bearer</span><span class="desc">widgets for one board</span></div>
           <div class="body pair">
             <div><div class="io-label"><span class="pip req"></span>Request</div>
 <pre class="code"><span class="b">{</span> <span class="k">"dashboard_code"</span>:<span class="s">"pos_main"</span>,
@@ -414,7 +430,64 @@ _LIFECYCLES_HTML = """<!DOCTYPE html>
       </div>
     </section>
 
-    <section class="journey" id="tokens">
+    <section class="journey" id="refresh">
+      <div class="j-head"><div class="j-num c" style="background:var(--warn)">&#8635;</div><div>
+        <h2>Session lifecycle &mdash; refresh &amp; expiry <span class="server-tag t">Tenant</span> <span class="server-tag c">Central</span></h2>
+        <p>Access tokens live 1 hour; refresh tokens 30 days. When a call returns 401 TOKEN_EXPIRED, trade the refresh token for a fresh pair &mdash; never bounce the user back to the login screen.</p>
+      </div></div>
+      <div class="seqmap"><div class="seqmap-svg"><svg viewBox="0 0 620 414" role="img" aria-label="Token refresh sequence" style="width:100%;height:auto;font-family:var(--mono)">
+<defs><marker id="ah2" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto"><path d="M0,0 L7,3.2 L0,6.4 Z" fill="context-stroke"/></marker></defs>
+<line x1="70" y1="56" x2="70" y2="400" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="2 5"/>
+<line x1="550" y1="56" x2="550" y2="400" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="2 5"/>
+<rect x="8" y="10" width="124" height="30" rx="8" fill="var(--surface-2)" stroke="var(--ink-soft)" stroke-width="1.3"/>
+<text x="70" y="29" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--ink-soft)">App</text>
+<rect x="488" y="10" width="124" height="30" rx="8" fill="var(--surface-2)" stroke="var(--ink)" stroke-width="1.3"/>
+<text x="550" y="29" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--ink)">Server</text>
+<text x="310" y="78" text-anchor="middle" font-size="11.5" font-weight="650" fill="var(--ink)">GET /me/... (any protected call) + Bearer</text>
+<line x1="70" y1="84" x2="550" y2="84" stroke="var(--ink-soft)" stroke-width="1.8"  marker-end="url(#ah2)"/>
+<text x="310" y="120" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--err)">401  code: TOKEN_EXPIRED</text>
+<line x1="550" y1="126" x2="70" y2="126" stroke="var(--err)" stroke-width="1.9" stroke-dasharray="4 4" marker-end="url(#ah2)"/>
+<rect x="167" y="147" width="286" height="24" rx="6" fill="var(--warn-bg)" stroke="var(--warn)" stroke-width="1"/>
+<text x="310" y="163" text-anchor="middle" font-size="11.5" fill="var(--ink)">access token has expired (1 hour TTL)</text>
+<text x="310" y="204" text-anchor="middle" font-size="11.5" font-weight="650" fill="var(--ink)">POST /auth/refresh  {refresh_token, device_uid}</text>
+<line x1="70" y1="210" x2="550" y2="210" stroke="var(--ink-soft)" stroke-width="1.8"  marker-end="url(#ah2)"/>
+<text x="310" y="246" text-anchor="middle" font-size="11.5" font-weight="650" fill="var(--ok)">new access_token + new refresh_token (rotated)</text>
+<line x1="550" y1="252" x2="70" y2="252" stroke="var(--ok)" stroke-width="1.7" stroke-dasharray="4 4" marker-end="url(#ah2)"/>
+<rect x="113" y="273" width="394" height="24" rx="6" fill="var(--warn-bg)" stroke="var(--warn)" stroke-width="1"/>
+<text x="310" y="289" text-anchor="middle" font-size="11.5" fill="var(--ink)">old refresh token is now dead -&gt; 401 REFRESH_INVALID</text>
+<text x="310" y="330" text-anchor="middle" font-size="11.5" font-weight="650" fill="var(--ink)">retry original call  + NEW Bearer</text>
+<line x1="70" y1="336" x2="550" y2="336" stroke="var(--ink-soft)" stroke-width="1.8"  marker-end="url(#ah2)"/>
+<text x="310" y="372" text-anchor="middle" font-size="11.5" font-weight="500" fill="var(--ink-soft)">200  data</text>
+<line x1="550" y1="378" x2="70" y2="378" stroke="var(--ink-faint)" stroke-width="1.4" stroke-dasharray="4 4" marker-end="url(#ah2)"/>
+</svg></div>
+        <div class="seqmap-legend"><span><i class="lg req"></i>request</span><span><i class="lg err"></i>expired (401)</span><span><i class="lg ok"></i>rotated tokens</span><span><i class="lg res"></i>response</span></div>
+      </div>
+      <div class="steps">
+        <article class="step">
+          <div class="bar"><span class="sn">R1</span><span class="method post">POST</span><span class="path">/api/v1/saas/auth/refresh</span><span class="desc">portal &mdash; trade refresh token for a new pair</span></div>
+          <div class="body pair">
+            <div><div class="io-label"><span class="pip req"></span>Request</div>
+<pre class="code"><span class="b">{</span> <span class="k">"refresh_token"</span>:<span class="s">"...(from login)..."</span>,
+  <span class="k">"device_uid"</span>:<span class="s">"ios-4F9A"</span> <span class="b">}</span></pre></div>
+            <div><div class="io-label"><span class="pip res"></span>Response <span class="status ok">200</span> &middot; verified live</div>
+<pre class="code"><span class="b">{</span> <span class="k">"data"</span>:<span class="b">{</span>
+  <span class="k">"access_token"</span>:<span class="s">"eyJ...(new)"</span>,
+  <span class="k">"refresh_token"</span>:<span class="s">"...(new, rotated)"</span>,
+  <span class="k">"expires_in"</span>:<span class="n">3600</span> <span class="b">}}</span></pre></div>
+          </div>
+        </article>
+        <article class="step">
+          <div class="bar"><span class="sn">R2</span><span class="method post">POST</span><span class="path">/api/v1/auth/refresh</span><span class="desc">POS / store &mdash; same shape, tenant server</span></div>
+          <div class="body"><div class="note info"><span class="ic">i</span><div>The POS token refreshes the same way against the <b>tenant</b> server: <span class="path">POST /api/v1/auth/refresh { refresh_token, device_uid }</span>. Portal tokens refresh on central, POS tokens on the tenant &mdash; each surface keeps its own refresh token.</div></div></div>
+        </article>
+        <article class="step">
+          <div class="bar"><span class="sn">!</span><span class="path">Single-use &amp; rotation</span><span class="desc">why a replay fails</span></div>
+          <div class="body"><div class="note"><span class="ic">!</span><div>Every refresh <b>rotates</b>: the response returns a <b>new</b> refresh token and the old one dies instantly. Replaying a spent token returns <span class="status err">401 REFRESH_INVALID</span> (verified live) &mdash; always persist the newest refresh token. A fresh login on the same <span class="path">device_uid</span> likewise supersedes that device's previous refresh token.</div></div></div>
+        </article>
+      </div>
+    </section>
+
+      <section class="journey" id="tokens">
       <div class="j-head"><div class="j-num c" style="background:var(--ink-soft)">&middot;</div><div>
         <h2>Tokens &amp; scope &mdash; which key opens which door</h2>
         <p>One JWT secret signs everything, but a token minted for one surface is rejected by the other. The scope claim is the boundary.</p>
