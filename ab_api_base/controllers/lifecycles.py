@@ -99,13 +99,14 @@ _LIFECYCLES_HTML = """<!DOCTYPE html>
   .j-head p{margin:0;color:var(--ink-soft);font-size:15px;}
   .server-tag{font:600 10.5px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:4px 8px;border-radius:6px;vertical-align:middle;margin-inline-start:8px;}
   .server-tag.t{color:var(--tenant);background:var(--tenant-bg);}.server-tag.c{color:var(--central);background:var(--central-bg);}
-  .flow{display:flex;align-items:center;gap:8px;margin:20px 0 26px;padding:16px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow-x:auto;box-shadow:var(--shadow);}
-  .fnode{flex:none;display:flex;flex-direction:column;gap:6px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface-2);}
-  .fnode .fn{font:800 11px/1 var(--mono);color:var(--ink-faint);}
-  .fnode .frow{display:flex;align-items:center;gap:7px;}
-  .fnode code{font:600 12px/1.3 var(--mono);color:var(--ink);white-space:nowrap;}
-  .farrow{flex:none;color:var(--ink-faint);font-size:18px;}
-  .fcap{flex:none;font:700 11px/1.3 var(--mono);color:var(--ink-faint);text-transform:uppercase;letter-spacing:.06em;text-align:center;white-space:nowrap;}
+  .seqmap{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;margin:20px 0 26px;}
+  .seqmap-svg{overflow-x:auto;}
+  .seqmap-svg svg{min-width:520px;}
+  .seqmap-legend{display:flex;flex-wrap:wrap;gap:18px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font:600 11.5px/1 var(--mono);color:var(--ink-soft);}
+  .seqmap-legend span{display:inline-flex;align-items:center;gap:8px;}
+  .seqmap-legend .lg{width:24px;border-top:2px solid var(--ink-soft);display:inline-block;}
+  .seqmap-legend .lg.res{border-top-style:dashed;border-color:var(--ink-faint);}
+  .seqmap-legend .lg.cross{border-top-width:3px;border-color:var(--warn);}
   .steps{display:flex;flex-direction:column;gap:14px;}
   .step{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
   .step>.bar{display:flex;align-items:center;gap:11px;flex-wrap:wrap;padding:13px 16px;border-bottom:1px solid var(--line);background:var(--surface-2);}
@@ -170,15 +171,44 @@ _LIFECYCLES_HTML = """<!DOCTYPE html>
         <h2>Customer Portal <span class="server-tag c">Central &middot; Portal</span></h2>
         <p>A tenant owner signs in, sees every Odoo instance they own with live KPIs, drills into one, and opens it with a one-time secure login. Every payload below is real output from a live trace.</p>
       </div></div>
-      <div class="flow" role="list" aria-label="Call sequence">
-        <span class="fcap">App</span><span class="farrow">&rarr;</span>
-        <div class="fnode"><span class="fn">01</span><div class="frow"><span class="method post">POST</span><code>/saas/auth/login</code></div></div><span class="farrow">&rarr;</span>
-        <div class="fnode"><span class="fn">02</span><div class="frow"><span class="method get">GET</span><code>/me/tenants</code></div></div><span class="farrow">&rarr;</span>
-        <div class="fnode"><span class="fn">03</span><div class="frow"><span class="method get">GET</span><code>/me/dashboard/aggregate</code></div></div><span class="farrow">&rarr;</span>
-        <div class="fnode"><span class="fn">04</span><div class="frow"><span class="method get">GET</span><code>/me/tenants/9/*</code></div></div><span class="farrow">&rarr;</span>
-        <div class="fnode"><span class="fn">05</span><div class="frow"><span class="method post">POST</span><code>/me/tenants/9/access</code></div></div><span class="farrow">&rarr;</span>
-        <span class="fcap">Odoo&nbsp;opens</span>
-      </div>
+      <div class="seqmap"><div class="seqmap-svg"><svg viewBox="0 0 660 624" role="img" aria-label="Customer Portal sequence" style="width:100%;height:auto;font-family:var(--mono)">
+<defs><marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto"><path d="M0,0 L7,3.2 L0,6.4 Z" fill="context-stroke"/></marker></defs>
+<line x1="70" y1="56" x2="70" y2="610" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="2 5"/>
+<line x1="330" y1="56" x2="330" y2="610" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="2 5"/>
+<line x1="590" y1="56" x2="590" y2="610" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="2 5"/>
+<rect x="8" y="10" width="124" height="30" rx="8" fill="var(--surface-2)" stroke="var(--ink-soft)" stroke-width="1.3"/>
+<text x="70" y="29" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--ink-soft)">App</text>
+<rect x="268" y="10" width="124" height="30" rx="8" fill="var(--central-bg)" stroke="var(--central)" stroke-width="1.3"/>
+<text x="330" y="29" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--central)">Central · Portal</text>
+<rect x="528" y="10" width="124" height="30" rx="8" fill="var(--tenant-bg)" stroke="var(--tenant)" stroke-width="1.3"/>
+<text x="590" y="29" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--tenant)">Tenant · Odoo</text>
+<text x="200" y="78" text-anchor="middle" font-size="11.5" font-weight="650" fill="var(--ink)">1  POST /saas/auth/login</text>
+<line x1="70" y1="84" x2="330" y2="84" stroke="var(--ink-soft)" stroke-width="1.8"  marker-end="url(#ah)"/>
+<text x="200" y="120" text-anchor="middle" font-size="11.5" font-weight="500" fill="var(--ink-soft)">access_token · scope saas_billing</text>
+<line x1="330" y1="126" x2="70" y2="126" stroke="var(--ink-faint)" stroke-width="1.4" stroke-dasharray="4 4" marker-end="url(#ah)"/>
+<text x="200" y="162" text-anchor="middle" font-size="11.5" font-weight="650" fill="var(--ink)">2  GET /me/tenants</text>
+<line x1="70" y1="168" x2="330" y2="168" stroke="var(--ink-soft)" stroke-width="1.8"  marker-end="url(#ah)"/>
+<text x="200" y="204" text-anchor="middle" font-size="11.5" font-weight="500" fill="var(--ink-soft)">instances[] + per-instance KPIs</text>
+<line x1="330" y1="210" x2="70" y2="210" stroke="var(--ink-faint)" stroke-width="1.4" stroke-dasharray="4 4" marker-end="url(#ah)"/>
+<text x="200" y="246" text-anchor="middle" font-size="11.5" font-weight="650" fill="var(--ink)">3  GET /me/dashboard/aggregate</text>
+<line x1="70" y1="252" x2="330" y2="252" stroke="var(--ink-soft)" stroke-width="1.8"  marker-end="url(#ah)"/>
+<text x="200" y="288" text-anchor="middle" font-size="11.5" font-weight="500" fill="var(--ink-soft)">roll-up totals</text>
+<line x1="330" y1="294" x2="70" y2="294" stroke="var(--ink-faint)" stroke-width="1.4" stroke-dasharray="4 4" marker-end="url(#ah)"/>
+<rect x="169" y="315" width="322" height="24" rx="6" fill="var(--warn-bg)" stroke="var(--warn)" stroke-width="1" opacity="0.95"/>
+<text x="330" y="331" text-anchor="middle" font-size="11.5" fill="var(--ink)">user taps an instance  (subscription_id 9)</text>
+<text x="200" y="372" text-anchor="middle" font-size="11.5" font-weight="650" fill="var(--ink)">4  GET /me/tenants/9/detail·resources·users·apps</text>
+<line x1="70" y1="378" x2="330" y2="378" stroke="var(--ink-soft)" stroke-width="1.8"  marker-end="url(#ah)"/>
+<text x="200" y="414" text-anchor="middle" font-size="11.5" font-weight="500" fill="var(--ink-soft)">instance profile · health · users · apps</text>
+<line x1="330" y1="420" x2="70" y2="420" stroke="var(--ink-faint)" stroke-width="1.4" stroke-dasharray="4 4" marker-end="url(#ah)"/>
+<text x="200" y="456" text-anchor="middle" font-size="11.5" font-weight="650" fill="var(--ink)">5  POST /me/tenants/9/access</text>
+<line x1="70" y1="462" x2="330" y2="462" stroke="var(--ink-soft)" stroke-width="1.8"  marker-end="url(#ah)"/>
+<text x="460" y="498" text-anchor="middle" font-size="11.5" font-weight="650" fill="var(--ink)">device-auth handoff  (cross-server)</text>
+<line x1="330" y1="504" x2="590" y2="504" stroke="var(--warn)" stroke-width="2.4"  marker-end="url(#ah)"/>
+<text x="460" y="540" text-anchor="middle" font-size="11.5" font-weight="500" fill="var(--ink-soft)">secure grant</text>
+<line x1="590" y1="546" x2="330" y2="546" stroke="var(--ink-faint)" stroke-width="1.4" stroke-dasharray="4 4" marker-end="url(#ah)"/>
+<text x="200" y="582" text-anchor="middle" font-size="11.5" font-weight="500" fill="var(--ink-soft)">login_url · expires 60s</text>
+<line x1="330" y1="588" x2="70" y2="588" stroke="var(--ink-faint)" stroke-width="1.4" stroke-dasharray="4 4" marker-end="url(#ah)"/>
+</svg></div><div class="seqmap-legend"><span><i class="lg req"></i>request</span><span><i class="lg res"></i>response</span><span><i class="lg cross"></i>cross-server call</span></div></div>
       <div class="steps">
         <article class="step">
           <div class="bar"><span class="sn">01</span><span class="method post">POST</span><span class="path">/api/v1/saas/auth/login</span><span class="desc">exchange credentials for a token</span></div>
@@ -274,14 +304,31 @@ _LIFECYCLES_HTML = """<!DOCTYPE html>
         <h2>POS Shift &amp; Sale <span class="server-tag t">Tenant &middot; Store</span></h2>
         <p>A cashier authenticates on a store device, opens a session, rings a sale, and closes out. Runs entirely on the tenant server; the token is scoped to that device + branch and sees only the current cashier's data.</p>
       </div></div>
-      <div class="flow" role="list" aria-label="Call sequence">
-        <span class="fcap">Till</span><span class="farrow">&rarr;</span>
-        <div class="fnode"><span class="fn">01</span><div class="frow"><span class="method post">POST</span><code>/auth/pin-token</code></div></div><span class="farrow">&rarr;</span>
-        <div class="fnode"><span class="fn">02</span><div class="frow"><span class="method post">POST</span><code>/pos/session/open</code></div></div><span class="farrow">&rarr;</span>
-        <div class="fnode"><span class="fn">03</span><div class="frow"><span class="method post">POST</span><code>/pos/order/create</code></div></div><span class="farrow">&#8635;</span>
-        <div class="fnode"><span class="fn">04</span><div class="frow"><span class="method post">POST</span><code>/pos/session/close</code></div></div><span class="farrow">&rarr;</span>
-        <span class="fcap">Z-report</span>
-      </div>
+      <div class="seqmap"><div class="seqmap-svg"><svg viewBox="0 0 560 414" role="img" aria-label="POS shift and sale sequence" style="width:100%;height:auto;font-family:var(--mono)">
+<defs><marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto"><path d="M0,0 L7,3.2 L0,6.4 Z" fill="context-stroke"/></marker></defs>
+<line x1="70" y1="56" x2="70" y2="400" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="2 5"/>
+<line x1="490" y1="56" x2="490" y2="400" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="2 5"/>
+<rect x="8" y="10" width="124" height="30" rx="8" fill="var(--surface-2)" stroke="var(--ink-soft)" stroke-width="1.3"/>
+<text x="70" y="29" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--ink-soft)">POS Till</text>
+<rect x="428" y="10" width="124" height="30" rx="8" fill="var(--tenant-bg)" stroke="var(--tenant)" stroke-width="1.3"/>
+<text x="490" y="29" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--tenant)">Tenant · Odoo</text>
+<text x="280" y="78" text-anchor="middle" font-size="11.5" font-weight="650" fill="var(--ink)">1  POST /auth/pin-token</text>
+<line x1="70" y1="84" x2="490" y2="84" stroke="var(--ink-soft)" stroke-width="1.8"  marker-end="url(#ah)"/>
+<text x="280" y="120" text-anchor="middle" font-size="11.5" font-weight="500" fill="var(--ink-soft)">access_token · scope pos (device+branch)</text>
+<line x1="490" y1="126" x2="70" y2="126" stroke="var(--ink-faint)" stroke-width="1.4" stroke-dasharray="4 4" marker-end="url(#ah)"/>
+<text x="280" y="162" text-anchor="middle" font-size="11.5" font-weight="650" fill="var(--ink)">2  POST /pos/session/open</text>
+<line x1="70" y1="168" x2="490" y2="168" stroke="var(--ink-soft)" stroke-width="1.8"  marker-end="url(#ah)"/>
+<text x="280" y="204" text-anchor="middle" font-size="11.5" font-weight="500" fill="var(--ink-soft)">session_id</text>
+<line x1="490" y1="210" x2="70" y2="210" stroke="var(--ink-faint)" stroke-width="1.4" stroke-dasharray="4 4" marker-end="url(#ah)"/>
+<text x="280" y="246" text-anchor="middle" font-size="11.5" font-weight="650" fill="var(--ink)">3  POST /pos/order/create   (repeat per sale)</text>
+<line x1="70" y1="252" x2="490" y2="252" stroke="var(--ink-soft)" stroke-width="1.8"  marker-end="url(#ah)"/>
+<text x="280" y="288" text-anchor="middle" font-size="11.5" font-weight="500" fill="var(--ink-soft)">order + receipt</text>
+<line x1="490" y1="294" x2="70" y2="294" stroke="var(--ink-faint)" stroke-width="1.4" stroke-dasharray="4 4" marker-end="url(#ah)"/>
+<text x="280" y="330" text-anchor="middle" font-size="11.5" font-weight="650" fill="var(--ink)">4  POST /pos/session/close</text>
+<line x1="70" y1="336" x2="490" y2="336" stroke="var(--ink-soft)" stroke-width="1.8"  marker-end="url(#ah)"/>
+<text x="280" y="372" text-anchor="middle" font-size="11.5" font-weight="500" fill="var(--ink-soft)">cash summary + Z-report</text>
+<line x1="490" y1="378" x2="70" y2="378" stroke="var(--ink-faint)" stroke-width="1.4" stroke-dasharray="4 4" marker-end="url(#ah)"/>
+</svg></div><div class="seqmap-legend"><span><i class="lg req"></i>request</span><span><i class="lg res"></i>response</span><span><i class="lg cross"></i>cross-server call</span></div></div>
       <div class="steps">
         <article class="step">
           <div class="bar"><span class="sn">01</span><span class="method post">POST</span><span class="path">/api/v1/auth/pin-token</span><span class="desc">PIN &rarr; token, auto-opens the session</span></div>
@@ -324,12 +371,23 @@ _LIFECYCLES_HTML = """<!DOCTYPE html>
         <h2>Owner Dashboard <span class="server-tag t">Tenant &middot; Store</span></h2>
         <p>The dashboard app reuses the POS login, discovers which boards it may show, then pulls widget data per board. Two calls to a full screen.</p>
       </div></div>
-      <div class="flow" role="list" aria-label="Call sequence">
-        <span class="fcap">App</span><span class="farrow">&rarr;</span>
-        <div class="fnode"><span class="fn">01</span><div class="frow"><span class="method post">POST</span><code>/dashboard/list</code></div></div><span class="farrow">&rarr;</span>
-        <div class="fnode"><span class="fn">02</span><div class="frow"><span class="method post">POST</span><code>/dashboard/data</code></div></div><span class="farrow">&rarr;</span>
-        <span class="fcap">Widgets</span>
-      </div>
+      <div class="seqmap"><div class="seqmap-svg"><svg viewBox="0 0 560 246" role="img" aria-label="Owner dashboard sequence" style="width:100%;height:auto;font-family:var(--mono)">
+<defs><marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto"><path d="M0,0 L7,3.2 L0,6.4 Z" fill="context-stroke"/></marker></defs>
+<line x1="70" y1="56" x2="70" y2="232" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="2 5"/>
+<line x1="490" y1="56" x2="490" y2="232" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="2 5"/>
+<rect x="8" y="10" width="124" height="30" rx="8" fill="var(--surface-2)" stroke="var(--ink-soft)" stroke-width="1.3"/>
+<text x="70" y="29" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--ink-soft)">Dashboard App</text>
+<rect x="428" y="10" width="124" height="30" rx="8" fill="var(--tenant-bg)" stroke="var(--tenant)" stroke-width="1.3"/>
+<text x="490" y="29" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--tenant)">Tenant · Odoo</text>
+<text x="280" y="78" text-anchor="middle" font-size="11.5" font-weight="650" fill="var(--ink)">1  POST /dashboard/list</text>
+<line x1="70" y1="84" x2="490" y2="84" stroke="var(--ink-soft)" stroke-width="1.8"  marker-end="url(#ah)"/>
+<text x="280" y="120" text-anchor="middle" font-size="11.5" font-weight="500" fill="var(--ink-soft)">dashboards[]  (boards this user may open)</text>
+<line x1="490" y1="126" x2="70" y2="126" stroke="var(--ink-faint)" stroke-width="1.4" stroke-dasharray="4 4" marker-end="url(#ah)"/>
+<text x="280" y="162" text-anchor="middle" font-size="11.5" font-weight="650" fill="var(--ink)">2  POST /dashboard/data  {code, filters}</text>
+<line x1="70" y1="168" x2="490" y2="168" stroke="var(--ink-soft)" stroke-width="1.8"  marker-end="url(#ah)"/>
+<text x="280" y="204" text-anchor="middle" font-size="11.5" font-weight="500" fill="var(--ink-soft)">widgets[]  (kpi · charts · tables)</text>
+<line x1="490" y1="210" x2="70" y2="210" stroke="var(--ink-faint)" stroke-width="1.4" stroke-dasharray="4 4" marker-end="url(#ah)"/>
+</svg></div><div class="seqmap-legend"><span><i class="lg req"></i>request</span><span><i class="lg res"></i>response</span><span><i class="lg cross"></i>cross-server call</span></div></div>
       <div class="steps">
         <article class="step">
           <div class="bar"><span class="sn">01</span><span class="method post">POST</span><span class="path">/api/v1/dashboard/list</span><span class="desc">which boards this user can open</span></div>
