@@ -204,8 +204,17 @@
     <t t-name="ab_ai_agent.AiAgentChatPage">
         <div class="o_ai_agent_chat_page">
             <div class="o_ai_agent_chat_page__inner">
+                <!-- initial_message / record_* are forwarded so a caller can
+                     open the chat already asking something, with the record
+                     it is asking about attached. AiAgentChat has supported
+                     initialMessage since it was written (it auto-sends in
+                     onWillStart) but this shim never passed it through, so no
+                     client action could reach it. -->
                 <AiAgentChat agentCode="params.agent_code"
                              surface="'chat'"
+                             initialMessage="params.initial_message"
+                             recordModel="params.record_model"
+                             recordId="params.record_id"
                              enableVoice="!!params.enable_voice"/>
             </div>
         </div>
