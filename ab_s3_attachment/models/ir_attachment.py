@@ -180,11 +180,22 @@ class IrAttachment(models.Model):
             data = self.raw
 
         if not data:
-            _logger.warning(
-                'ab_s3_attachment: 404 attachment id=%s name=%r key=%s — '
-                'file missing in S3 and DB inline',
-                self.id, self.name, self._s3_key(self.store_fname or ''),
-            )
+            # A regenerable asset bundle whose backing bytes are gone. This is
+            # the normal state for a DB-cloned / template-launched tenant: the
+            # inherited ir_attachment rows point at store_fnames whose S3
+            # objects live under the SOURCE tenant's prefix, so this tenant
+            # only ever reads a miss. Serving a permanent 404 breaks the web
+            # client (OwlError, e.g. web.chartjs_lib fails to load). Purge the
+            # stale row so the very next request regenerates the bundle under
+            # THIS tenant's prefix.
+            if self._is_regenerable_asset():
+                self._purge_stale_asset()
+            else:
+                _logger.warning(
+                    'ab_s3_attachment: 404 attachment id=%s name=%r key=%s — '
+                    'file missing in S3 and DB inline',
+                    self.id, self.name, self._s3_key(self.store_fname or ''),
+                )
             raise NotFound()
 
         stream = Stream(
@@ -197,6 +208,43 @@ class IrAttachment(models.Model):
         stream.data = data
         stream.size = len(data)
         return stream
+
+    def _is_regenerable_asset(self):
+        """True for compiled asset-bundle attachments — safe to drop & rebuild.
+
+        Asset bundles are the only attachments Odoo can recreate from source
+        on demand, so they are the only ones we may purge on a storage miss.
+        """
+        self.ensure_one()
+        return (
+            self.res_model == 'ir.ui.view'
+            and self.res_id == 0
+            and (self.url or '').startswith('/web/assets/')
+        )
+
+    def _purge_stale_asset(self):
+        """Delete a stale asset-bundle row so Odoo regenerates it.
+
+        Runs in an autonomous cursor: the caller raises NotFound immediately
+        after, which rolls back the request transaction and would otherwise
+        undo an ORM delete — trapping the tenant in a permanent 404 loop.
+        Raw SQL (not unlink) is intentional: the S3 object is already gone, so
+        there is nothing for the storage GC to clean up.
+        """
+        self.ensure_one()
+        att_id = self.id
+        _logger.warning(
+            'ab_s3_attachment: asset bundle id=%s %r has no backing bytes '
+            '(key=%s) — purging stale row so it regenerates under this '
+            "tenant's prefix", att_id, self.name,
+            self._s3_key(self.store_fname or ''),
+        )
+        try:
+            with self.env.registry.cursor() as cr:
+                cr.execute("DELETE FROM ir_attachment WHERE id = %s", (att_id,))
+        except Exception:
+            _logger.exception(
+                'ab_s3_attachment: failed to purge stale asset %s', att_id)
 
     def _file_write(self, bin_value, checksum):
         """Write bytes to S3 with idempotent dedup + transient-error retry.
