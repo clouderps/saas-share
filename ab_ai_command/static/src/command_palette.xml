@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <!-- The "/" palette, above the composer. -->
+    <t t-name="ab_ai_command.Palette">
+        <div class="o_ai_cmd_palette" role="listbox" t-att-aria-label="labels.commands">
+            <button t-foreach="filteredCommands" t-as="cmd" t-key="cmd.code"
+                    type="button" role="option"
+                    class="o_ai_cmd_palette__item"
+                    t-att-class="{ 'is-active': cmd_index === state.paletteIndex }"
+                    t-att-aria-selected="cmd_index === state.paletteIndex ? 'true' : 'false'"
+                    t-on-mouseenter="() => this.state.paletteIndex = cmd_index"
+                    t-on-click="() => this.pickCommand(cmd)">
+                <i t-attf-class="fa {{cmd.icon}} o_ai_cmd_palette__icon" aria-hidden="true"/>
+                <span class="o_ai_cmd_palette__verb">/<t t-esc="cmd.verb"/></span>
+                <span class="o_ai_cmd_palette__desc" t-esc="cmd.description"/>
+            </button>
+        </div>
+    </t>
+
+    <!-- Result of a command: the draft, or what is still needed. -->
+    <t t-name="ab_ai_command.Result">
+        <div class="o_ai_cmd_result">
+
+            <!-- Created: show the record as it actually exists, so the
+                 user confirms reality rather than their own input. -->
+            <t t-if="msg.commandResult.status === 'created'">
+                <div class="o_ai_cmd_draft_badge">
+                    <i class="fa fa-file-o" aria-hidden="true"/>
+                    <span t-esc="labels.draftOnly"/>
+                </div>
+                <table class="o_ai_cmd_table">
+                    <tr t-foreach="msg.commandResult.preview.header" t-as="row" t-key="row_index">
+                        <th t-esc="row[0]"/>
+                        <td t-esc="row[1]"/>
+                    </tr>
+                </table>
+                <table t-if="msg.commandResult.preview.lines.length" class="o_ai_cmd_table o_ai_cmd_table--lines">
+                    <thead>
+                        <tr>
+                            <th t-esc="labels.item"/>
+                            <th t-esc="labels.qty"/>
+                            <th t-esc="labels.subtotal"/>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="msg.commandResult.preview.lines" t-as="line" t-key="line_index">
+                            <td t-esc="line[0]"/>
+                            <td t-esc="line[1]"/>
+                            <td t-esc="line[2]"/>
+                        </tr>
+                    </tbody>
+                </table>
+                <p t-if="msg.commandResult.preview.total" class="o_ai_cmd_total">
+                    <span t-esc="labels.total"/>
+                    <strong>
+                        <t t-esc="msg.commandResult.preview.total"/>
+                        <span class="o_ai_cmd_ccy" t-esc="msg.commandResult.preview.currency"/>
+                    </strong>
+                </p>
+                <!-- Assumptions we had to make — a date read one way
+                     when the other reading is also a real date. -->
+                <div t-foreach="msg.commandResult.questions" t-as="q" t-key="q_index"
+                     class="o_ai_cmd_assumption">
+                    <i class="fa fa-info-circle" aria-hidden="true"/>
+                    <span t-esc="q.message"/>
+                </div>
+            </t>
+
+            <!-- Needs input: ask, never guess. -->
+            <t t-elif="msg.commandResult.status === 'needs_input'">
+                <div t-foreach="msg.commandResult.questions" t-as="q" t-key="q_index"
+                     class="o_ai_cmd_question">
+                    <p class="o_ai_cmd_question__text" t-esc="q.message"/>
+                    <div t-if="q.options.length" class="o_ai_cmd_options">
+                        <button t-foreach="q.options" t-as="opt" t-key="opt.id"
+                                type="button" class="o_ai_cmd_option"
+                                t-on-click="() => this.answerCommandQuestion(msg, q, opt)">
+                            <t t-esc="opt.name"/>
+                        </button>
+                    </div>
+                </div>
+                <div t-if="msg.creatable.length" class="o_ai_cmd_actions">
+                    <button type="button" class="o_ai_cmd_btn o_ai_cmd_btn--primary"
+                            t-on-click="() => this.confirmCreateMissing(msg)">
+                        <i class="fa fa-plus" aria-hidden="true"/>
+                        <span t-esc="labels.createAndContinue"/>
+                    </button>
+                    <button type="button" class="o_ai_cmd_btn"
+                            t-on-click="() => this.cancelCommand(msg)">
+                        <span t-esc="labels.cancel"/>
+                    </button>
+                </div>
+            </t>
+
+        </div>
+    </t>
+
+</templates>

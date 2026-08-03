@@ -47,6 +47,14 @@ with the domain app, so the command exists exactly when that app does.
         'data/ai_command_tool_data.xml',
         'views/ai_agent_command_views.xml',
     ],
+    'assets': {
+        'web.assets_backend': [
+            'ab_ai_command/static/src/command_palette.scss',
+            'ab_ai_command/static/src/command_palette.js',
+            'ab_ai_command/static/src/command_palette.xml',
+            'ab_ai_command/static/src/command_inherit.xml',
+        ],
+    },
     'installable': True,
     'auto_install': False,
     'application': False,

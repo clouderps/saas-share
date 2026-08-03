@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <!-- Slot the palette above the composer and the command result into
+         the answer card. Both are t-if'd on state this module owns, so
+         with ab_ai_command absent the template is untouched. -->
+    <t t-name="ab_ai_command.AiAgentChatCommands"
+       t-inherit="ab_ai_agent.AiAgentChat" t-inherit-mode="extension">
+
+        <xpath expr="//footer[hasclass('o_ai_agent_chat__footer')]" position="before">
+            <t t-if="paletteVisible" t-call="ab_ai_command.Palette"/>
+        </xpath>
+
+        <xpath expr="//div[hasclass('o_ai_answer__body')]" position="inside">
+            <t t-if="msg.commandResult" t-call="ab_ai_command.Result"/>
+        </xpath>
+
+    </t>
+
+</templates>

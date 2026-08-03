@@ -1,0 +1,174 @@
+// Slash-command palette + result card.
+// Inherits the Ghaima tokens ab_ai_agent already defines; every
+// directional rule is logical so RTL needs no mirrored variant.
+
+.o_ai_cmd_palette {
+    margin-block-end: var(--ai-step-2);
+    border: 1px solid var(--ai-ghaima-line);
+    border-radius: var(--ai-radius-md);
+    background: white;
+    box-shadow: var(--ai-shadow-md);
+    overflow: hidden;
+    max-block-size: 240px;
+    overflow-y: auto;
+
+    &__item {
+        display: flex;
+        align-items: center;
+        gap: var(--ai-step-2);
+        inline-size: 100%;
+        appearance: none;
+        border: 0;
+        background: transparent;
+        text-align: start;
+        padding: var(--ai-step-2) var(--ai-step-3);
+        font-size: 0.85rem;
+        cursor: pointer;
+        border-block-end: 1px solid var(--ai-ghaima-line);
+
+        &:last-child { border-block-end: 0; }
+        &.is-active  { background: var(--ai-ghaima-bg); }
+        &:focus-visible {
+            outline: 2px solid var(--ai-ghaima-blue);
+            outline-offset: -2px;
+        }
+    }
+
+    &__icon { color: var(--ai-ghaima-blue); inline-size: 1rem; text-align: center; }
+
+    &__verb {
+        font-family: ui-monospace, monospace;
+        font-weight: 600;
+        color: var(--ai-ghaima-ink);
+        // A verb is an ASCII identifier; bidi must not reorder it.
+        direction: ltr;
+        unicode-bidi: isolate;
+    }
+
+    &__desc {
+        color: var(--ai-ghaima-muted);
+        font-size: 0.78rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+.o_ai_cmd_draft_badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(185, 136, 0, 0.10);
+    color: var(--ai-ghaima-gold);
+    border-radius: var(--ai-radius-sm);
+    padding: 3px var(--ai-step-2);
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-block-end: var(--ai-step-3);
+}
+
+.o_ai_cmd_table {
+    inline-size: 100%;
+    border-collapse: collapse;
+    margin-block-end: var(--ai-step-3);
+    font-size: 0.85rem;
+
+    th, td {
+        padding: 5px var(--ai-step-2);
+        border-block-end: 1px solid var(--ai-ghaima-line);
+        text-align: start;
+        vertical-align: top;
+    }
+    th { color: var(--ai-ghaima-muted); font-weight: 500; white-space: nowrap; }
+
+    &--lines {
+        thead th {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        td:nth-child(2), td:nth-child(3),
+        thead th:nth-child(2), thead th:nth-child(3) {
+            text-align: end;
+            font-variant-numeric: tabular-nums;
+        }
+    }
+}
+
+.o_ai_cmd_total {
+    display: flex;
+    justify-content: space-between;
+    margin: 0 0 var(--ai-step-3);
+    font-size: 0.9rem;
+    strong { font-variant-numeric: tabular-nums; }
+}
+
+.o_ai_cmd_assumption,
+.o_ai_cmd_question {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--ai-step-2);
+    font-size: 0.82rem;
+    margin-block-end: var(--ai-step-2);
+}
+
+.o_ai_cmd_assumption {
+    color: var(--ai-ghaima-gold);
+    background: rgba(185, 136, 0, 0.07);
+    border-radius: var(--ai-radius-sm);
+    padding: var(--ai-step-2);
+}
+
+.o_ai_cmd_question {
+    flex-direction: column;
+    &__text { margin: 0 0 var(--ai-step-2); color: var(--ai-ghaima-ink); }
+}
+
+.o_ai_cmd_options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ai-step-2);
+}
+
+.o_ai_cmd_option,
+.o_ai_cmd_btn {
+    appearance: none;
+    background: white;
+    border: 1px solid var(--ai-ghaima-line);
+    border-radius: var(--ai-radius-sm);
+    padding: 5px var(--ai-step-3);
+    font-size: 0.8rem;
+    cursor: pointer;
+    min-block-size: 28px;
+    transition: border-color 0.15s, background 0.15s, color 0.15s;
+
+    &:hover { border-color: var(--ai-ghaima-blue); background: var(--ai-ghaima-bg); }
+    &:focus-visible { outline: 2px solid var(--ai-ghaima-blue); outline-offset: 1px; }
+}
+
+.o_ai_cmd_actions {
+    display: flex;
+    gap: var(--ai-step-2);
+    margin-block-start: var(--ai-step-3);
+}
+
+.o_ai_cmd_btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    &--primary {
+        background: var(--ai-ghaima-blue);
+        border-color: transparent;
+        color: white;
+        &:hover { background: var(--ai-ghaima-navy); border-color: transparent; }
+    }
+}
+
+// Currency sits apart from the figure, and stays LTR next to an
+// Arabic-Indic number so bidi does not reflow the pair.
+.o_ai_cmd_ccy {
+    margin-inline-start: 0.35em;
+    font-weight: 500;
+    unicode-bidi: isolate;
+}
