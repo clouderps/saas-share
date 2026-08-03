@@ -382,10 +382,26 @@ export class AiAgentChat extends Component {
         }
     }
 
-    /** True when this surface renders right-to-left. */
+    /** True when this surface renders right-to-left.
+     *
+     * Checks the COMPUTED direction as well as the attributes: Odoo
+     * puts dir on <html> for an RTL language, but a theme or an
+     * embedding page can set it elsewhere, and the computed value is
+     * the only signal that is always right.
+     */
     get isRtl() {
         const loc = this.props.locale || document.documentElement.lang || "";
-        return loc.startsWith("ar") || document.documentElement.dir === "rtl";
+        if (loc.startsWith("ar")) {
+            return true;
+        }
+        if (document.documentElement.dir === "rtl" || document.body.dir === "rtl") {
+            return true;
+        }
+        try {
+            return getComputedStyle(document.body).direction === "rtl";
+        } catch (e) {
+            return false;
+        }
     }
 
     /** Narrow surfaces (chatter side panel) get the dense block layout. */

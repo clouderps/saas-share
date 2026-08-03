@@ -98,7 +98,7 @@
     align-items: center;
     gap: var(--ai-step-3);
     padding: var(--ai-step-4) var(--ai-step-5);
-    background: white;
+    background: var(--ai-surface);
     border-block-end: 1px solid var(--ai-ghaima-line);
     // Bump above the body so the AiAgentChip dropdown paints OVER
     // the message stream when opened. The `.o_ai_agent_chat > *`
@@ -171,7 +171,7 @@
 
 .o_ai_agent_chat__footer {
     padding: var(--ai-step-4) var(--ai-step-5);
-    background: white;
+    background: var(--ai-surface);
     border-block-start: 1px solid var(--ai-ghaima-line);
 }
 
@@ -189,7 +189,7 @@
     padding: var(--ai-step-3) var(--ai-step-4);
     border: 1px solid var(--ai-ghaima-line);
     border-radius: var(--ai-radius-md);
-    background: white;
+    background: var(--ai-surface);
     font-family: inherit;
     font-size: 0.95rem;
     line-height: 1.5;
@@ -278,7 +278,7 @@
 }
 
 .o_ai_answer {
-    background: white;
+    background: var(--ai-surface);
     border: 1px solid var(--ai-ghaima-line);
     border-radius: var(--ai-radius-md);
     box-shadow: var(--ai-shadow-sm);
@@ -346,7 +346,7 @@
         &:hover {
             color: var(--ai-ghaima-ink);
             border-color: var(--ai-ghaima-line);
-            background: white;
+            background: var(--ai-surface);
         }
         &:focus-visible {
             outline: 2px solid var(--ai-ghaima-blue);
@@ -362,7 +362,7 @@
         &[aria-expanded="true"] {
             color: var(--ai-ghaima-blue);
             border-color: var(--ai-ghaima-line);
-            background: white;
+            background: var(--ai-surface);
         }
     }
 
@@ -423,7 +423,7 @@
     }
 
     &__act {
-        background: white;
+        background: var(--ai-surface);
         border: 1px solid var(--ai-ghaima-line);
         color: var(--ai-ghaima-muted);
         &:hover { color: var(--ai-ghaima-ink); border-color: var(--ai-ghaima-ink); }
@@ -505,7 +505,7 @@
     align-items: center;
     gap: var(--ai-step-2);
     padding: 6px var(--ai-step-3) 6px var(--ai-step-2);
-    background: white;
+    background: var(--ai-surface);
     border: 1px solid var(--ai-ghaima-line);
     border-radius: 999px;
     cursor: pointer;
@@ -570,7 +570,7 @@
     inset-inline-start: 0;
     min-width: 280px;
     max-width: 360px;
-    background: white;
+    background: var(--ai-surface);
     border: 1px solid var(--ai-ghaima-line);
     border-radius: var(--ai-radius-md);
     box-shadow: var(--ai-shadow-lg);
@@ -627,7 +627,7 @@
     align-items: flex-start;
     gap: var(--ai-step-3);
     padding: var(--ai-step-3) var(--ai-step-4);
-    background: white;
+    background: var(--ai-surface);
     border: 1px solid var(--ai-ghaima-line);
     border-radius: var(--ai-radius-md);
     cursor: pointer;
@@ -681,7 +681,7 @@
     align-items: center;
     gap: var(--ai-step-3);
     padding: var(--ai-step-2) var(--ai-step-3);
-    background: white;
+    background: var(--ai-surface);
     border: 1px solid var(--ai-ghaima-line);
     border-radius: 999px;
     font-size: 0.75rem;
@@ -721,7 +721,7 @@
 .o_ai_agent_run_trace {
     border: 1px solid var(--ai-ghaima-line);
     border-radius: var(--ai-radius-md);
-    background: white;
+    background: var(--ai-surface);
     font-size: 0.825rem;
     overflow: hidden;
 
@@ -777,7 +777,7 @@
 // ─── 7. Chatter Ask AI button ───────────────────────────────────────
 
 .o-mail-Chatter-askAI {
-    background: white !important;
+    background: var(--ai-surface) !important;
     color: var(--ai-ghaima-blue) !important;
     border: 1px solid var(--ai-ghaima-line) !important;
     font-weight: 600;
@@ -825,7 +825,7 @@
         height: 100%;
         min-height: 600px;
         max-height: 1100px;
-        background: white;
+        background: var(--ai-surface);
         border-radius: var(--ai-radius-lg);
         box-shadow: var(--ai-shadow-md);
         overflow: hidden;
@@ -891,7 +891,7 @@
     appearance: none;
     inline-size: 100%;
     text-align: start;
-    background: white;
+    background: var(--ai-surface);
     border: 1px solid var(--ai-ghaima-line);
     border-radius: var(--ai-radius-sm);
     padding: var(--ai-step-2) var(--ai-step-3);
@@ -910,7 +910,7 @@
 
 .o_ai_agent_example_chip {
     appearance: none;
-    background: white;
+    background: var(--ai-surface);
     border: 1px solid var(--ai-ghaima-line);
     border-radius: var(--ai-radius-md);
     padding: var(--ai-step-3) var(--ai-step-4);
@@ -959,7 +959,7 @@
 .o_ai_agent_chat__mic {
     position: relative;
     appearance: none;
-    background: white;
+    background: var(--ai-surface);
     color: var(--ai-ghaima-blue);
     border: 1px solid var(--ai-ghaima-line);
     width: 44px; height: 44px;
@@ -1030,7 +1030,7 @@
     margin: var(--ai-step-2) 0 var(--ai-step-3);
     border: 1px solid var(--ai-ghaima-line);
     border-radius: var(--ai-radius-md);
-    background: white;
+    background: var(--ai-surface);
     box-shadow: var(--ai-shadow-sm);
     overflow: hidden;
 }
@@ -1087,7 +1087,7 @@
         height: 100%;
         flex: 1 1 auto;
         border-radius: 0;
-        background: white;
+        background: var(--ai-surface);
 
         // The inline panel already has its own header bar above, so
         // hide the duplicated chat header (title / token meter /
@@ -1281,4 +1281,63 @@
 
 @media (prefers-reduced-motion: reduce) {
     .o_ai_start__item { transition: none; }
+}
+
+
+// ─── 13. Dark mode ──────────────────────────────────────────────────
+//
+// ab_ghaima_theme signals dark two ways — Bootstrap 5.3's data-bs-theme
+// on <html> and its own .ghaima-dark body class. Honour both, because
+// which one lands first depends on how the mode was set.
+//
+// Every surface above routes through a token, so this block is the only
+// place dark is described. Card backgrounds were literal `white` before
+// this pass, which no theme could override.
+
+@mixin ghaima-ai-dark {
+    --ai-ghaima-bg:     #12141C;
+    --ai-ghaima-ink:    #E8EAF2;
+    --ai-ghaima-muted:  #9BA2B4;
+    --ai-ghaima-line:   #2A2E3C;
+    --ai-surface:       #1A1D28;
+    --ai-surface-sunk:  #15171F;
+    // The brand tint has to lift off a dark card, not sink into it.
+    --ai-header-tint:   rgba(0, 95, 246, 0.16);
+    // Shadows do almost nothing on dark; keep them faint and rely on
+    // the surface step for separation instead.
+    --ai-shadow-sm:     0 1px 2px rgba(0, 0, 0, 0.35);
+    --ai-shadow-md:     0 4px 12px rgba(0, 0, 0, 0.40);
+    --ai-shadow-lg:     0 12px 32px rgba(0, 0, 0, 0.50);
+}
+
+[data-bs-theme="dark"] .o_ai_agent_chat,
+[data-bs-theme="dark"] .o_ai_agent_chat_page,
+.ghaima-dark .o_ai_agent_chat,
+.ghaima-dark .o_ai_agent_chat_page {
+    @include ghaima-ai-dark;
+
+    // The page-level wash is tuned for a light background.
+    &::before { opacity: 0.35; }
+}
+
+// The command card ships from ab_ai_command but renders inside this
+// shell, so it inherits the same tokens — except its own literals.
+[data-bs-theme="dark"], .ghaima-dark {
+    .o_ai_cmd_palette,
+    .o_ai_cmd_option,
+    .o_ai_cmd_btn:not(.o_ai_cmd_btn--primary) {
+        background: var(--ai-surface, #1A1D28);
+        color: var(--ai-ghaima-ink, #E8EAF2);
+        border-color: var(--ai-ghaima-line, #2A2E3C);
+    }
+    .o_ai_cmd_palette__item {
+        border-block-end-color: var(--ai-ghaima-line, #2A2E3C);
+        color: var(--ai-ghaima-ink, #E8EAF2);
+        &.is-active { background: var(--ai-surface-sunk, #15171F); }
+    }
+    .o_ai_start__item {
+        background: var(--ai-surface, #1A1D28);
+        color: var(--ai-ghaima-ink, #E8EAF2);
+        border-color: var(--ai-ghaima-line, #2A2E3C);
+    }
 }
