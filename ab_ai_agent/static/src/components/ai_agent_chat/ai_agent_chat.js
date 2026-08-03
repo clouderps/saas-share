@@ -2,11 +2,16 @@
 
 import { Component, useState, useRef, onMounted, onPatched, useEffect } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
+import { _t } from "@web/core/l10n/translation";
 import { registry } from "@web/core/registry";
 import { AiAgentChip } from "../ai_agent_chip/ai_agent_chip";
 import { AiAgentSkillCard } from "../ai_agent_skill_card/ai_agent_skill_card";
 import { AiAgentTokenMeter } from "../ai_agent_token_meter/ai_agent_token_meter";
 import { AiAgentRunTrace } from "../ai_agent_run_trace/ai_agent_run_trace";
+// The one block renderer every AI surface shares. This template used
+// to re-implement data_table / kpi_grid / callout inline, so chart
+// blocks rendered as nothing here while working everywhere else.
+import { AiResponse } from "@ab_ai_ui/ai_response/ai_response";
 
 /**
  * <AiAgentChat/> — the universal chat surface.
@@ -44,6 +49,7 @@ export class AiAgentChat extends Component {
         AiAgentSkillCard,
         AiAgentTokenMeter,
         AiAgentRunTrace,
+        AiResponse,
     };
     static props = {
         // Hard-pin an agent (chatter button passes one). Optional;
@@ -95,7 +101,12 @@ export class AiAgentChat extends Component {
             input: this.props.initialMessage || "",
             messages: [],
             isThinking: false,
+            thinkingLabel: "",
             muted,
+            // Openers derived from this user's real menu access — see
+            // _loadStarters. Empty until that resolves; the template
+            // simply renders no chips in the meantime.
+            starters: [],
             // Voice (manager-only, gated by props.enableVoice)
             recording: false,
             speechAvailable: typeof window !== "undefined"
@@ -120,6 +131,7 @@ export class AiAgentChat extends Component {
 
         // Auto-pick the prop-specified agent on mount.
         onMounted(async () => {
+            this._loadStarters();       // fire-and-forget; never blocks paint
             if (this.props.agentCode) {
                 const found = this.aiAgent.state.agents.find((a) => a.code === this.props.agentCode);
                 if (found) {
@@ -141,6 +153,29 @@ export class AiAgentChat extends Component {
                 await this._send(this.props.initialMessage);
             }
         });
+    }
+
+    /**
+     * Opening suggestions, from the server, based on what this user can
+     * actually open.
+     *
+     * This replaced a hardcoded list. The old chips offered every user
+     * the same things — "P&L report for this month", "cash position" —
+     * so a cashier was invited to open screens they have no access to
+     * and every suggestion dead-ended. Failing quietly is correct here:
+     * no chips is a smaller problem than wrong chips.
+     */
+    async _loadStarters() {
+        try {
+            const res = await this.aiAgent.fetchStarters({
+                recordModel: this.props.recordModel,
+            });
+            if (res && res.starters) {
+                this.state.starters = res.starters;
+            }
+        } catch (e) {
+            this.state.starters = [];
+        }
     }
 
     async _loadRecordHistory() {
@@ -195,14 +230,11 @@ export class AiAgentChat extends Component {
         if (this.props.recordModel && this.props.recordName) {
             return `${this.props.recordName} · ${this.props.recordModel}`;
         }
-        return this.activeAgent?.description || "Ask anything about your business";
+        return this.activeAgent?.description || _t("Ask anything about your business");
     }
 
     get placeholderText() {
-        if ((this.props.locale || "").startsWith("ar")) {
-            return "اسأل عن أي شيء…";
-        }
-        return "Ask me anything…";
+        return _t("Ask me anything\u2026");
     }
 
     // ── Event handlers ────────────────────────────────────────
@@ -347,40 +379,87 @@ export class AiAgentChat extends Component {
         }
     }
 
+    /** True when this surface renders right-to-left. */
+    get isRtl() {
+        const loc = this.props.locale || document.documentElement.lang || "";
+        return loc.startsWith("ar") || document.documentElement.dir === "rtl";
+    }
+
+    /** Narrow surfaces (chatter side panel) get the dense block layout. */
+    get isCompact() {
+        return this.props.surface === "chatter" || this.props.hideSidebar;
+    }
+
     /**
-     * 6 example prompts shown on the empty state. Click → auto-send.
-     * Localised; chatter surface gets record-aware variants.
+     * UI strings.
+     *
+     * These go through _t so they land in the module's .po catalogue
+     * and follow the user's language like every other string in Odoo.
+     * They were briefly a locale ternary in this file, which meant the
+     * Arabic UI still rendered English chrome around Arabic answers.
      */
-    get examplePrompts() {
-        const isArabic = (this.props.locale || "").startsWith("ar");
-        if (this.props.recordModel) {
-            return isArabic ? [
-                { icon: "fa-compress", text: "لخّص هذا السجل" },
-                { icon: "fa-list", text: "ما الإجراءات المعلقة؟" },
-                { icon: "fa-history", text: "اعرض آخر التعديلات" },
-                { icon: "fa-lightbulb-o", text: "ما الذي يجب أن أفعله الآن؟" },
-            ] : [
-                { icon: "fa-compress", text: "Summarise this record" },
-                { icon: "fa-list", text: "What activities are pending?" },
-                { icon: "fa-history", text: "Show me recent changes" },
-                { icon: "fa-lightbulb-o", text: "What should I do next?" },
-            ];
+    get labels() {
+        return {
+            close: _t("Close"),
+            sources: _t("Sources used"),
+            collapse: _t("Collapse answer"),
+            open: _t("Open"),
+            refine: _t("Refine"),
+            helpful: _t("Helpful"),
+            unhelpful: _t("Not helpful"),
+            working: _t("Working\u2026"),
+            skills: _t("Quick skills"),
+            tryAsking: _t("Try asking"),
+            ask: _t("Ask"),
+            listening: _t("Listening\u2026"),
+            startRecording: _t("Tap to speak"),
+            stopRecording: _t("Stop recording"),
+            answer: _t("Answer"),
+            welcome: _t("Start here"),
+        };
+    }
+
+    get muteLabels() {
+        return {
+            on: _t("Mute response sound"),
+            off: _t("Unmute response sound"),
+        };
+    }
+
+    /**
+     * Card title. The runtime already names structured reports via
+     * render.title — use it, because it describes what the answer IS
+     * ("Sales · today") rather than restating the question.
+     */
+    answerTitle(msg) {
+        if (msg.isWelcome) {
+            return this.labels.welcome;
         }
-        return isArabic ? [
-            { icon: "fa-bar-chart", text: "ما إجمالي مبيعات اليوم؟" },
-            { icon: "fa-users", text: "أفضل 5 عملاء هذا الشهر" },
-            { icon: "fa-money", text: "وضع النقدية الحالي" },
-            { icon: "fa-exclamation-triangle", text: "اعرض الفواتير المتأخرة" },
-            { icon: "fa-line-chart", text: "تقرير الربح والخسارة لهذا الشهر" },
-            { icon: "fa-shopping-cart", text: "حالة نقاط البيع الآن" },
-        ] : [
-            { icon: "fa-bar-chart", text: "What are total sales today?" },
-            { icon: "fa-users", text: "Top 5 customers this month" },
-            { icon: "fa-money", text: "What's my cash position?" },
-            { icon: "fa-exclamation-triangle", text: "Show overdue invoices" },
-            { icon: "fa-line-chart", text: "P&L report for this month" },
-            { icon: "fa-shopping-cart", text: "Status of POS sessions now" },
-        ];
+        return (msg.render && msg.render.title)
+            || (msg.envelope && msg.envelope.render && msg.envelope.render.title)
+            || this.labels.answer;
+    }
+
+    toggleCollapse(msg) {
+        msg.collapsed = !msg.collapsed;
+    }
+
+    toggleTrace(msg) {
+        msg.showTrace = !msg.showTrace;
+    }
+
+    /** Put the original question back in the box to reword and re-ask. */
+    refine(msg) {
+        const idx = this.state.messages.indexOf(msg);
+        for (let i = idx - 1; i >= 0; i--) {
+            if (this.state.messages[i].role === "user") {
+                this.state.input = this.state.messages[i].text;
+                break;
+            }
+        }
+        if (this.textareaRef.el) {
+            this.textareaRef.el.focus();
+        }
     }
 
     onExamplePick(prompt) {
@@ -401,9 +480,7 @@ export class AiAgentChat extends Component {
 
     _addAssistantWelcome() {
         const agent = this.activeAgent;
-        const greeting = (this.props.locale || "").startsWith("ar")
-            ? "أهلاً! بماذا أساعدك اليوم؟"
-            : `Hi! How can I help you today?`;
+        const greeting = _t("Hi! How can I help you today?");
         this.state.messages.push({
             role: "assistant",
             id: `welcome-${Date.now()}`,
@@ -411,6 +488,8 @@ export class AiAgentChat extends Component {
             agentName: agent?.name || "Ghaima Assistant",
             agentAccent: agent?.accent || "blue",
             isWelcome: true,
+            collapsed: false,
+            showTrace: false,
         });
     }
 
@@ -444,10 +523,16 @@ export class AiAgentChat extends Component {
             role: "user",
             id: `u-${Date.now()}`,
             text,
+            // Shown at the end of the question line. Locale-formatted so
+            // Arabic users get Arabic-Indic digits when their locale
+            // asks for them.
+            at: new Date().toLocaleTimeString(this.isRtl ? "ar-SA" : undefined,
+                                              { hour: "2-digit", minute: "2-digit" }),
         };
         this.state.messages.push(userMsg);
         this.state.input = "";
         this.state.isThinking = true;
+        this.state.thinkingLabel = this.labels.working;
 
         try {
             const envelope = await this.aiAgent.runAgent({
@@ -475,6 +560,10 @@ export class AiAgentChat extends Component {
                 render: envelope.render || null,
                 envelope,
                 feedback: null,
+                // Card UI state — declared up-front so OWL's reactivity
+                // tracks them; adding keys later would not re-render.
+                collapsed: false,
+                showTrace: false,
             });
             this._playDoneSound();
             // Voice playback for the Manager Console — reads the

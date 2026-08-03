@@ -15,7 +15,7 @@ import json
 import logging
 import time
 
-from odoo.exceptions import UserError
+from odoo.exceptions import AccessError, UserError
 
 _logger = logging.getLogger(__name__)
 
@@ -348,6 +348,235 @@ def _builtin_open_action(env, agent=None, xmlid=None, **_kw):
         }
     except Exception as e:
         return {'error': str(e)}
+
+
+# ─── System guidance ─────────────────────────────────────────────────
+# "What can I do here?" / "Where do I do X?" / "What is this screen?"
+#
+# Every one of these reads the menu tree and model metadata AS THE
+# REQUESTING USER — never sudo. ir.ui.menu already filters itself by
+# groups_id, and ir.model.fields respects field-level groups, so an
+# accountant and a cashier get genuinely different answers and the
+# assistant can never point someone at a screen they cannot open.
+
+def _menu_path(menu):
+    """'Sales / Orders / Quotations' — walked with the user's own
+    access, so a hidden ancestor truncates the path rather than
+    leaking its name."""
+    parts, node, guard = [], menu, 0
+    while node and guard < 12:
+        try:
+            parts.append(node.name)
+            node = node.parent_id
+        except Exception:
+            break
+        guard += 1
+    return ' / '.join(reversed(parts))
+
+
+def _builtin_list_my_apps(env, agent=None, **_kw):
+    """Top-level apps this user can actually open.
+
+    The grounding for "what can I do in the system?". Without it the
+    model invents plausible Odoo menus the user has no access to.
+    """
+    Menu = env.get('ir.ui.menu')
+    if Menu is None:
+        return {'error': 'ir.ui.menu unavailable'}
+    try:
+        # No sudo: the ORM applies the menu's groups_id for us.
+        roots = Menu.search([('parent_id', '=', False)], order='sequence, id')
+    except AccessError:
+        # Portal/public users can't read the backend menu tree at all.
+        # That IS the answer — "you have no back-office apps" — not a
+        # failure, so return it as data the model can explain.
+        return {
+            'user': env.user.name,
+            'app_count': 0,
+            'apps': [],
+            'note': ('This user has no back-office access at all. Explain '
+                     'that they use the customer portal, not the back '
+                     'office, and do not list any app.'),
+        }
+    except Exception as e:
+        return {'error': f'could not read menus: {type(e).__name__}'}
+
+    apps = []
+    for root in roots:
+        children = root.child_id.filtered(lambda m: m.name)
+        apps.append({
+            'name': root.name,
+            'xmlid': root.get_external_id().get(root.id) or '',
+            'sections': children.mapped('name')[:12],
+        })
+    return {
+        'user': env.user.name,
+        'app_count': len(apps),
+        'apps': apps,
+        'note': 'Only apps this user may open. Do not mention anything absent.',
+    }
+
+
+def _builtin_find_menu(env, agent=None, query=None, limit=6, **_kw):
+    """Resolve "where do I do X?" to real, openable menu entries.
+
+    Returns the menu path plus its action, so the answer can carry a
+    working "take me there" button instead of a prose breadcrumb the
+    user has to hunt for.
+    """
+    if not query or not str(query).strip():
+        return {'error': 'query required'}
+    Menu = env.get('ir.ui.menu')
+    if Menu is None:
+        return {'error': 'ir.ui.menu unavailable'}
+
+    q = str(query).strip()
+    try:
+        menus = Menu.search([('name', 'ilike', q)], limit=int(limit) * 3)
+        if not menus:
+            # Fall back to matching the action's own name — users ask for
+            # "credit note", the menu is called "Refunds".
+            menus = Menu.search([('action', '!=', False)], limit=400).filtered(
+                lambda m: q.lower() in (m.action.name or '').lower()
+            )[:int(limit) * 3]
+    except Exception as e:
+        return {'error': f'menu search failed: {type(e).__name__}'}
+
+    hits = []
+    for menu in menus:
+        if not menu.action:
+            continue           # a folder, not a destination
+        hits.append({
+            'label': menu.name,
+            'path': _menu_path(menu),
+            'menu_id': menu.id,
+            'action_xmlid': menu.action.get_external_id().get(menu.action.id) or '',
+            'model': getattr(menu.action, 'res_model', '') or '',
+        })
+        if len(hits) >= int(limit):
+            break
+
+    if not hits:
+        return {
+            'query': q,
+            'matches': [],
+            'note': ('Nothing this user can open matches. Say so plainly and '
+                     'suggest they ask an administrator for access — do NOT '
+                     'invent a menu path.'),
+        }
+    return {'query': q, 'matches': hits}
+
+
+def _resolve_model(env, name):
+    """Turn whatever the user called a screen into a real model name.
+
+    People say "the invoices screen", not "account.move". Resolving that
+    here rather than asking them to supply a technical name keeps the
+    conversation in their language — and stops the assistant replying
+    with tool mechanics, which is a leak of our internals into a
+    business user's answer.
+    """
+    if not name:
+        return None
+    raw = str(name).strip()
+    if env.get(raw) is not None:          # already a model name
+        return raw
+
+    # Menu label → the action's model. This is how users actually refer
+    # to screens: by the words in their own navigation.
+    Menu = env.get('ir.ui.menu')
+    if Menu is not None:
+        try:
+            for menu in Menu.search([('name', 'ilike', raw)], limit=20):
+                target = getattr(menu.action, 'res_model', None)
+                if target and env.get(target) is not None:
+                    return target
+        except Exception:
+            pass
+
+    # Fall back to the model's own human description ("Journal Entry").
+    IrModel = env.get('ir.model')
+    if IrModel is not None:
+        try:
+            hit = IrModel.sudo().search(
+                ['|', ('name', '=ilike', raw), ('name', 'ilike', raw)], limit=1)
+            if hit and env.get(hit.model) is not None:
+                return hit.model
+        except Exception:
+            pass
+    return None
+
+
+def _builtin_explain_screen(env, agent=None, model=None, screen=None, **_kw):
+    """Describe a screen from live metadata rather than guessing.
+
+    Reads the model's own fields, its state/stage vocabulary and the
+    server actions bound to it — as the user, so field-level groups are
+    honoured and a restricted field never surfaces in the explanation.
+
+    Accepts either a technical model name or whatever the user called
+    the screen; see _resolve_model.
+    """
+    requested = model or screen
+    model = _resolve_model(env, requested)
+    if not model:
+        return {
+            'error': 'could not identify that screen',
+            'requested': requested or '',
+            'note': ('Ask the user which screen they mean in THEIR words '
+                     '(e.g. "the invoices list", "the customer form"). '
+                     'Never ask for a technical model name and never '
+                     'mention this tool by name.'),
+        }
+    Model = env.get(model)
+    if Model is None:
+        return {'error': f'model {model} is not installed'}
+
+    try:
+        Model.check_access('read')
+    except Exception:
+        return {'error': f'no read access to {model}',
+                'note': 'Tell the user they lack access to this screen.'}
+
+    fields_meta = Model.fields_get()   # already group-filtered per user
+    interesting, states = [], []
+    for name, meta in fields_meta.items():
+        if name.startswith('_') or meta.get('type') in (
+                'binary', 'one2many', 'many2many'):
+            continue
+        if meta.get('type') == 'selection' and name in ('state', 'stage_id', 'status'):
+            states = [lbl for _v, lbl in (meta.get('selection') or [])]
+        if meta.get('required') or name in (
+                'name', 'partner_id', 'date', 'state', 'company_id',
+                'amount_total', 'user_id'):
+            interesting.append({
+                'field': name,
+                'label': meta.get('string') or name,
+                'type': meta.get('type'),
+                'required': bool(meta.get('required')),
+                'readonly': bool(meta.get('readonly')),
+                'help': (meta.get('help') or '')[:160],
+            })
+
+    try:
+        can_write = Model.has_access('write')
+        can_create = Model.has_access('create')
+        can_unlink = Model.has_access('unlink')
+    except Exception:
+        can_write = can_create = can_unlink = False
+
+    return {
+        'model': model,
+        'title': Model._description or model,
+        'record_count': Model.search_count([]),
+        'key_fields': interesting[:18],
+        'lifecycle': states,
+        'permissions': {
+            'create': can_create, 'write': can_write, 'delete': can_unlink,
+        },
+        'note': ('Permissions describe THIS user. If write is false, do not '
+                 'tell them to edit anything — explain who can.'),
+    }
 
 
 # ─── HR domain tools ─────────────────────────────────────────────────
@@ -825,6 +1054,9 @@ register('open_list', _builtin_open_list)
 register('open_pivot', _builtin_open_pivot)
 register('open_graph', _builtin_open_graph)
 register('open_action', _builtin_open_action)
+register('list_my_apps', _builtin_list_my_apps)
+register('find_menu', _builtin_find_menu)
+register('explain_screen', _builtin_explain_screen)
 register('hr_attendance_missing_today', _builtin_hr_attendance_missing_today)
 register('hr_leave_pending', _builtin_hr_leave_pending)
 register('hr_attendance_open_shifts', _builtin_hr_attendance_open_shifts)

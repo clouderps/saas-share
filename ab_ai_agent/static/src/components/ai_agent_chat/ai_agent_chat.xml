@@ -1,9 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
 
+    <!--
+        Ask AI — answer cards.
+
+        This is not a messaging UI. The agent's job is decision support,
+        reporting, and explaining the system, so a turn renders as:
+
+            question line  (muted, small — context, not content)
+            answer card    (title · sources · block-kit body · actions)
+
+        No chat bubbles, no avatars, no typing dots — those framed the
+        agent as a person to talk to rather than an answer to act on.
+
+        The card body delegates to <AiResponse/> from ab_ai_ui: the one
+        renderer every AI surface shares. This template used to
+        re-implement data_table / kpi_grid / callout / highlight_list
+        inline, which meant chart blocks silently rendered as nothing
+        here while working everywhere else.
+
+        RTL: the shell carries dir and every rule in the SCSS uses
+        logical properties, so nothing here needs a mirrored variant.
+    -->
     <t t-name="ab_ai_agent.AiAgentChat">
-        <section class="o_ai_agent_chat" role="region" aria-label="AI Agent Chat"
-                 t-att-dir="(props.locale || '').startsWith('ar') ? 'rtl' : 'auto'">
+        <section class="o_ai_agent_chat" role="region"
+                 t-att-aria-label="headerTitle"
+                 t-att-dir="isRtl ? 'rtl' : 'auto'">
 
             <!-- ── Header ─────────────────────────────────────────── -->
             <header class="o_ai_agent_chat__header">
@@ -17,11 +39,11 @@
                         t-att-class="{ 'is-muted': state.muted }"
                         t-on-click="toggleMute"
                         type="button"
-                        t-att-title="state.muted ? 'Unmute response sound' : 'Mute response sound'">
+                        t-att-title="state.muted ? muteLabels.off : muteLabels.on">
                     <i t-att-class="state.muted ? 'fa fa-volume-off' : 'fa fa-volume-up'"/>
                 </button>
                 <button t-if="props.onClose" class="o_ai_agent_chat__close" type="button"
-                        t-on-click="close" aria-label="Close">
+                        t-on-click="close" t-att-aria-label="labels.close">
                     <i class="fa fa-times"/>
                 </button>
             </header>
@@ -31,141 +53,132 @@
                 <div class="o_ai_agent_chat__stream" t-ref="stream">
                     <t t-foreach="state.messages" t-as="msg" t-key="msg.id">
 
-                        <!-- User bubble -->
-                        <div t-if="msg.role === 'user'" class="o_ai_agent_msg o_ai_agent_msg--user">
-                            <div class="o_ai_agent_msg__avatar" style="background: var(--ai-ghaima-navy); color: white;">
-                                <i class="fa fa-user"/>
-                            </div>
-                            <div class="o_ai_agent_msg__bubble" t-esc="msg.text"/>
+                        <!-- Question: context for the answer below it,
+                             deliberately quiet. -->
+                        <div t-if="msg.role === 'user'" class="o_ai_answer_q">
+                            <i class="fa fa-search o_ai_answer_q__icon" aria-hidden="true"/>
+                            <p class="o_ai_answer_q__text" t-esc="msg.text"/>
+                            <span t-if="msg.at" class="o_ai_answer_q__time" t-esc="msg.at"/>
                         </div>
 
-                        <!-- Assistant bubble -->
-                        <div t-elif="msg.role === 'assistant'"
-                             class="o_ai_agent_msg o_ai_agent_msg--assistant">
-                            <div class="o_ai_agent_msg__avatar"
-                                 t-attf-class="o_accent-{{msg.agentAccent || 'blue'}}">
-                                <img t-if="activeAgent?.avatar_url" t-att-src="activeAgent.avatar_url" alt=""/>
-                                <span t-else="" t-esc="(msg.agentName || 'AI').slice(0,1).toUpperCase()"/>
-                            </div>
-                            <div class="flex-grow-1" style="min-width: 0;">
-                                <div class="o_ai_agent_msg__bubble">
-                                    <!-- Structured report: render the block kit -->
-                                    <div t-if="msg.render and msg.render.blocks and msg.render.blocks.length"
-                                         class="o_ai_agent_msg__report">
-                                        <h4 t-if="msg.render.title" class="o_ai_agent_msg__report-title"
-                                            t-esc="msg.render.title"/>
-                                        <p t-if="msg.render.subtitle"
-                                           class="o_ai_agent_msg__report-subtitle text-muted"
-                                           t-esc="msg.render.subtitle"/>
-                                        <t t-foreach="msg.render.blocks" t-as="block" t-key="block_index">
-                                            <!-- data_table -->
-                                            <div t-if="block.type === 'data_table'" class="o_ai_agent_table_wrap">
-                                                <p t-if="block.title" class="o_ai_agent_table_title" t-esc="block.title"/>
-                                                <table class="o_ai_agent_table">
-                                                    <thead t-if="block.headers and block.headers.length">
-                                                        <tr><th t-foreach="block.headers" t-as="h" t-key="h_index" t-esc="h"/></tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        <tr t-foreach="block.rows or []" t-as="row" t-key="row_index">
-                                                            <td t-foreach="row" t-as="cell" t-key="cell_index" t-esc="cell"/>
-                                                        </tr>
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                            <!-- kpi_grid -->
-                                            <div t-elif="block.type === 'kpi_grid'" class="o_ai_agent_kpi_grid">
-                                                <div t-foreach="block.items or []" t-as="kpi" t-key="kpi_index"
-                                                     class="o_ai_agent_kpi"
-                                                     t-attf-class="o_ai_agent_kpi o_tone-{{kpi.tone || 'neutral'}}">
-                                                    <p class="o_ai_agent_kpi__label" t-esc="kpi.label"/>
-                                                    <p class="o_ai_agent_kpi__value" t-esc="kpi.value"/>
-                                                </div>
-                                            </div>
-                                            <!-- highlight_list -->
-                                            <div t-elif="block.type === 'highlight_list'" class="o_ai_agent_highlight">
-                                                <p t-if="block.title" class="o_ai_agent_highlight__title" t-esc="block.title"/>
-                                                <ul>
-                                                    <li t-foreach="block.items or []" t-as="item" t-key="item_index" t-esc="item"/>
-                                                </ul>
-                                            </div>
-                                            <!-- callout -->
-                                            <div t-elif="block.type === 'callout'"
-                                                 t-attf-class="o_ai_agent_callout o_tone-{{block.tone || 'neutral'}}">
-                                                <i t-attf-class="fa {{block.icon || 'fa-info-circle'}}"/>
-                                                <div>
-                                                    <strong t-if="block.title" t-esc="block.title"/>
-                                                    <p class="mb-0" t-esc="block.body"/>
-                                                </div>
-                                            </div>
-                                            <!-- text -->
-                                            <div t-elif="block.type === 'text'" class="o_ai_agent_text" t-out="block.text"/>
-                                        </t>
-                                    </div>
-                                    <!-- Plain text fallback -->
-                                    <div t-else="" t-out="msg.text"/>
-                                </div>
-                                <AiAgentRunTrace t-if="msg.toolCalls and msg.toolCalls.length"
+                        <!-- Answer card -->
+                        <article t-elif="msg.role === 'assistant'"
+                                 class="o_ai_answer"
+                                 t-att-class="{ 'is-collapsed': msg.collapsed }">
+
+                            <header class="o_ai_answer__head">
+                                <h3 class="o_ai_answer__title" t-esc="answerTitle(msg)"/>
+                                <button t-if="msg.toolCalls and msg.toolCalls.length"
+                                        class="o_ai_answer__sources"
+                                        type="button"
+                                        t-on-click="() => this.toggleTrace(msg)"
+                                        t-att-aria-expanded="msg.showTrace ? 'true' : 'false'"
+                                        t-att-title="labels.sources">
+                                    <i class="fa fa-database" aria-hidden="true"/>
+                                    <span t-esc="msg.toolCalls.length"/>
+                                </button>
+                                <button class="o_ai_answer__collapse" type="button"
+                                        t-on-click="() => this.toggleCollapse(msg)"
+                                        t-att-aria-label="labels.collapse">
+                                    <i t-att-class="msg.collapsed ? 'fa fa-chevron-down' : 'fa fa-chevron-up'"/>
+                                </button>
+                            </header>
+
+                            <div t-if="!msg.collapsed" class="o_ai_answer__body">
+                                <!-- One renderer for every block type,
+                                     charts included. -->
+                                <AiResponse t-if="msg.envelope"
+                                            envelope="msg.envelope"
+                                            compact="isCompact"
+                                            hideProvenance="true"/>
+                                <div t-else="" class="o_ai_answer__plain" t-out="msg.text"/>
+
+                                <AiAgentRunTrace t-if="msg.showTrace and msg.toolCalls and msg.toolCalls.length"
                                                  toolCalls="msg.toolCalls"
                                                  provenance="msg.provenance"/>
-                                <button t-if="msg.pendingAction" class="o_ai_agent_msg__action"
+                            </div>
+
+                            <footer t-if="!msg.collapsed" class="o_ai_answer__foot">
+                                <button t-if="msg.pendingAction"
+                                        class="o_ai_answer__cta"
+                                        type="button"
                                         t-on-click="() => this.runEnvelopeAction(msg.pendingAction)">
-                                    <i class="fa fa-external-link me-1"/>
-                                    <t t-esc="msg.pendingAction.name || 'Open'"/>
+                                    <i class="fa fa-external-link" aria-hidden="true"/>
+                                    <span t-esc="msg.pendingAction.name || labels.open"/>
                                 </button>
-                                <div t-if="msg.runId" class="o_ai_agent_msg__feedback">
+                                <button t-if="msg.runId" class="o_ai_answer__act" type="button"
+                                        t-on-click="() => this.refine(msg)">
+                                    <i class="fa fa-repeat" aria-hidden="true"/>
+                                    <span t-esc="labels.refine"/>
+                                </button>
+                                <span class="flex-grow-1"/>
+                                <div t-if="msg.runId" class="o_ai_answer__rate">
                                     <button t-att-class="{ 'is-active': msg.feedback === 'up' }"
                                             t-on-click="() => this.rate(msg, 'up')"
-                                            aria-label="Mark as helpful">
+                                            t-att-aria-label="labels.helpful" type="button">
                                         <i class="fa fa-thumbs-up"/>
                                     </button>
                                     <button t-att-class="{ 'is-active': msg.feedback === 'down' }"
                                             t-on-click="() => this.rate(msg, 'down')"
-                                            aria-label="Mark as unhelpful">
+                                            t-att-aria-label="labels.unhelpful" type="button">
                                         <i class="fa fa-thumbs-down"/>
                                     </button>
                                 </div>
-                                <!-- Example prompts shown only on the welcome message -->
-                                <div t-if="msg.isWelcome" class="o_ai_agent_examples">
-                                    <button t-foreach="examplePrompts" t-as="ex" t-key="ex_index"
-                                            class="o_ai_agent_example_chip"
-                                            t-on-click="() => this.onExamplePick(ex)">
-                                        <i t-attf-class="fa {{ex.icon}}"/>
-                                        <span t-esc="ex.text"/>
-                                    </button>
-                                </div>
+                            </footer>
+
+                            <!-- Openers, derived from what this user can
+                                 actually reach — never a fixed list.
+                                 Only in-card when there is no sidebar to
+                                 host them, otherwise they appear twice. -->
+                            <div t-if="msg.isWelcome and state.starters.length and props.hideSidebar"
+                                 class="o_ai_agent_examples">
+                                <button t-foreach="state.starters" t-as="ex" t-key="ex_index"
+                                        class="o_ai_agent_example_chip"
+                                        type="button"
+                                        t-on-click="() => this.onExamplePick(ex)">
+                                    <i t-attf-class="fa {{ex.icon}}" aria-hidden="true"/>
+                                    <span t-esc="ex.text"/>
+                                </button>
                             </div>
-                        </div>
+                        </article>
                     </t>
 
-                    <!-- Typing indicator -->
-                    <div t-if="state.isThinking" class="o_ai_agent_msg o_ai_agent_msg--assistant">
-                        <div class="o_ai_agent_msg__avatar"
-                             t-attf-class="o_accent-{{activeAgent?.accent || 'blue'}}">
-                            <span t-esc="(activeAgent?.name || 'AI').slice(0,1).toUpperCase()"/>
+                    <!-- Working: mirror the shape of the answer to come
+                         rather than three dancing dots. -->
+                    <article t-if="state.isThinking" class="o_ai_answer is-pending" aria-busy="true">
+                        <header class="o_ai_answer__head">
+                            <h3 class="o_ai_answer__title" t-esc="state.thinkingLabel || labels.working"/>
+                        </header>
+                        <div class="o_ai_answer__body">
+                            <div class="o_ai_skeleton">
+                                <span class="o_ai_skeleton__kpi"/>
+                                <span class="o_ai_skeleton__kpi"/>
+                                <span class="o_ai_skeleton__kpi"/>
+                            </div>
+                            <div class="o_ai_skeleton">
+                                <span class="o_ai_skeleton__row"/>
+                                <span class="o_ai_skeleton__row" style="inline-size: 82%;"/>
+                                <span class="o_ai_skeleton__row" style="inline-size: 64%;"/>
+                            </div>
                         </div>
-                        <div class="o_ai_agent_msg__bubble">
-                            <span class="o_ai_agent_typing">
-                                <span/><span/><span/>
-                            </span>
-                        </div>
-                    </div>
+                    </article>
                 </div>
 
                 <aside t-if="!props.hideSidebar" class="o_ai_agent_chat__sidebar">
                     <div t-if="skills.length" class="o_ai_agent_skill_panel">
-                        <p class="o_ai_agent_skill_panel__title">Quick skills</p>
+                        <p class="o_ai_agent_skill_panel__title" t-esc="labels.skills"/>
                         <AiAgentSkillCard t-foreach="skills" t-as="s" t-key="s.code"
                                           skill="s" onPick.bind="onSkillPick"/>
                     </div>
                     <div t-else="" class="o_ai_agent_skill_panel">
-                        <p class="o_ai_agent_skill_panel__title">Tips</p>
-                        <div class="text-muted small" style="line-height: 1.6;">
-                            <p class="mb-2">Try asking:</p>
-                            <ul class="ps-3">
-                                <li>"How many sales today?"</li>
-                                <li>"Compare this month vs last month"</li>
-                                <li>"What should I do next?"</li>
-                            </ul>
+                        <p class="o_ai_agent_skill_panel__title" t-esc="labels.tryAsking"/>
+                        <div class="o_ai_agent_sidebar_hints">
+                            <button t-foreach="state.starters" t-as="ex" t-key="ex_index"
+                                    type="button" class="o_ai_agent_sidebar_hint"
+                                    t-on-click="() => this.onExamplePick(ex)">
+                                <i t-attf-class="fa {{ex.icon}}" aria-hidden="true"/>
+                                <span t-esc="ex.text"/>
+                            </button>
                         </div>
                     </div>
                 </aside>
@@ -174,24 +187,23 @@
             <!-- ── Footer ─────────────────────────────────────────── -->
             <footer class="o_ai_agent_chat__footer">
                 <form class="o_ai_agent_chat__form" t-on-submit.prevent="send">
-                    <!-- Voice input (manager-only, requires Web Speech API) -->
                     <button t-if="props.enableVoice and state.speechAvailable"
                             type="button"
                             class="o_ai_agent_chat__mic"
                             t-att-class="{ 'is-recording': state.recording }"
                             t-on-click="toggleRecording"
-                            t-att-title="state.recording ? 'Stop recording (tap to send)' : 'Hold conversation — tap to speak'">
+                            t-att-title="state.recording ? labels.stopRecording : labels.startRecording">
                         <i t-att-class="state.recording ? 'fa fa-stop' : 'fa fa-microphone'"/>
                         <span t-if="state.recording" class="o_ai_agent_chat__mic_pulse"/>
                     </button>
                     <textarea t-ref="textarea" class="o_ai_agent_chat__textarea"
                               t-model="state.input"
-                              t-att-placeholder="state.recording ? 'Listening…' : placeholderText"
+                              t-att-placeholder="state.recording ? labels.listening : placeholderText"
                               t-on-keydown="onInputKeydown"
                               rows="1"/>
                     <button class="o_ai_agent_chat__send" type="submit"
                             t-att-disabled="state.isThinking or !state.input.trim()">
-                        <span t-if="!state.isThinking">Send</span>
+                        <span t-if="!state.isThinking" t-esc="labels.ask"/>
                         <i t-if="state.isThinking" class="fa fa-spinner fa-spin"/>
                     </button>
                 </form>
@@ -204,12 +216,6 @@
     <t t-name="ab_ai_agent.AiAgentChatPage">
         <div class="o_ai_agent_chat_page">
             <div class="o_ai_agent_chat_page__inner">
-                <!-- initial_message / record_* are forwarded so a caller can
-                     open the chat already asking something, with the record
-                     it is asking about attached. AiAgentChat has supported
-                     initialMessage since it was written (it auto-sends in
-                     onWillStart) but this shim never passed it through, so no
-                     client action could reach it. -->
                 <AiAgentChat agentCode="params.agent_code"
                              surface="'chat'"
                              initialMessage="params.initial_message"

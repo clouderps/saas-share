@@ -171,6 +171,36 @@ class AIAgent(models.Model):
                 tools |= topic.tool_ids
             agent.all_tool_ids = tools
 
+    @api.model
+    def _heal_core_topics(self):
+        """Attach topics the assistant must always have, on every -u.
+
+        The seed file declares ``noupdate="0"``, but the deployed
+        ir_model_data row for agent_ghaima_assistant carries
+        noupdate=True — so an upgrade silently skips the agent record
+        and a newly-shipped topic never reaches existing tenants. That
+        is invisible: the tools install fine, the topic installs fine,
+        and the assistant just never gains the capability.
+
+        Adding the link here instead of fighting the flag keeps
+        ops-level edits to the prompt intact (the reason the flag was
+        set) while still guaranteeing capability rollout. Purely
+        additive and idempotent — it never removes a topic an operator
+        attached by hand.
+        """
+        agent = self.search([('code', '=', 'ghaima_assistant')], limit=1)
+        if not agent:
+            return False
+        wanted = self.env['ai.agent.topic'].search([
+            ('code', 'in', ['system_guidance'])])
+        missing = wanted - agent.topic_ids
+        if missing:
+            agent.topic_ids = [(4, t.id) for t in missing]
+            _logger.info(
+                "ai.agent: attached %s to %s",
+                ', '.join(missing.mapped('code')), agent.code)
+        return True
+
     # ── Constraints ────────────────────────────────────────────
 
     @api.constrains('max_hops')

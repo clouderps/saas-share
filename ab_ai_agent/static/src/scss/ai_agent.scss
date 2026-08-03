@@ -213,103 +213,267 @@
     }
 }
 
-// ─── 2. Message bubbles ─────────────────────────────────────────────
+// ─── 2. Answer cards ────────────────────────────────────────────────
+//
+// Not a chat transcript. A turn is a quiet question line followed by an
+// answer card the user can act on — collapse, inspect sources, open the
+// underlying view. Bubbles and avatars were removed deliberately: they
+// framed the agent as someone to converse with rather than an answer to
+// use, and they wasted horizontal space that tables and KPI grids need.
+//
+// Every directional rule below is logical (inline-start/-end, border-
+// inline-*), so the RTL pass is the dir attribute alone.
 
-.o_ai_agent_msg {
+// The question — context for the card beneath it, not content.
+.o_ai_answer_q {
     display: flex;
-    gap: var(--ai-step-3);
-    max-width: 100%;
-
-    &--user {
-        flex-direction: row-reverse;
-        .o_ai_agent_msg__bubble {
-            background: var(--ai-ghaima-blue);
-            color: white;
-            border-radius: var(--ai-radius-md) var(--ai-radius-md) var(--ai-step-1) var(--ai-radius-md);
-        }
-    }
-
-    &--assistant {
-        .o_ai_agent_msg__bubble {
-            background: white;
-            color: var(--ai-ghaima-ink);
-            border: 1px solid var(--ai-ghaima-line);
-            border-radius: var(--ai-radius-md) var(--ai-radius-md) var(--ai-radius-md) var(--ai-step-1);
-            box-shadow: var(--ai-shadow-sm);
-        }
-    }
-}
-
-.o_ai_agent_msg__avatar {
-    flex-shrink: 0;
-    width: 32px; height: 32px;
-    border-radius: 50%;
-    background: var(--ai-ghaima-cyan);
-    color: var(--ai-ghaima-navy);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.85rem;
-    font-weight: 600;
-    overflow: hidden;
-
-    img { width: 100%; height: 100%; object-fit: cover; }
-}
-
-.o_ai_agent_msg__bubble {
-    flex: 1;
-    padding: var(--ai-step-3) var(--ai-step-4);
-    font-size: 0.925rem;
-    line-height: 1.55;
-
-    p:last-child { margin-bottom: 0; }
-    code {
-        background: rgba(13, 0, 162, 0.05);
-        padding: 0.1em 0.35em;
-        border-radius: 4px;
-        font-size: 0.85em;
-    }
-}
-
-.o_ai_agent_msg__feedback {
-    display: flex;
+    align-items: baseline;
     gap: var(--ai-step-2);
-    margin-block-start: var(--ai-step-2);
+    padding-inline: var(--ai-step-1);
+    margin-block-end: var(--ai-step-2);
 
-    button {
+    &__icon {
+        flex-shrink: 0;
+        font-size: 0.7rem;
+        color: var(--ai-ghaima-muted);
+        opacity: 0.7;
+    }
+
+    &__text {
+        flex: 1;
+        margin: 0;
+        min-width: 0;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--ai-ghaima-muted);
+    }
+
+    &__time {
+        flex-shrink: 0;
+        font-size: 0.72rem;
+        color: var(--ai-ghaima-muted);
+        opacity: 0.65;
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+.o_ai_answer {
+    background: white;
+    border: 1px solid var(--ai-ghaima-line);
+    border-radius: var(--ai-radius-md);
+    box-shadow: var(--ai-shadow-sm);
+    overflow: hidden;
+    margin-block-end: var(--ai-step-5);
+
+    // A hairline of brand colour on the leading edge marks the card as
+    // system output without tinting the whole surface.
+    border-inline-start: 3px solid var(--ai-ghaima-blue);
+
+    &.is-pending {
+        border-inline-start-color: var(--ai-ghaima-cyan);
+    }
+
+    &.is-collapsed {
+        box-shadow: none;
+    }
+
+    &__head {
+        display: flex;
+        align-items: center;
+        gap: var(--ai-step-2);
+        padding: var(--ai-step-2) var(--ai-step-3);
+        border-block-end: 1px solid var(--ai-ghaima-line);
+        background: var(--ai-ghaima-bg);
+    }
+
+    &.is-collapsed &__head {
+        border-block-end: none;
+    }
+
+    &__title {
+        flex: 1;
+        min-width: 0;
+        margin: 0;
+        font-family: var(--ai-font-heading);
+        font-size: 0.9rem;
+        font-weight: 600;
+        line-height: 1.3;
+        color: var(--ai-ghaima-ink);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    // "3 sources" — the audit affordance. Answers that move money need
+    // their provenance one click away, not buried.
+    &__sources,
+    &__collapse {
+        flex-shrink: 0;
         appearance: none;
         background: transparent;
+        border: 1px solid transparent;
+        color: var(--ai-ghaima-muted);
+        border-radius: var(--ai-radius-sm);
+        padding: 2px var(--ai-step-2);
+        font-size: 0.75rem;
+        line-height: 1.5;
+        cursor: pointer;
+        transition: color 0.15s, border-color 0.15s, background 0.15s;
+
+        &:hover {
+            color: var(--ai-ghaima-ink);
+            border-color: var(--ai-ghaima-line);
+            background: white;
+        }
+        &:focus-visible {
+            outline: 2px solid var(--ai-ghaima-blue);
+            outline-offset: 1px;
+        }
+    }
+
+    &__sources {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-variant-numeric: tabular-nums;
+        &[aria-expanded="true"] {
+            color: var(--ai-ghaima-blue);
+            border-color: var(--ai-ghaima-line);
+            background: white;
+        }
+    }
+
+    &__body {
+        padding: var(--ai-step-3);
+        font-size: 0.925rem;
+        line-height: 1.55;
+        color: var(--ai-ghaima-ink);
+
+        > :last-child { margin-block-end: 0; }
+
+        code {
+            background: rgba(13, 0, 162, 0.05);
+            padding: 0.1em 0.35em;
+            border-radius: 4px;
+            font-size: 0.85em;
+        }
+    }
+
+    &__plain p:last-child { margin-bottom: 0; }
+
+    &__foot {
+        display: flex;
+        align-items: center;
+        gap: var(--ai-step-2);
+        padding: var(--ai-step-2) var(--ai-step-3);
+        border-block-start: 1px solid var(--ai-ghaima-line);
+        background: var(--ai-ghaima-bg);
+    }
+
+    // Primary: take me to the thing this answer is about.
+    &__cta,
+    &__act {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        appearance: none;
+        border-radius: var(--ai-radius-sm);
+        padding: 5px var(--ai-step-3);
+        font-size: 0.8rem;
+        font-weight: 500;
+        cursor: pointer;
+        // 24px minimum hit target (WCAG 2.2 AA target size).
+        min-block-size: 26px;
+        transition: background 0.15s, border-color 0.15s, color 0.15s;
+
+        &:focus-visible {
+            outline: 2px solid var(--ai-ghaima-blue);
+            outline-offset: 2px;
+        }
+    }
+
+    &__cta {
+        background: var(--ai-ghaima-blue);
+        border: 1px solid transparent;
+        color: white;
+        &:hover { background: var(--ai-ghaima-navy); }
+    }
+
+    &__act {
+        background: white;
         border: 1px solid var(--ai-ghaima-line);
         color: var(--ai-ghaima-muted);
-        padding: 4px var(--ai-step-2);
-        border-radius: var(--ai-radius-sm);
-        font-size: 0.8rem;
-        cursor: pointer;
-        transition: all 0.15s;
-
         &:hover { color: var(--ai-ghaima-ink); border-color: var(--ai-ghaima-ink); }
-        &.is-active { background: var(--ai-ghaima-blue); color: white; border-color: transparent; }
+    }
+
+    &__rate {
+        display: flex;
+        gap: var(--ai-step-1);
+
+        button {
+            appearance: none;
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--ai-ghaima-muted);
+            padding: 3px var(--ai-step-2);
+            border-radius: var(--ai-radius-sm);
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: all 0.15s;
+
+            &:hover { color: var(--ai-ghaima-ink); border-color: var(--ai-ghaima-line); }
+            &.is-active { background: var(--ai-ghaima-blue); color: white; }
+            &:focus-visible {
+                outline: 2px solid var(--ai-ghaima-blue);
+                outline-offset: 1px;
+            }
+        }
     }
 }
 
-// Typing indicator
-.o_ai_agent_typing {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    span {
-        width: 6px; height: 6px;
-        background: var(--ai-ghaima-blue);
-        border-radius: 50%;
-        animation: o-ai-typing 1.2s infinite ease-in-out;
-        &:nth-child(2) { animation-delay: 0.2s; }
-        &:nth-child(3) { animation-delay: 0.4s; }
+// Working state: sketch the shape of the answer that is coming rather
+// than three dancing dots. The user reads "a table with figures is
+// loading", which is true, instead of "someone is typing", which is not.
+.o_ai_skeleton {
+    display: flex;
+    gap: var(--ai-step-2);
+    margin-block-end: var(--ai-step-3);
+
+    &:last-child { margin-block-end: 0; flex-direction: column; }
+
+    &__kpi,
+    &__row {
+        display: block;
+        border-radius: var(--ai-radius-sm);
+        background: linear-gradient(
+            90deg,
+            var(--ai-ghaima-bg) 25%,
+            rgba(13, 0, 162, 0.06) 37%,
+            var(--ai-ghaima-bg) 63%
+        );
+        background-size: 400% 100%;
+        animation: o-ai-shimmer 1.4s ease infinite;
+    }
+
+    &__kpi { flex: 1; block-size: 46px; }
+    &__row { inline-size: 100%; block-size: 12px; }
+}
+
+@keyframes o-ai-shimmer {
+    0%   { background-position: 100% 50%; }
+    100% { background-position: 0 50%; }
+}
+
+// Respect the OS setting — a shimmering panel is a real problem for
+// vestibular sensitivity, and this one is always on screen while waiting.
+@media (prefers-reduced-motion: reduce) {
+    .o_ai_skeleton__kpi,
+    .o_ai_skeleton__row {
+        animation: none;
+        background: var(--ai-ghaima-bg);
     }
 }
-@keyframes o-ai-typing {
-    0%, 80%, 100% { opacity: 0.3; transform: translateY(0); }
-    40% { opacity: 1; transform: translateY(-3px); }
-}
+
 
 // ─── 3. Agent chip (persona picker) ─────────────────────────────────
 
@@ -683,10 +847,42 @@
 
 // Example prompt chips on the welcome message
 .o_ai_agent_examples {
-    margin-block-start: var(--ai-step-3);
+    // Sits inside the welcome card, below its body.
+    padding: 0 var(--ai-step-3) var(--ai-step-3);
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: var(--ai-step-2);
+}
+
+// Same openers in the sidebar when the agent has no skills configured.
+.o_ai_agent_sidebar_hints {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ai-step-2);
+}
+
+.o_ai_agent_sidebar_hint {
+    display: flex;
+    align-items: center;
+    gap: var(--ai-step-2);
+    appearance: none;
+    inline-size: 100%;
+    text-align: start;
+    background: white;
+    border: 1px solid var(--ai-ghaima-line);
+    border-radius: var(--ai-radius-sm);
+    padding: var(--ai-step-2) var(--ai-step-3);
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: var(--ai-ghaima-ink);
+    cursor: pointer;
+    min-block-size: 32px;
+    transition: border-color 0.15s, background 0.15s;
+
+    i { color: var(--ai-ghaima-blue); flex-shrink: 0; }
+
+    &:hover { border-color: var(--ai-ghaima-blue); background: var(--ai-ghaima-bg); }
+    &:focus-visible { outline: 2px solid var(--ai-ghaima-blue); outline-offset: 1px; }
 }
 
 .o_ai_agent_example_chip {
@@ -785,181 +981,21 @@
     100% { transform: scale(1.35); opacity: 0; }
 }
 
-// ─── 9. Report block kit inside assistant bubble ────────────────────
-
-.o_ai_agent_msg__report {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ai-step-3);
-
-    .o_ai_agent_msg__report-title {
-        font-family: var(--ai-font-heading);
-        font-size: 1.05rem;
-        font-weight: 600;
-        margin: 0;
-    }
-
-    .o_ai_agent_msg__report-subtitle {
-        font-size: 0.825rem;
-        margin: 0;
-    }
-}
-
-// data_table block
-.o_ai_agent_table_wrap {
-    background: var(--ai-ghaima-bg);
-    border: 1px solid var(--ai-ghaima-line);
-    border-radius: var(--ai-radius-md);
-    overflow: hidden;
-}
-
-.o_ai_agent_table_title {
-    margin: 0;
-    padding: var(--ai-step-3) var(--ai-step-4);
-    font-size: 0.825rem;
-    font-weight: 600;
-    color: var(--ai-ghaima-muted);
-    background: white;
-    border-block-end: 1px solid var(--ai-ghaima-line);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-
-.o_ai_agent_table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.875rem;
-    background: white;
-
-    thead {
-        background: var(--ai-ghaima-bg);
-        th {
-            text-align: start;
-            padding: var(--ai-step-2) var(--ai-step-4);
-            font-weight: 600;
-            font-size: 0.78rem;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            color: var(--ai-ghaima-muted);
-            border-block-end: 1px solid var(--ai-ghaima-line);
-        }
-    }
-    tbody td {
-        padding: var(--ai-step-2) var(--ai-step-4);
-        border-block-end: 1px solid var(--ai-ghaima-line);
-        font-variant-numeric: tabular-nums;
-    }
-    tbody tr:last-child td { border-block-end: none; }
-    tbody tr:hover { background: rgba(0, 95, 246, 0.03); }
-}
-
-// kpi_grid block
-.o_ai_agent_kpi_grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: var(--ai-step-3);
-}
-
-.o_ai_agent_kpi {
-    background: white;
-    border: 1px solid var(--ai-ghaima-line);
-    border-radius: var(--ai-radius-md);
-    padding: var(--ai-step-3) var(--ai-step-4);
-
-    .o_ai_agent_kpi__label {
-        margin: 0;
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: var(--ai-ghaima-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-    }
-    .o_ai_agent_kpi__value {
-        margin: 4px 0 0 0;
-        font-family: var(--ai-font-heading);
-        font-size: 1.4rem;
-        font-weight: 600;
-        font-variant-numeric: tabular-nums;
-        color: var(--ai-ghaima-ink);
-    }
-    &.o_tone-good {
-        border-color: rgba(4, 120, 87, 0.3);
-        .o_ai_agent_kpi__value { color: var(--ai-ghaima-green); }
-    }
-    &.o_tone-bad {
-        border-color: rgba(185, 28, 28, 0.3);
-        .o_ai_agent_kpi__value { color: var(--ai-ghaima-rose); }
-    }
-    &.o_tone-warn {
-        border-color: rgba(185, 136, 0, 0.3);
-        .o_ai_agent_kpi__value { color: var(--ai-ghaima-gold); }
-    }
-}
-
-// highlight_list block
-.o_ai_agent_highlight {
-    background: white;
-    border-inline-start: 3px solid var(--ai-ghaima-blue);
-    padding: var(--ai-step-3) var(--ai-step-4);
-    border-radius: var(--ai-radius-sm);
-
-    .o_ai_agent_highlight__title {
-        margin: 0 0 var(--ai-step-2) 0;
-        font-weight: 600;
-        font-size: 0.875rem;
-    }
-    ul {
-        margin: 0;
-        padding-inline-start: 1.2em;
-        font-size: 0.875rem;
-        line-height: 1.6;
-    }
-}
-
-// callout block
-.o_ai_agent_callout {
-    background: rgba(0, 95, 246, 0.05);
-    border: 1px solid rgba(0, 95, 246, 0.18);
-    border-radius: var(--ai-radius-md);
-    padding: var(--ai-step-3) var(--ai-step-4);
-    display: flex;
-    align-items: flex-start;
-    gap: var(--ai-step-3);
-
-    > .fa {
-        font-size: 1.1rem;
-        color: var(--ai-ghaima-blue);
-        margin-block-start: 2px;
-    }
-    strong {
-        display: block;
-        font-size: 0.9rem;
-        margin-block-end: 2px;
-    }
-    p { font-size: 0.875rem; line-height: 1.5; }
-
-    &.o_tone-good {
-        background: rgba(4, 120, 87, 0.06);
-        border-color: rgba(4, 120, 87, 0.2);
-        > .fa { color: var(--ai-ghaima-green); }
-    }
-    &.o_tone-bad {
-        background: rgba(185, 28, 28, 0.06);
-        border-color: rgba(185, 28, 28, 0.2);
-        > .fa { color: var(--ai-ghaima-rose); }
-    }
-    &.o_tone-warn {
-        background: rgba(185, 136, 0, 0.06);
-        border-color: rgba(185, 136, 0, 0.2);
-        > .fa { color: var(--ai-ghaima-gold); }
-    }
-}
+// ─── 9. Report block kit ────────────────────────────────────────────
+//
+// Deliberately empty. Answer bodies render through <AiResponse/> from
+// ab_ai_ui, which ships its own ai_response_components.scss. This
+// section used to carry a second, drifting copy of the table / KPI /
+// callout styles for the inline renderer that lived in this module.
 
 // ─── 10. RTL adjustments ────────────────────────────────────────────
 
 [dir="rtl"] {
     .o_ai_agent_chat__textarea { text-align: start; }
-    .o_ai_agent_msg__bubble code { font-family: ui-monospace, monospace; }
+    .o_ai_answer__body code { font-family: ui-monospace, monospace; }
+    // Latin identifiers (menu paths, model names, figures) inside an RTL
+    // answer must not be reordered by the bidi algorithm.
+    .o_ai_answer_q__time { direction: ltr; }
     // logical properties handle the rest automatically — no flips needed
 }
 

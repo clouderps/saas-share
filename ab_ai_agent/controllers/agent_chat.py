@@ -49,6 +49,74 @@ class AIAgentController(http.Controller):
             } for a in visible],
         }
 
+    # ── Conversation starters ──────────────────────────────────
+
+    @http.route('/ai_agent/starters', type='json', auth='user',
+                methods=['POST'])
+    def starters(self, record_model=None, **kwargs):
+        """Opening suggestions built from what this user can reach.
+
+        The panel used to ship a fixed list — "P&L report for this
+        month", "cash position" — regardless of who was looking at it.
+        A cashier was invited to open screens they have no access to,
+        and every suggestion failed for them.
+
+        These are derived from the user's real menu access instead
+        (same source the find_menu tool reads), so the panel never
+        offers a door that is locked. Record context wins when present:
+        on a form the useful openers are about that record.
+        """
+        env = request.env
+        arabic = (env.user.lang or '').startswith('ar')
+
+        if record_model:
+            Model = env.get(record_model)
+            label = (Model._description or record_model) if Model is not None \
+                else record_model
+            return {'success': True, 'starters': [
+                {'icon': 'fa-question-circle',
+                 'text': (f'ما معنى شاشة {label}؟' if arabic
+                          else f'What is this {label} screen for?')},
+                {'icon': 'fa-compress',
+                 'text': 'لخّص هذا السجل' if arabic else 'Summarise this record'},
+                {'icon': 'fa-lightbulb-o',
+                 'text': ('ما الذي يجب أن أفعله الآن؟' if arabic
+                          else 'What should I do next?')},
+            ]}
+
+        # Always-safe openers — they work for every user because the
+        # tools behind them answer from that user's own access.
+        out = [
+            {'icon': 'fa-th-large',
+             'text': ('ما الذي يمكنني فعله في النظام؟' if arabic
+                      else 'What can I do in the system?')},
+        ]
+
+        from ..services.tool_dispatcher import _builtin_list_my_apps
+        apps = (_builtin_list_my_apps(env) or {}).get('apps') or []
+        # Skip the shells every user has — they make dull suggestions.
+        skip = {'Discuss', 'Calendar', 'Contacts', 'To-do', 'Dashboard',
+                'Settings', 'Apps', 'Ghaima AI'}
+        for app in apps:
+            if app['name'] in skip:
+                continue
+            out.append({
+                'icon': 'fa-arrow-circle-o-right',
+                'text': (f"ما الجديد في {app['name']}؟" if arabic
+                         else f"What's happening in {app['name']}?"),
+            })
+            if len(out) >= 5:
+                break
+
+        if len(out) == 1:
+            # No back-office apps at all (portal user).
+            out.append({
+                'icon': 'fa-question-circle',
+                'text': ('كيف أستخدم بوابة العملاء؟' if arabic
+                         else 'How do I use the customer portal?'),
+            })
+        return {'success': True, 'starters': out}
+
     # ── Per-record conversation lookup ─────────────────────────
 
     @http.route('/ai_agent/conversation/lookup', type='json',

@@ -42,6 +42,37 @@ Always end with `__end_message` summarising what you opened/did (e.g. "Opening t
             ])]"/>
         </record>
 
+        <!-- System guidance — the "help me use Ghaima" half of the
+             assistant. Every tool here answers from the CURRENT user's
+             own access, so the instructions push hard on never
+             inventing capability the user does not have. -->
+        <record id="topic_system_guidance" model="ai.agent.topic">
+            <field name="name">System Guidance</field>
+            <field name="code">system_guidance</field>
+            <field name="description">Explain what Ghaima does, what this user can reach, where to perform a task, and what a screen means — grounded in their real permissions.</field>
+            <field name="instructions">You also teach people how to use Ghaima. These questions are as important as the numbers.
+
+**Never guess where something lives.** Odoo menu layouts differ per install and per user's access. Always call a tool first:
+
+- `list_my_apps` — when the user asks what they can do, what they have access to, or where to begin ("what can I do here?", "ما الذي يمكنني فعله؟", "I'm new"). Answer ONLY from what it returns. If an app is not in the result the user cannot open it, so do not mention it.
+- `find_menu` — for every how-do-I / where-is question ("where do I create a credit note?", "وين أسوي مرتجع؟", "how do I add an employee?"). Give the returned `path` verbatim, then call `open_action` with the match's `action_xmlid` so the answer carries a working button.
+- `explain_screen` — when they ask what a screen, document type, field or status means. Use the real `key_fields` and `lifecycle` it returns rather than describing Odoo in general.
+
+**Permissions are part of the answer, not a footnote.** `explain_screen` reports what THIS user may do. When `write` is false, do not tell them to change anything — say who can and stop. When `find_menu` returns no matches, say plainly that they do not have access to it and suggest asking their administrator. Never soften this into a vague "you may need permissions" — be specific about what you checked.
+
+**Teach in the order they will act.** Lead with the destination (the menu path), then what they will see there, then the first thing to fill in. Two or three steps, not a manual. If the task genuinely needs more, offer to walk through it rather than dumping every step.
+
+**Never expose the plumbing.** Do not name a tool, a model, or a field's technical name in your reply, and never ask the user to supply one — they are business users, not developers. If you cannot tell which screen they mean, ask in their words ("do you mean the customer invoices list, or the vendor bills?").
+
+Always end with `__end_message`.</field>
+            <field name="tool_ids" eval="[(6, 0, [
+                ref('tool_list_my_apps'),
+                ref('tool_find_menu'),
+                ref('tool_explain_screen'),
+                ref('tool_open_action'),
+            ])]"/>
+        </record>
+
         <!-- HR — attendance + leave roll-call. Gated to PII-allowed agents. -->
         <record id="topic_hr_roll_call" model="ai.agent.topic">
             <field name="name">HR Roll Call</field>

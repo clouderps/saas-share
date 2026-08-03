@@ -154,5 +154,43 @@
             <field name="dispatch_kind">python</field>
         </record>
 
+        <!-- ── System guidance ────────────────────────────────────
+             "What can I do?" / "Where do I do X?" / "What is this?"
+
+             Deliberately NOT group-gated: each one reads the menu tree
+             and model metadata as the requesting user, so it is already
+             self-scoping. A cashier asking what they can do gets the
+             cashier's answer from the same tool the CFO uses. Gating
+             them by group would only hide the capability, not the data.
+        -->
+
+        <record id="tool_list_my_apps" model="ai.agent.tool">
+            <field name="name">List the apps this user can open</field>
+            <field name="code">list_my_apps</field>
+            <field name="category">navigation</field>
+            <field name="description">List the apps and sections THIS user is actually allowed to open, read live from their menu access. Call it whenever the user asks what the system can do for them, what they have access to, or where to start ("what can I do here?", "ما الذي يمكنني فعله؟", "I'm new, help me"). Ground your answer only in what it returns — never mention an app that is absent from the result, because the user cannot open it.</field>
+            <field name="schema">{"type": "object", "properties": {}}</field>
+            <field name="dispatch_kind">python</field>
+        </record>
+
+        <record id="tool_find_menu" model="ai.agent.tool">
+            <field name="name">Find where to do something</field>
+            <field name="code">find_menu</field>
+            <field name="category">navigation</field>
+            <field name="description">Resolve "where do I do X?" into real menu entries this user can open, with the full path and the action behind it. Use for any how-do-I / where-is question ("where do I create a credit note?", "وين أسوي فاتورة مرتجع؟", "how do I add an employee?"). Each match carries an action_xmlid you can pass to open_action so the answer includes a working button. When matches is empty, say plainly that they do not have access and suggest asking an administrator — never invent a menu path.</field>
+            <field name="schema">{"type": "object", "properties": {"query": {"type": "string", "description": "What the user wants to do, in their own words"}, "limit": {"type": "number", "default": 6}}, "required": ["query"]}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="allow_end_message" eval="True"/>
+        </record>
+
+        <record id="tool_explain_screen" model="ai.agent.tool">
+            <field name="name">Explain a screen from live metadata</field>
+            <field name="code">explain_screen</field>
+            <field name="category">retrieval</field>
+            <field name="description">Explain what a screen or document type is for, using the model's real fields, lifecycle states and this user's own permissions — not guesswork. Use when the user asks what something means, what a field is for, or what happens next ("what is this screen?", "شنو معنى هذي الشاشة؟", "what does Posted mean?"). The permissions block describes THIS user: when write is false, explain who can change it instead of telling them to edit.</field>
+            <field name="schema">{"type": "object", "properties": {"screen": {"type": "string", "description": "The screen in the user's own words ('the invoices list', 'customer form') OR a technical model name. The tool resolves either."}}, "required": ["screen"]}</field>
+            <field name="dispatch_kind">python</field>
+        </record>
+
     </data>
 </odoo>

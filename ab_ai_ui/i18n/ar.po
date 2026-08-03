@@ -1,0 +1,76 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* ab_ai_ui
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-03 07:59+0000\n"
+"PO-Revision-Date: 2026-08-03 07:59+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: ab_ai_ui
+#. odoo-javascript
+#: code:addons/ab_ai_ui/static/src/widgets/ai_response_envelope_widget.xml:0
+msgid "AI analysis not generated yet."
+msgstr "لم يتم إنشاء تحليل الذكاء الاصطناعي بعد."
+
+#. module: ab_ai_ui
+#. odoo-javascript
+#: code:addons/ab_ai_ui/static/src/support/error_envelope.xml:0
+msgid "AI request failed"
+msgstr "فشل طلب الذكاء الاصطناعي"
+
+#. module: ab_ai_ui
+#. odoo-javascript
+#: code:addons/ab_ai_ui/static/src/support/skeleton_shimmer.xml:0
+msgid "AI response is loading"
+msgstr "جارٍ تحميل رد الذكاء الاصطناعي"
+
+#. module: ab_ai_ui
+#. odoo-javascript
+#: code:addons/ab_ai_ui/static/src/support/provenance_bar.xml:0
+msgid "AI response metadata"
+msgstr "بيانات وصفية لرد الذكاء الاصطناعي"
+
+#. module: ab_ai_ui
+#. odoo-javascript
+#: code:addons/ab_ai_ui/static/src/blocks/ai_chart.xml:0
+msgid "Chart"
+msgstr "رسم بياني"
+
+#. module: ab_ai_ui
+#. odoo-javascript
+#: code:addons/ab_ai_ui/static/src/blocks/ai_chart.xml:0
+msgid "Insight"
+msgstr "استنتاج"
+
+#. module: ab_ai_ui
+#. odoo-javascript
+#: code:addons/ab_ai_ui/static/src/blocks/kpi_grid.xml:0
+msgid "Key performance indicators"
+msgstr "مؤشرات الأداء الرئيسية"
+
+#. module: ab_ai_ui
+#. odoo-javascript
+#: code:addons/ab_ai_ui/static/src/blocks/tool_trace.xml:0
+msgid "Tools used ("
+msgstr "الأدوات المستخدمة ("
+
+#. module: ab_ai_ui
+#. odoo-javascript
+#: code:addons/ab_ai_ui/static/src/blocks/tool_trace.xml:0
+msgid "args:"
+msgstr "المعاملات:"
+
+#. module: ab_ai_ui
+#. odoo-javascript
+#: code:addons/ab_ai_ui/static/src/blocks/tool_trace.xml:0
+msgid "result:"
+msgstr "النتيجة:"

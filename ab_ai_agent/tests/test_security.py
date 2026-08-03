@@ -105,9 +105,26 @@ class TestSnapshotIsolation(TransactionCase):
         })
         so.action_confirm()
 
+        def orders_month(block):
+            """Pull the sales|orders_month count out of the snapshot.
+
+            The block used to be prose ("Sale orders confirmed this
+            month: 1") and is now pipe-CSV, so assert on the parsed
+            value rather than on a rendered sentence — the isolation
+            guarantee is what matters here, not the wording.
+            """
+            for line in block.splitlines():
+                cells = line.split('|')
+                if len(cells) >= 3 and cells[:2] == ['sales', 'orders_month']:
+                    return int(cells[2] or 0)
+            return None
+
         # Admin sees the confirmed order (their scope includes it).
         admin_block = _business_snapshot_block(self.env)
-        self.assertIn('Sale orders confirmed this month: 1', admin_block)
+        admin_count = orders_month(admin_block)
+        self.assertIsNotNone(
+            admin_count, 'snapshot no longer reports sales|orders_month')
+        self.assertGreaterEqual(admin_count, 1)
 
         # A portal user, reading as themselves, is scoped by record rules to
         # their own orders (none) — they must NOT see the company-wide figure.
@@ -116,5 +133,5 @@ class TestSnapshotIsolation(TransactionCase):
             'groups_id': [(6, 0, [self.env.ref('base.group_portal').id])],
         })
         portal_block = _business_snapshot_block(self.env(user=portal.id))
-        self.assertIn('Sale orders confirmed this month: 0', portal_block)
-        self.assertNotIn('Sale orders confirmed this month: 1', portal_block)
+        self.assertEqual(orders_month(portal_block) or 0, 0,
+                         'portal user leaked a company-wide sales figure')

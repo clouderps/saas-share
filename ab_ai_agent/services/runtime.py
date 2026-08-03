@@ -305,6 +305,7 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
             final_text = response if isinstance(response, str) else (
                 '\n'.join(response) if isinstance(response, list) else str(response)
             )
+        final_text = _strip_control_tokens(final_text)
 
         # ── Grounding retry (#3) ──────────────────────────────
         # A data question answered with NO tool and NO knowledge
@@ -1115,6 +1116,24 @@ def _parse_response(text):
         if obj.get('action') == 'final':
             return {'kind': 'final', 'text': obj.get('text') or ''}
     return {'kind': 'final', 'text': text}
+
+
+#: Protocol tokens the topic prompts instruct the model to emit. They
+#: are control flow, not prose — but models routinely type them into
+#: the answer instead of acting on them, and the user then reads
+#: "…Opening this screen for you now. __end_message".
+_CONTROL_TOKENS = ('__end_message',)
+
+
+def _strip_control_tokens(text):
+    """Remove protocol tokens the model echoed into its visible answer."""
+    if not text:
+        return text
+    for token in _CONTROL_TOKENS:
+        text = text.replace(token, '')
+    # Collapse the whitespace the removal leaves behind, without
+    # touching intentional paragraph breaks inside the answer.
+    return '\n'.join(line.rstrip() for line in text.split('\n')).strip()
 
 
 def _truncate(s, limit):

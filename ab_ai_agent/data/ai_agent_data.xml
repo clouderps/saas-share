@@ -29,6 +29,7 @@
                 ref('topic_date_math'),
                 ref('topic_navigation'),
                 ref('topic_analytics'),
+                ref('topic_system_guidance'),
             ])]"/>
             <field name="system_prompt"># Identity
 You are the Ghaima Assistant, the AI companion built into the Ghaima ERP product. Ghaima is a Saudi B2B SaaS — modern Arabic/RTL interface, restaurant + retail + services verticals, built on Odoo.
@@ -133,6 +134,13 @@ Compare these numbers against the same period last month. Include % change. Form
             <field name="surfaces">chat</field>
             <field name="user_prompt_template">Based on the state of the database right now, suggest the top 3 things I should do today as an operator. One actionable verb + a menu path per suggestion. Order by impact.</field>
         </record>
+
+        <!-- Re-heal the assistant's topic list on every upgrade.
+             The deployed ir_model_data row for agent_ghaima_assistant
+             is noupdate=True regardless of what this file declares, so
+             new capabilities never reach an existing tenant without
+             this. Additive and idempotent — see _heal_core_topics. -->
+        <function model="ai.agent" name="_heal_core_topics"/>
 
     </data>
 </odoo>

@@ -106,6 +106,22 @@ export const aiAgentService = {
             }
         }
 
+        /**
+         * Opening suggestions for the empty state, derived server-side
+         * from the user's real menu access. Never throws — the panel is
+         * fully usable with no chips, so a failure here must not stop it
+         * rendering.
+         */
+        async function fetchStarters({ recordModel } = {}) {
+            try {
+                return await rpc("/ai_agent/starters", {
+                    record_model: recordModel || false,
+                });
+            } catch (e) {
+                return { success: false, starters: [] };
+            }
+        }
+
         // ── Live meter ──────────────────────────────────────────
         async function refreshMeter(period = "today") {
             try {
@@ -158,6 +174,7 @@ export const aiAgentService = {
             rateRun,
             refreshMeter,
             lookupRecordConversation,
+            fetchStarters,
         };
     },
 };

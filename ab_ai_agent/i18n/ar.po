@@ -1,5 +1,7 @@
-# Arabic translation of ab_ai_agent
-# Generated 2026-06-11 — menu & window-action names (i18n pass).
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* ab_ai_agent
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Odoo 18.0 ab_ai_agent\n"
@@ -10,17 +12,85 @@ msgstr ""
 "Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 ? 4 : 5;\n"
 
 #. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_form
+msgid ""
+"# Identity\n"
+"You are a..."
+msgstr ""
+"# Identity\n"
+"You are a..."
+
+#. module: ab_ai_agent
+#: model:ai.agent,system_prompt:ab_ai_agent.agent_ghaima_assistant
+msgid ""
+"# Identity\n"
+"You are the Ghaima Assistant, the AI companion built into the Ghaima ERP product. Ghaima is a Saudi B2B SaaS — modern Arabic/RTL interface, restaurant + retail + services verticals, built on Odoo.\n"
+"\n"
+"# Tone\n"
+"- Direct, helpful, business-aware. Short sentences. Confident defaults, never apologetic.\n"
+"- Match the user's language. Default to clear modern Arabic if the user types in Arabic; English otherwise.\n"
+"- Use the user's first name when known. Never address them as \"Dear customer\" or anything formal.\n"
+"\n"
+"# What you DO\n"
+"- Answer business questions grounded in the company's own data (sales, inventory, invoices, customers, employees) — through the tools when they exist for the topic.\n"
+"- Explain a feature, a workflow, a Saudi-specific compliance item (ZATCA e-invoicing, GOSI, Hijri dates).\n"
+"- Suggest the next action a user could take in the app, with menu paths when relevant.\n"
+"\n"
+"# What you DON'T\n"
+"- Don't invent numbers. If a tool returns nothing or you cannot retrieve data, say so plainly and propose a follow-up question.\n"
+"- Don't lecture. No \"best practices\" lists unless asked.\n"
+"- Don't apologise. Replace \"I'm sorry, but...\" with the action: \"Try X\" or \"Here's what worked\".\n"
+"- Don't expose technical errors. If a tool fails, translate the failure into a human-readable note.\n"
+"\n"
+"# Constraints\n"
+"- Never reveal API keys, JWT contents, or internal IDs.\n"
+"- Never make up records that don't exist; cite real ids with [SOURCE:<id>] when you have them."
+msgstr ""
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent__success_rate
+msgid "% of runs in the last 30 days that ended in state=done."
+msgstr "نسبة التشغيلات في آخر ٣٠ يوماً التي انتهت بالحالة done."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_usage_price_book__markup_pct
+msgid "(billed − provider×FX) / provider×FX × 100"
+msgstr "(المفوتر − تكلفة المزوّد×سعر الصرف) / تكلفة المزوّد×سعر الصرف × ١٠٠"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_usage_local_budget__daily_sar
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_usage_local_budget__monthly_sar
+msgid "0 = unlimited"
+msgstr "٠ = بلا حد"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent__topic_ids
+msgid ""
+"A topic bundles related instructions and tools. The agent receives the union"
+" of every selected topic."
+msgstr ""
+"الموضوع يجمع تعليمات وأدوات مترابطة. يتلقى الوكيل اتحاد كل المواضيع "
+"المختارة."
+
+#. module: ab_ai_agent
 #: model:ir.ui.menu,name:ab_ai_agent.menu_ai_root
 msgid "AI"
 msgstr "الذكاء الاصطناعي"
 
 #. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_form
+msgid "AI Agent"
+msgstr "وكيل ذكاء اصطناعي"
+
+#. module: ab_ai_agent
 #: model:ir.actions.act_window,name:ab_ai_agent.action_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_list
 msgid "AI Agents"
 msgstr "وكلاء الذكاء الاصطناعي"
 
 #. module: ab_ai_agent
 #: model:ir.actions.act_window,name:ab_ai_agent.action_ai_usage_local_budget
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_usage_local_budget_list
 msgid "AI Budgets"
 msgstr "ميزانيات الذكاء الاصطناعي"
 
@@ -30,9 +100,89 @@ msgid "AI Cost Center"
 msgstr "مركز تكلفة الذكاء الاصطناعي"
 
 #. module: ab_ai_agent
+#: model:res.groups,name:ab_ai_agent.group_ai_agent_manager
+msgid "AI Manager"
+msgstr "مدير الذكاء الاصطناعي"
+
+#. module: ab_ai_agent
 #: model:ir.actions.act_window,name:ab_ai_agent.action_ai_usage_price_book
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_usage_price_book_list
 msgid "AI Price Book"
 msgstr "دليل أسعار الذكاء الاصطناعي"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_usage_local_log_graph
+msgid "AI Usage"
+msgstr "استهلاك الذكاء الاصطناعي"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_usage_local_log_list
+msgid "AI Usage (this instance)"
+msgstr "استهلاك الذكاء الاصطناعي (هذه النسخة)"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__accent
+msgid "Accent"
+msgstr "لون التمييز"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_skill__accent
+msgid ""
+"Accent colour for the launcher card. Pulled from Ghaima design tokens, no "
+"hex codes in templates."
+msgstr ""
+"لون التمييز لبطاقة التشغيل. مأخوذ من متغيرات تصميم غيمه، دون أكواد hex في "
+"القوالب."
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_tool_form
+msgid "Access control"
+msgstr "التحكم في الوصول"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__active
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__active
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__active
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_topic__active
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__active
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_search
+msgid "Active"
+msgstr "نشط"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__agent_id
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__agent_id
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__agent_id
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__agent_id
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_run_search
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_usage_local_log_search
+msgid "Agent"
+msgstr "الوكيل"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_topic__agent_count
+msgid "Agent Count"
+msgstr "عدد الوكلاء"
+
+#. module: ab_ai_agent
+#: model:res.groups,name:ab_ai_agent.group_ai_agent_designer
+msgid "Agent Designer"
+msgstr "مصمّم الوكلاء"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__agent_run_id
+msgid "Agent Run"
+msgstr "تشغيل الوكيل"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_run_list
+msgid "Agent Runs"
+msgstr "تشغيلات الوكيل"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__agent_skill_id
+msgid "Agent Skill"
+msgstr "مهارة الوكيل"
 
 #. module: ab_ai_agent
 #: model:ir.actions.act_window,name:ab_ai_agent.action_ai_agent_skill
@@ -41,13 +191,30 @@ msgstr "مهارات الوكلاء"
 
 #. module: ab_ai_agent
 #: model:ir.actions.act_window,name:ab_ai_agent.action_ai_agent_tool
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_tool_list
 msgid "Agent Tools"
 msgstr "أدوات الوكلاء"
 
 #. module: ab_ai_agent
 #: model:ir.actions.act_window,name:ab_ai_agent.action_ai_agent_topic
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_topic_list
 msgid "Agent Topics"
 msgstr "مواضيع الوكلاء"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_kanban
+msgid "Agent avatar"
+msgstr "صورة الوكيل"
+
+#. module: ab_ai_agent
+#: model:ir.model.constraint,message:ab_ai_agent.constraint_ai_agent_unique_code
+msgid "Agent code must be unique across the database."
+msgstr "يجب أن يكون رمز الوكيل فريداً على مستوى قاعدة البيانات."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__surface__agent
+msgid "Agent runtime"
+msgstr "بيئة تشغيل الوكيل"
 
 #. module: ab_ai_agent
 #: model:ir.ui.menu,name:ab_ai_agent.menu_ai_agents_section
@@ -55,170 +222,31 @@ msgid "Agents"
 msgstr "الوكلاء"
 
 #. module: ab_ai_agent
+#: model_terms:ir.actions.act_window,help:ab_ai_agent.action_ai_agent
+msgid ""
+"Agents are personas with a system prompt, a set of topics + tools, and a "
+"list of skills users can invoke."
+msgstr ""
+"الوكلاء شخصيات لكل منها موجّه نظام، ومجموعة من المواضيع والأدوات، وقائمة "
+"مهارات يمكن للمستخدمين استدعاؤها."
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,description:ab_ai_agent.tool_data_analysis
+msgid ""
+"Aggregate a business metric over time and return a ready-made chart, KPI "
+"grid and peak callout. Numbers are computed from the database — accurate, "
+"never estimated. Use this for ANY \"trend / over time / how are X doing / "
+"compare to last period / breakdown by day-week-month\" question about sales."
+" metric: pos_sales (Point of Sale), sale_orders (sales orders), "
+"invoiced_revenue (posted customer invoices). period_days 1-365. group "
+"day|week|month. Do NOT restate the returned table in prose — write one short"
+" paragraph interpreting it."
+msgstr ""
+
+#. module: ab_ai_agent
 #: model:ir.ui.menu,name:ab_ai_agent.menu_ai_agent_list
 msgid "All Agents"
 msgstr "جميع الوكلاء"
-
-#. module: ab_ai_agent
-#: model:ir.ui.menu,name:ab_ai_agent.menu_ai_budgets
-msgid "Budgets"
-msgstr "الميزانيات"
-
-#. module: ab_ai_agent
-#: model:ir.ui.menu,name:ab_ai_agent.menu_ai_config
-msgid "Configuration"
-msgstr "التهيئة"
-
-#. module: ab_ai_agent
-#: model:ir.ui.menu,name:ab_ai_agent.menu_ai_cost_center
-msgid "Cost Center"
-msgstr "مركز التكلفة"
-
-#. module: ab_ai_agent
-#: model:ir.ui.menu,name:ab_ai_agent.menu_ai_ops
-msgid "Operations"
-msgstr "العمليات"
-
-#. module: ab_ai_agent
-#: model:ir.ui.menu,name:ab_ai_agent.menu_ai_pricebook
-msgid "Price Book"
-msgstr "دليل الأسعار"
-
-#. module: ab_ai_agent
-#: model:ir.actions.act_window,name:ab_ai_agent.action_ai_agent_run
-#: model:ir.ui.menu,name:ab_ai_agent.menu_ai_agent_run
-msgid "Run History"
-msgstr "سجل التشغيل"
-
-#. module: ab_ai_agent
-#: model:ir.ui.menu,name:ab_ai_agent.menu_ai_agent_skills
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__skill_ids
-msgid "Skills"
-msgstr "المهارات"
-
-#. module: ab_ai_agent
-#: model:ir.ui.menu,name:ab_ai_agent.menu_ai_agent_tools
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_topic__tool_ids
-msgid "Tools"
-msgstr "الأدوات"
-
-#. module: ab_ai_agent
-#: model:ir.ui.menu,name:ab_ai_agent.menu_ai_agent_topics
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__topic_ids
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__topic_ids
-msgid "Topics"
-msgstr "المواضيع"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__name
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__name
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__name
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_topic__name
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__name
-msgid "Name"
-msgstr "الاسم"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__code
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__code
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__code
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_topic__code
-msgid "Code"
-msgstr "رمز "
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__persona
-msgid "Persona"
-msgstr "الشخصية"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__description
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__description
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__description
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_topic__description
-msgid "Description"
-msgstr "الوصف"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__avatar
-msgid "Avatar"
-msgstr "الصورة الرمزية"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__sequence
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__sequence
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__sequence
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_topic__sequence
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__sequence
-msgid "Sequence"
-msgstr "تسلسل "
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__active
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__active
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__active
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_topic__active
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__active
-msgid "Active"
-msgstr "نشط"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__system_prompt
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__system_prompt
-msgid "System Prompt"
-msgstr "موجه النظام"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__locale
-msgid "Locale"
-msgstr "منطقة بيانات "
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__response_style
-msgid "Response Style"
-msgstr "أسلوب الاستجابة"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__model_class
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__model_class
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__model_class
-msgid "Model Class"
-msgstr "فئة النموذج"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__max_hops
-msgid "Max Hops"
-msgstr "الحد الأقصى للقفزات"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__max_cost_usd
-msgid "Max Cost Usd"
-msgstr "الحد الأقصى للتكلفة (دولار)"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__allow_pii
-msgid "Allow Pii"
-msgstr "السماح بالبيانات الشخصية"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__allow_write_actions
-msgid "Allow Write Actions"
-msgstr "السماح بإجراءات الكتابة"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__allow_web_grounding
-msgid "Allow Web Grounding"
-msgstr "السماح بالاستناد إلى الويب"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__is_system
-msgid "Is System"
-msgstr "نظام "
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__tool_ids
-msgid "Direct Tools"
-msgstr "الأدوات المباشرة"
 
 #. module: ab_ai_agent
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__all_tool_ids
@@ -226,14 +254,47 @@ msgid "All Tool"
 msgstr "جميع الأدوات"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__surface_ids
-msgid "Primary Surface"
-msgstr "الواجهة الرئيسية"
+#: model:ai.agent.topic,description:ab_ai_agent.topic_date_math
+msgid ""
+"All date math goes through the date_reference tool. Never compute relative "
+"dates manually."
+msgstr ""
+"كل حسابات التاريخ تمر عبر أداة date_reference. لا تحسب التواريخ النسبية "
+"يدوياً أبداً."
 
 #. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__is_public
-msgid "Is Public"
-msgstr "عام"
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__surface_ids__all
+msgid "All surfaces"
+msgstr "جميع الواجهات"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__allow_end_message
+msgid "Allow End Message"
+msgstr "السماح برسالة الإنهاء"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__allow_pii
+msgid "Allow Pii"
+msgstr "السماح بالبيانات الشخصية"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__allow_web_grounding
+msgid "Allow Web Grounding"
+msgstr "السماح بالاستناد إلى الويب"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__allow_write_actions
+msgid "Allow Write Actions"
+msgstr "السماح بإجراءات الكتابة"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent__allow_web_grounding
+msgid ""
+"Allow the agent to use provider web-search tools (OpenAI web_search_preview "
+"/ Gemini google_search). Adds cost."
+msgstr ""
+"السماح للوكيل باستخدام أدوات البحث على الويب لدى المزوّد (OpenAI "
+"web_search_preview / Gemini google_search). يزيد التكلفة."
 
 #. module: ab_ai_agent
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__company_ids
@@ -246,21 +307,95 @@ msgid "Allowed User Groups"
 msgstr "مجموعات المستخدمين المسموح بها"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__run_count
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__run_count
-msgid "Run Count"
-msgstr "عدد مرات التشغيل"
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_tool__category__analysis
+msgid "Analysis / Compute"
+msgstr "التحليل / الحساب"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__last_run_at
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__last_run_at
-msgid "Last Run At"
-msgstr "وقت آخر تشغيل"
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__persona__analyst
+msgid "Analyst"
+msgstr "محلل"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__success_rate
-msgid "Success Rate"
-msgstr "معدل النجاح"
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__response_style__analytical
+msgid "Analytical (low temperature)"
+msgstr "تحليلي (حرارة منخفضة)"
+
+#. module: ab_ai_agent
+#: model:ai.agent.topic,name:ab_ai_agent.topic_analytics
+msgid "Analytics & Charts"
+msgstr "التحليلات والرسوم"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
+msgid "Answer"
+msgstr "الإجابة"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_price_book__provider__anthropic
+msgid "Anthropic"
+msgstr "Anthropic"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__locale__ar
+msgid "Arabic"
+msgstr "اللغة العربية "
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
+msgid "Ask"
+msgstr "اسأل"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/web/chatter_patch.xml:0
+msgid "Ask AI"
+msgstr "اسأل الذكاء الاصطناعي"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
+msgid "Ask anything about your business"
+msgstr "اسأل عن أي شيء يخص عملك"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
+msgid "Ask me anything…"
+msgstr "اسأل عن أي شيء…"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/web/chatter_patch.xml:0
+msgid "Ask the AI agent about this record"
+msgstr "اسأل وكيل الذكاء الاصطناعي عن هذا السجل"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__persona__assistant
+msgid "Assistant"
+msgstr "المساعد"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__audio_seconds
+msgid "Audio Seconds"
+msgstr "ثواني الصوت"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_usage_local_log__audio_seconds
+msgid "Audio billed (Whisper / realtime sessions)."
+msgstr "الصوت المُفوتر (Whisper / الجلسات الفورية)."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__avatar
+msgid "Avatar"
+msgstr "الصورة الرمزية"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent__avg_cost_usd
+msgid "Average cost per successful run, last 30 days."
+msgstr "متوسط التكلفة لكل تشغيلة ناجحة، آخر ٣٠ يوماً."
 
 #. module: ab_ai_agent
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__avg_cost_usd
@@ -269,33 +404,258 @@ msgid "Avg Cost Usd"
 msgstr "متوسط التكلفة (دولار)"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__total_cost_30d_usd
-msgid "Total Cost 30D Usd"
-msgstr "إجمالي تكلفة 30 يومًا (دولار)"
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_list
+msgid "Avg cost (USD)"
+msgstr "متوسط التكلفة (دولار)"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__id
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__id
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__id
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__id
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_topic__id
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__id
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__id
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__id
-msgid "ID"
-msgstr "المُعرف"
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_skill__surfaces__cron
+msgid "Background cron"
+msgstr "مهمة خلفية مجدولة"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__display_name
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__display_name
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__display_name
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__display_name
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_topic__display_name
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__display_name
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__display_name
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__display_name
-msgid "Display Name"
-msgstr "اسم العرض "
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_price_book__model_class__balanced
+msgid "Balanced"
+msgstr "متوازن"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__model_class__balanced
+msgid "Balanced (compare / forecast / report)"
+msgstr "متوازن (مقارنة / توقع / تقرير)"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__response_style__balanced
+msgid "Balanced (default)"
+msgstr "متوازن (افتراضي)"
+
+#. module: ab_ai_agent
+#: model:ai.agent.skill,user_prompt_template:ab_ai_agent.agent_ghaima_assistant_skill_next_action
+msgid ""
+"Based on the state of the database right now, suggest the top 3 things I "
+"should do today as an operator. One actionable verb + an Odoo menu path per "
+"suggestion. Order by impact."
+msgstr ""
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_form
+msgid "Behaviour"
+msgstr "السلوك"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__billed_cached_per_1k_sar
+msgid "Billed Cached Per 1K Sar"
+msgstr "المحتسب للرموز المخزنة لكل 1000 (ريال)"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__billed_input_per_1k_sar
+msgid "Billed Input Per 1K Sar"
+msgstr "المحتسب للإدخال لكل 1000 (ريال)"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__billed_output_per_1k_sar
+msgid "Billed Output Per 1K Sar"
+msgstr "المحتسب للإخراج لكل 1000 (ريال)"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_budget__state__blocked
+msgid "Blocked"
+msgstr "محجوب"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__persona__bot
+msgid "Bot"
+msgstr "Bot "
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__locale__both
+msgid "Both / auto-detect"
+msgstr "كلاهما / اكتشاف تلقائي"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__state__budget
+msgid "Budget exceeded"
+msgstr "تم تجاوز الميزانية"
+
+#. module: ab_ai_agent
+#: model:ir.ui.menu,name:ab_ai_agent.menu_ai_budgets
+msgid "Budgets"
+msgstr "الميزانيات"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__cache_hit
+msgid "Cache Hit"
+msgstr "إصابة التخزين المؤقت"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_usage_local_log_search
+msgid "Cache hits"
+msgstr "إصابات الذاكرة المؤقتة"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_token_meter/ai_agent_token_meter.xml:0
+msgid "Cache hits today"
+msgstr "إصابات الذاكرة المؤقتة اليوم"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__cached_tokens
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__cached_tokens
+msgid "Cached Tokens"
+msgstr "الرموز المخزنة مؤقتًا"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__state__cancelled
+msgid "Cancelled"
+msgstr "تم الإلغاء "
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_run_search
+msgid "Capped"
+msgstr "مقيّد بحد"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__category
+msgid "Category"
+msgstr "الفئة "
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__central_audit_id_remote
+msgid "Central Audit Id Remote"
+msgstr "معرف التدقيق المركزي البعيد"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__routed_via__gateway
+msgid "Central Gateway"
+msgstr "البوابة المركزية"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__surface__chat
+msgid "Chat"
+msgstr "الدردشة"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_skill__surfaces__chat
+msgid "Chat (Discuss + systray)"
+msgstr "الدردشة (المناقشة + شريط النظام)"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__surface__chat
+msgid "Chatbot"
+msgstr "برنامج الدردشة الآلي "
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__surface_ids__chat
+msgid "Chatbot (Discuss)"
+msgstr "روبوت الدردشة (المناقشة)"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__surface_ids__chatter
+msgid "Chatter (record forms)"
+msgstr "سجل المحادثة (نماذج السجلات)"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_price_book__model_class__cheap
+msgid "Cheap"
+msgstr "اقتصادي"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__model_class__cheap
+msgid "Cheap (lite — short replies)"
+msgstr "اقتصادي (خفيف — ردود قصيرة)"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
+msgid "Close"
+msgstr "إغلاق"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/web/chatter_patch.xml:0
+msgid "Close AI panel"
+msgstr "إغلاق لوحة الذكاء الاصطناعي"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__persona__coach
+msgid "Coach"
+msgstr "مدرب"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__code
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__code
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__code
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_topic__code
+msgid "Code"
+msgstr "رمز "
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
+msgid "Collapse answer"
+msgstr "طيّ الإجابة"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__company_id
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__company_id
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__company_id
+msgid "Company"
+msgstr "الشركة "
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_budget__scope__company
+msgid "Company-wide"
+msgstr "على مستوى الشركة"
+
+#. module: ab_ai_agent
+#: model:ai.agent.skill,name:ab_ai_agent.agent_ghaima_assistant_skill_compare
+msgid "Compare to last period"
+msgstr "قارن بالفترة السابقة"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__completion_tokens
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__completion_tokens
+msgid "Completion Tokens"
+msgstr "رموز الإكمال"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__surface__compose
+msgid "Composer"
+msgstr "محرر الرسائل"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_usage_local_log__est_cost_usd
+msgid "Computed from local price book at request time."
+msgstr "يُحسب من قائمة الأسعار المحلية وقت الطلب."
+
+#. module: ab_ai_agent
+#: model:ir.ui.menu,name:ab_ai_agent.menu_ai_config
+msgid "Configuration"
+msgstr "التهيئة"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__conversation_id
+msgid "Conversation"
+msgstr "المحادثة"
+
+#. module: ab_ai_agent
+#: model:ir.ui.menu,name:ab_ai_agent.menu_ai_cost_center
+msgid "Cost Center"
+msgstr "مركز التكلفة"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__cost_sar
+msgid "Cost Sar"
+msgstr "التكلفة (ريال)"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__cost_usd
+msgid "Cost Usd"
+msgstr "التكلفة (دولار)"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__state__cost_capped
+msgid "Cost cap hit"
+msgstr "تم بلوغ سقف التكلفة"
 
 #. module: ab_ai_agent
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__create_uid
@@ -322,6 +682,650 @@ msgid "Created on"
 msgstr "أنشئ في"
 
 #. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__response_style__creative
+msgid "Creative (high temperature)"
+msgstr "إبداعي (حرارة عالية)"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__surface__cron
+msgid "Cron"
+msgstr "Cron"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__surface_ids__cron
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__surface__cron
+msgid "Cron / background"
+msgstr "مجدول / خلفية"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__surface__report
+msgid "Daily Report"
+msgstr "التقرير اليومي"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__daily_sar
+msgid "Daily Sar"
+msgstr "اليومي (ريال)"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__surface__dashboard
+msgid "Dashboard"
+msgstr "لوحة البيانات "
+
+#. module: ab_ai_agent
+#: model:ai.agent.topic,name:ab_ai_agent.topic_date_math
+msgid "Date & Time Math"
+msgstr "حساب التاريخ والوقت"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__description
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__description
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__description
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_topic__description
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_form
+msgid "Description"
+msgstr "الوصف"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_tool_form
+msgid "Description (shown to the LLM)"
+msgstr "الوصف (يُعرض على النموذج اللغوي)"
+
+#. module: ab_ai_agent
+#: model_terms:ir.actions.act_window,help:ab_ai_agent.action_ai_agent
+msgid "Design a new agent."
+msgstr "صمّم وكيلاً جديداً."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__routed_via__direct
+msgid "Direct"
+msgstr "مباشر"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__routed_via__direct
+msgid "Direct Provider"
+msgstr "المزود المباشر"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__tool_ids
+msgid "Direct Tools"
+msgstr "الأدوات المباشرة"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent__all_tool_ids
+msgid ""
+"Direct tools + every tool reachable via topics. The runtime consults this "
+"set, not tool_ids alone."
+msgstr ""
+"الأدوات المباشرة + كل أداة يمكن الوصول إليها عبر المواضيع. يعتمد المشغّل على"
+" هذه المجموعة لا على tool_ids وحدها."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__agent_ids
+msgid "Directly attached to agents"
+msgstr "مرتبط مباشرة بالوكلاء"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__dispatch_kind
+msgid "Dispatch Kind"
+msgstr "نوع الإرسال"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__display_name
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__display_name
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__display_name
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__display_name
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_topic__display_name
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__display_name
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__display_name
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__display_name
+msgid "Display Name"
+msgstr "اسم العرض "
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_form
+msgid "Distribution"
+msgstr "النطاق"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__surface__scan
+msgid "Document Scanner"
+msgstr "ماسح المستندات"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__state__done
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_run_search
+msgid "Done"
+msgstr "منتهي "
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__duration_ms
+msgid "Duration Ms"
+msgstr "المدة (مللي ثانية)"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__effective_from
+msgid "Effective From"
+msgstr "ساري من"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__effective_to
+msgid "Effective To"
+msgstr "ساري حتى"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_form
+msgid "Effective tool set (topics + direct)"
+msgstr "مجموعة الأدوات الفعّالة (المواضيع + المباشرة)"
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,description:ab_ai_agent.tool_hr_attendance_open_shifts
+msgid ""
+"Employees who clocked in but haven't clocked out yet. Useful for end-of-day "
+"exit reminders."
+msgstr ""
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent__company_ids
+msgid "Empty = available to every company; restricted otherwise."
+msgstr "فارغ = متاح لكل الشركات؛ وإلا فهو مقيّد."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent__user_group_ids
+msgid "Empty = every internal user can invoke this agent."
+msgstr "فارغ = يمكن لكل مستخدم داخلي استدعاء هذا الوكيل."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_tool__group_ids
+msgid ""
+"Empty = every internal user can invoke. The runtime checks this BEFORE "
+"dispatching."
+msgstr ""
+"فارغ = يمكن لكل مستخدم داخلي الاستدعاء. يتحقق المشغّل من ذلك قبل التوزيع."
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_run_form
+msgid ""
+"Empty here means the answer had NO knowledge-base\n"
+"                                grounding — the usual reason an answer is wrong."
+msgstr ""
+"الفراغ هنا يعني أن الإجابة بلا استناد إلى قاعدة\n"
+"                                المعرفة — وهو السبب المعتاد لخطأ الإجابة."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__enforce
+msgid "Enforce"
+msgstr "إلزام"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__locale__en
+msgid "English"
+msgstr "English"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__state__error
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__status__error
+msgid "Error"
+msgstr "خطأ"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__error_message
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__error_message
+msgid "Error Message"
+msgstr "رسالة الخطأ"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_run_search
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_usage_local_log_search
+msgid "Errors"
+msgstr "الأخطاء"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__est_cost_billable
+msgid "Est Cost Billable"
+msgstr "التكلفة التقديرية القابلة للفوترة"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__est_cost_sar
+msgid "Est Cost Sar"
+msgstr "التكلفة التقديرية (ريال)"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__est_cost_usd
+msgid "Est Cost Usd"
+msgstr "التكلفة التقديرية (دولار)"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/web/chatter_patch.xml:0
+msgid "Expand"
+msgstr "توسيع"
+
+#. module: ab_ai_agent
+#: model:ai.agent.skill,name:ab_ai_agent.agent_ghaima_assistant_skill_explain
+msgid "Explain this screen"
+msgstr "اشرح هذه الشاشة"
+
+#. module: ab_ai_agent
+#: model:ai.agent.topic,description:ab_ai_agent.topic_system_guidance
+msgid ""
+"Explain what Ghaima does, what this user can reach, where to perform a task,"
+" and what a screen means — grounded in their real permissions."
+msgstr ""
+"شرح ما يقدّمه غيمه، وما يمكن لهذا المستخدم الوصول إليه، وأين ينفّذ مهمة ما، "
+"ومعنى كل شاشة — استناداً إلى صلاحياته الفعلية."
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,description:ab_ai_agent.tool_explain_screen
+msgid ""
+"Explain what a screen or document type is for, using the model's real "
+"fields, lifecycle states and this user's own permissions — not guesswork. "
+"Use when the user asks what something means, what a field is for, or what "
+"happens next (\"what is this screen?\", \"شنو معنى هذي الشاشة؟\", \"what "
+"does Posted mean?\"). The permissions block describes THIS user: when write "
+"is false, explain who can change it instead of telling them to edit."
+msgstr ""
+
+#. module: ab_ai_agent
+#: model:ai.agent.skill,user_prompt_template:ab_ai_agent.agent_ghaima_assistant_skill_explain
+msgid ""
+"Explain what this {model} record represents and what the user typically does"
+" next. Keep it concrete; reference field names that matter."
+msgstr ""
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent__is_public
+msgid ""
+"Exposed on the public website widget. Public agents have their cost charged "
+"to the company and runs go through a dedicated rate-limited code path."
+msgstr ""
+"متاح في أداة الموقع العام. تُحمَّل تكلفة الوكلاء العامّين على الشركة وتمر "
+"تشغيلاتهم عبر مسار مقيّد المعدل."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__surface__api
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__surface__api
+msgid "External API"
+msgstr "واجهة API خارجية"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_tool__category__integration
+msgid "External Integration"
+msgstr "تكامل خارجي"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__persona__extractor
+msgid "Extractor"
+msgstr "المستخرج"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_usage_local_budget__enforce
+msgid "False = soft-warn only; True = block at 100%."
+msgstr "خطأ = تحذير فقط؛ صحيح = الحظر عند ١٠٠٪."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_price_book__model_class__fast
+msgid "Fast"
+msgstr "سريع"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__model_class__fast
+msgid "Fast (default for chat)"
+msgstr "سريع (افتراضي للدردشة)"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__feature
+msgid "Feature"
+msgstr "الميزة"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__feedback
+msgid "Feedback"
+msgstr "التقييم"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__feedback_note
+msgid "Feedback Note"
+msgstr "ملاحظة التقييم"
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,description:ab_ai_agent.tool_record_action
+msgid ""
+"Finalize a business document the user names by its number: confirm a "
+"Sale/Purchase Order, post an Invoice/Bill/Payment, or validate a Stock "
+"Picking. Examples: \"INV/2026/00001 please post\", \"SO00047 confirm the "
+"order\", \"WH/IN/00012 validate\", \"PBNK1/2026/0003 post payment\". Pass "
+"the exact reference the user said. WRITE action — only runs when the agent "
+"is allowed write actions; otherwise the user is told it's blocked."
+msgstr ""
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,description:ab_ai_agent.tool_semantic_search
+msgid ""
+"Find records semantically similar to a natural-language query (vector cosine"
+" search over pgvector). Use when the user references a record by paraphrase "
+"(\"the deal with Acme construction\", \"leads that look like the one I "
+"closed last week\", \"policies about overtime\") rather than an exact "
+"identifier. The result is a pipe-CSV `id|name|score|hint1|hint2` — cite ids "
+"in your answer, do not invent fields. model: technical model name (e.g. "
+"'crm.lead', 'res.partner', 'ai.chat.fact'); query: the search text. Only "
+"models that have been embedded return useful results — when count=0, fall "
+"back to other tools."
+msgstr ""
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__finished_at
+msgid "Finished At"
+msgstr "وقت الانتهاء"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_skill__icon
+msgid "FontAwesome icon code without the fa- prefix is fine too."
+msgstr "يمكن استخدام رمز أيقونة FontAwesome بدون البادئة fa- أيضاً."
+
+#. module: ab_ai_agent
+#: model:ai.agent.topic,instructions:ab_ai_agent.topic_analytics
+msgid ""
+"For ANY question about how a metric is doing over time — \"sales trend\", \"POS sales last 30 days\", \"compare this month to last\", \"weekly revenue\", \"how are we doing\" — call the `data_analysis` tool. Pick metric (pos_sales / sale_orders / invoiced_revenue), period_days and group (day/week/month) from the question; call `date_reference` first only if the user gave a relative range you must convert. The tool returns the chart, KPI grid and peak callout already — do NOT repeat those numbers in prose. Your final answer is ONE short paragraph: what changed, why it matters, and one concrete recommended action.\n"
+"\n"
+"For \"latest / most recent / last N records\" questions (\"latest invoice added\", \"last 5 sale orders\", \"newest customers\", \"recent POS orders\") call the `recent_records` tool with the matching kind — NEVER answer these from earlier conversation context or prior numbers. It returns the table; add one short sentence about the newest item. For a COMPOUND request (\"latest SO and invoice and purchase\", \"recent customers and sales\") call `recent_records` once per kind in separate steps — every result is automatically combined into one answer, so do not skip any kind the user asked for."
+msgstr ""
+
+#. module: ab_ai_agent
+#: model:ai.agent.topic,instructions:ab_ai_agent.topic_hr_roll_call
+msgid ""
+"For HR-attendance questions (\"who didn't check in today\", \"show pending "
+"leave requests\", \"who's still at the office\"), call the matching tool. "
+"Render results as a data_table with columns Name / Department / Job (or Name"
+" / Type / Dates for leaves). Do NOT call these tools if the agent isn't PII-"
+"allowed."
+msgstr ""
+
+#. module: ab_ai_agent
+#: model:ai.agent.topic,instructions:ab_ai_agent.topic_general_conversation
+msgid ""
+"For greetings and casual exchanges, respond naturally and briefly. Stay on "
+"topic. If the user asks for data, switch to the appropriate topic."
+msgstr ""
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_topic__instructions
+msgid ""
+"Free-form guidance the LLM receives when this topic is active. Reference "
+"tools by their JSON name."
+msgstr ""
+"إرشادات حرة يتلقاها النموذج اللغوي عندما يكون هذا الموضوع نشطاً. أشِر إلى "
+"الأدوات باسمها في JSON."
+
+#. module: ab_ai_agent
+#: model:ai.agent.topic,description:ab_ai_agent.topic_general_conversation
+msgid "Friendly back-and-forth, greetings, small clarifications. No tools."
+msgstr "حوار ودّي وتحيات وتوضيحات بسيطة. بدون أدوات."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__fx_usd_to_sar
+msgid "Fx Usd To Sar"
+msgstr "سعر صرف الدولار إلى الريال"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_usage_local_log__cache_hit
+msgid "G.1 cache short-circuited this call — tokens and cost are 0."
+msgstr "أوقفت الذاكرة المؤقتة هذا الاستدعاء — الرموز والتكلفة صفر."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__routed_via__gateway
+msgid "Gateway"
+msgstr "البوّابة"
+
+#. module: ab_ai_agent
+#: model:ai.agent.topic,name:ab_ai_agent.topic_general_conversation
+msgid "General Conversation"
+msgstr "محادثة عامة"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_usage_local_log__request_id
+msgid ""
+"Generated locally per call; sent to central — joins ai.usage.log.request_id "
+"on the gateway for reconciliation."
+msgstr ""
+"يُولَّد محلياً لكل استدعاء ويُرسل إلى المركز — يُطابَق مع "
+"ai.usage.log.request_id في البوابة للتسوية."
+
+#. module: ab_ai_agent
+#: model:ir.module.category,name:ab_ai_agent.module_category_ai_agent
+msgid "Ghaima AI"
+msgstr "غيمه للذكاء الاصطناعي"
+
+#. module: ab_ai_agent
+#: model:ir.model,name:ab_ai_agent.model_ai_agent_topic
+msgid "Ghaima AI — Agent capability bundle"
+msgstr "غيمه للذكاء الاصطناعي — حزمة قدرات الوكيل"
+
+#. module: ab_ai_agent
+#: model:ir.model,name:ab_ai_agent.model_ai_agent_run
+msgid "Ghaima AI — Agent invocation audit row"
+msgstr "غيمه للذكاء الاصطناعي — سجل تدقيق استدعاء الوكيل"
+
+#. module: ab_ai_agent
+#: model:ir.model,name:ab_ai_agent.model_ai_agent
+msgid "Ghaima AI — Agent persona"
+msgstr "غيمه للذكاء الاصطناعي — شخصية الوكيل"
+
+#. module: ab_ai_agent
+#: model:ir.model,name:ab_ai_agent.model_ai_agent_skill
+msgid "Ghaima AI — Agent skill (user-facing action)"
+msgstr "غيمه للذكاء الاصطناعي — مهارة الوكيل (إجراء للمستخدم)"
+
+#. module: ab_ai_agent
+#: model:ir.model,name:ab_ai_agent.model_ai_agent_tool
+msgid "Ghaima AI — Agent tool"
+msgstr "غيمه للذكاء الاصطناعي — أداة الوكيل"
+
+#. module: ab_ai_agent
+#: model:ir.model,name:ab_ai_agent.model_ai_usage_local_budget
+msgid "Ghaima AI — Local pre-call budget guard"
+msgstr "غيمه للذكاء الاصطناعي — حارس الميزانية قبل الاستدعاء"
+
+#. module: ab_ai_agent
+#: model:ir.model,name:ab_ai_agent.model_ai_usage_local_log
+msgid "Ghaima AI — Per-instance LLM call audit + meter"
+msgstr "غيمه للذكاء الاصطناعي — تدقيق وقياس استدعاءات النموذج لكل نسخة"
+
+#. module: ab_ai_agent
+#: model:ir.model,name:ab_ai_agent.model_ai_usage_price_book
+msgid "Ghaima AI — Per-model pricing (provider cost + tenant-billed)"
+msgstr ""
+"غيمه للذكاء الاصطناعي — التسعير لكل نموذج (تكلفة المزوّد + المفوتر للمستأجر)"
+
+#. module: ab_ai_agent
+#: model:ir.actions.server,name:ab_ai_agent.ir_cron_reconcile_usage_ir_actions_server
+msgid "Ghaima AI: reconcile local usage with central audit"
+msgstr "غيمه للذكاء الاصطناعي: تسوية الاستهلاك المحلي مع تدقيق المركز"
+
+#. module: ab_ai_agent
+#: model:ir.actions.server,name:ab_ai_agent.ir_cron_refresh_agent_stats_ir_actions_server
+msgid "Ghaima AI: refresh per-agent stats"
+msgstr "غيمه للذكاء الاصطناعي: تحديث إحصاءات الوكلاء"
+
+#. module: ab_ai_agent
+#: model:ir.actions.server,name:ab_ai_agent.ir_cron_sync_pricebook_ir_actions_server
+msgid "Ghaima AI: sync price book from central"
+msgstr "غيمه للذكاء الاصطناعي: مزامنة قائمة الأسعار من المركز"
+
+#. module: ab_ai_agent
+#: model:ai.agent,name:ab_ai_agent.agent_ghaima_assistant
+msgid "Ghaima Assistant"
+msgstr "مساعد غيمه"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_skill__accent__blue
+msgid "Ghaima Blue"
+msgstr "أزرق غيمة"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_skill__accent__cyan
+msgid "Ghaima Cyan"
+msgstr "سماوي غيمة"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_skill__accent__navy
+msgid "Ghaima Navy"
+msgstr "كحلي غيمة"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_skill__accent__gold
+msgid "Gold"
+msgstr "ذهبي"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_price_book__provider__google
+msgid "Google"
+msgstr "Google"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_skill__accent__green
+msgid "Green (positive)"
+msgstr "أخضر (إيجابي)"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__grounded
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__grounded__grounded
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_run_search
+msgid "Grounded"
+msgstr "مستند إلى مصادر"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_run_search
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_search
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_usage_local_log_search
+msgid "Group By"
+msgstr "تجميع حسب"
+
+#. module: ab_ai_agent
+#: model:ai.agent.topic,name:ab_ai_agent.topic_hr_roll_call
+msgid "HR Roll Call"
+msgstr "كشف حضور الموظفين"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent__max_hops
+msgid ""
+"Hard cap on tool-calling rounds per run. Prevents infinite loops when the "
+"model misuses tools."
+msgstr ""
+"حد أقصى صارم لجولات استدعاء الأدوات في التشغيلة الواحدة. يمنع الحلقات "
+"اللانهائية عند إساءة النموذج استخدام الأدوات."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
+msgid "Helpful"
+msgstr "إجابة مفيدة"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
+msgid "Hi! How can I help you today?"
+msgstr "أهلاً! بماذا أساعدك اليوم؟"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent__model_class
+msgid ""
+"Hint passed to the gateway. Cheap/fast/balanced maps to provider-specific "
+"models (Gemini: flash-lite / 2.5-flash / 2.5-pro)."
+msgstr ""
+"تلميح يُمرَّر إلى البوابة. تُترجم القيم اقتصادي/سريع/متوازن إلى نماذج خاصة "
+"بالمزوّد (Gemini: flash-lite / 2.5-flash / 2.5-pro)."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__hops
+msgid "Hops"
+msgstr "القفزات"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__id
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__id
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__id
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__id
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_topic__id
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__id
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__id
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__id
+msgid "ID"
+msgstr "المُعرف"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__icon
+msgid "Icon"
+msgstr "الأيقونة"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_form
+msgid "Identity"
+msgstr "الهوية"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_tool__category__retrieval
+msgid "Information Retrieval"
+msgstr "استرجاع المعلومات"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_topic__instructions
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_topic_form
+msgid "Instructions"
+msgstr "التعليمات"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__is_public
+msgid "Is Public"
+msgstr "عام"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__is_published
+msgid "Is Published"
+msgstr "تم نشره "
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__is_system
+msgid "Is System"
+msgstr "نظام "
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__is_write_action
+msgid "Is Write Action"
+msgstr "إجراء كتابة"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_tool_form
+msgid "JSON Schema (parameters)"
+msgstr "مخطط JSON (المعاملات)"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_tool__schema
+msgid "JSON Schema for the tool parameters. Validated on save."
+msgstr "مخطط JSON لمعاملات الأداة. يتم التحقق منه عند الحفظ."
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_form
+msgid "KPI linkage"
+msgstr "الارتباط بمؤشرات الأداء"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__kpi_label
+msgid "Kpi Label"
+msgstr "تسمية مؤشر الأداء"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__kpi_target_text
+msgid "Kpi Target Text"
+msgstr "نص هدف مؤشر الأداء"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__last_run_at
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__last_run_at
+msgid "Last Run At"
+msgstr "وقت آخر تشغيل"
+
+#. module: ab_ai_agent
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__write_uid
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__write_uid
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__write_uid
@@ -346,549 +1350,75 @@ msgid "Last Updated on"
 msgstr "آخر تحديث في"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_topic__instructions
-msgid "Instructions"
-msgstr "التعليمات"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_topic__agent_ids
-msgid "Used by Agents"
-msgstr "مستخدم من الوكلاء"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_topic__agent_count
-msgid "Agent Count"
-msgstr "عدد الوكلاء"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__category
-msgid "Category"
-msgstr "الفئة "
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__schema
-msgid "Schema"
-msgstr "المخطط"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__allow_end_message
-msgid "Allow End Message"
-msgstr "السماح برسالة الإنهاء"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__is_write_action
-msgid "Is Write Action"
-msgstr "إجراء كتابة"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__requires_pii
-msgid "Requires Pii"
-msgstr "يتطلب بيانات شخصية"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__dispatch_kind
-msgid "Dispatch Kind"
-msgstr "نوع الإرسال"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__server_action_id
-msgid "Server Action"
-msgstr "إجراء الخادم "
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__group_ids
-msgid "Restricted to Groups"
-msgstr "مقيد بالمجموعات"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__agent_ids
-msgid "Directly attached to agents"
-msgstr "مرتبط مباشرة بالوكلاء"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__icon
-msgid "Icon"
-msgstr "الأيقونة"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__accent
-msgid "Accent"
-msgstr "لون التمييز"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__agent_id
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__agent_id
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__agent_id
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__agent_id
-msgid "Agent"
-msgstr "الوكيل"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__surfaces
-msgid "Surfaces"
-msgstr "الواجهات"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__user_prompt_template
-msgid "User Prompt Template"
-msgstr "قالب موجه المستخدم"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__requires_record_context
-msgid "Requires Record Context"
-msgstr "يتطلب سياق سجل"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__kpi_label
-msgid "Kpi Label"
-msgstr "تسمية مؤشر الأداء"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__kpi_target_text
-msgid "Kpi Target Text"
-msgstr "نص هدف مؤشر الأداء"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__skill_id
-msgid "Skill"
-msgstr "المهارة "
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__user_id
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__user_id
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__user_id
-msgid "User"
-msgstr "المستخدم"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__company_id
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__company_id
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__company_id
-msgid "Company"
-msgstr "الشركة "
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__surface
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__surface
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__surface
-msgid "Surface"
-msgstr "السطح "
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__record_ref
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__record_ref
-msgid "Record Ref"
-msgstr "مرجع السجل"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__conversation_id
-msgid "Conversation"
-msgstr "المحادثة"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__question
-msgid "Question"
-msgstr "السؤال"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__response
-msgid "Response"
-msgstr "الاستجابة"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__state
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__state
-msgid "State"
-msgstr "الولاية "
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__error_message
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__error_message
-msgid "Error Message"
-msgstr "رسالة الخطأ"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__hops
-msgid "Hops"
-msgstr "القفزات"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__tool_calls_json
-msgid "Tool Calls Json"
-msgstr "استدعاءات الأدوات JSON"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__cost_usd
-msgid "Cost Usd"
-msgstr "التكلفة (دولار)"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__cost_sar
-msgid "Cost Sar"
-msgstr "التكلفة (ريال)"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__prompt_tokens
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__prompt_tokens
-msgid "Prompt Tokens"
-msgstr "رموز الموجه"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__completion_tokens
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__completion_tokens
-msgid "Completion Tokens"
-msgstr "رموز الإكمال"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__cached_tokens
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__cached_tokens
-msgid "Cached Tokens"
-msgstr "الرموز المخزنة مؤقتًا"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__total_tokens
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__total_tokens
-msgid "Total Tokens"
-msgstr "إجمالي الرموز"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__model_used
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__model_used
-msgid "Model Used"
-msgstr "النموذج المستخدم"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__provider_used
-msgid "Provider Used"
-msgstr "المزود المستخدم"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__routed_via
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__routed_via
-msgid "Routed Via"
-msgstr "موجه عبر"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__verdict
-msgid "Verdict"
-msgstr "الحكم"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__feedback
-msgid "Feedback"
-msgstr "التقييم"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__feedback_note
-msgid "Feedback Note"
-msgstr "ملاحظة التقييم"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__started_at
-msgid "Started At"
-msgstr "بدأ في"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__finished_at
-msgid "Finished At"
-msgstr "وقت الانتهاء"
-
-#. module: ab_ai_agent
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__latency_ms
 msgid "Latency Ms"
 msgstr "زمن الاستجابة (مللي ثانية)"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__request_id
-msgid "Request"
-msgstr "طلب"
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_usage_local_budget_form
+msgid "Limits (SAR)"
+msgstr "الحدود (ر.س)"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__feature
-msgid "Feature"
-msgstr "الميزة"
+#: model:ai.agent.tool,description:ab_ai_agent.tool_hr_leave_pending
+msgid ""
+"List leave requests awaiting approval. Returns count + per-request rows with"
+" employee, type, date range, day count."
+msgstr ""
 
 #. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__agent_skill_id
-msgid "Agent Skill"
-msgstr "مهارة الوكيل"
+#: model:ai.agent.tool,description:ab_ai_agent.tool_hr_attendance_missing_today
+msgid ""
+"List of active employees who have NOT checked in for the day yet — the "
+"\"who's not at work today\" roll call. Returns count + per-employee rows "
+"with department and job title."
+msgstr ""
 
 #. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__agent_run_id
-msgid "Agent Run"
-msgstr "تشغيل الوكيل"
+#: model:ai.agent.tool,description:ab_ai_agent.tool_list_my_apps
+msgid ""
+"List the apps and sections THIS user is actually allowed to open, read live "
+"from their menu access. Call it whenever the user asks what the system can "
+"do for them, what they have access to, or where to start (\"what can I do "
+"here?\", \"ما الذي يمكنني فعله؟\", \"I'm new, help me\"). Ground your answer"
+" only in what it returns — never mention an app that is absent from the "
+"result, because the user cannot open it."
+msgstr ""
 
 #. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__provider
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__provider
-msgid "Provider"
-msgstr "المزود"
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
+msgid "Listening…"
+msgstr "أستمع…"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__cache_hit
-msgid "Cache Hit"
-msgstr "إصابة التخزين المؤقت"
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_price_book__provider__local
+msgid "Local"
+msgstr "محلي"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__web_grounding_calls
-msgid "Web Grounding Calls"
-msgstr "استدعاءات الاستناد إلى الويب"
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__status__budget
+msgid "Local budget capped"
+msgstr "تم بلوغ سقف الميزانية المحلية"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__audio_seconds
-msgid "Audio Seconds"
-msgstr "ثواني الصوت"
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__locale
+msgid "Locale"
+msgstr "منطقة بيانات "
 
 #. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__est_cost_usd
-msgid "Est Cost Usd"
-msgstr "التكلفة التقديرية (دولار)"
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_usage_local_log__feature
+msgid "Logical feature name (e.g. \"chat\", \"daily_report\")."
+msgstr "الاسم المنطقي للميزة (مثل \"chat\" أو \"daily_report\")."
 
 #. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__est_cost_sar
-msgid "Est Cost Sar"
-msgstr "التكلفة التقديرية (ريال)"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__est_cost_billable
-msgid "Est Cost Billable"
-msgstr "التكلفة التقديرية القابلة للفوترة"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__timestamp
-msgid "Timestamp"
-msgstr "الطابع الزمني"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__duration_ms
-msgid "Duration Ms"
-msgstr "المدة (مللي ثانية)"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__status
-msgid "Status"
-msgstr "الحالة"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__reconciled_with_central
-msgid "Reconciled With Central"
-msgstr "مسوّى مع المركز"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__reconciled_at
-msgid "Reconciled At"
-msgstr "وقت التسوية"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__central_audit_id_remote
-msgid "Central Audit Id Remote"
-msgstr "معرف التدقيق المركزي البعيد"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__prompt_excerpt
-msgid "Prompt Excerpt"
-msgstr "مقتطف الموجه"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__model_name
-msgid "Model Name"
-msgstr "اسم النموذج"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__provider_input_per_1k_usd
-msgid "Provider Input Per 1K Usd"
-msgstr "سعر المزود للإدخال لكل 1000 (دولار)"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__provider_output_per_1k_usd
-msgid "Provider Output Per 1K Usd"
-msgstr "سعر المزود للإخراج لكل 1000 (دولار)"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__provider_cached_per_1k_usd
-msgid "Provider Cached Per 1K Usd"
-msgstr "سعر المزود للرموز المخزنة لكل 1000 (دولار)"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__billed_input_per_1k_sar
-msgid "Billed Input Per 1K Sar"
-msgstr "المحتسب للإدخال لكل 1000 (ريال)"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__billed_output_per_1k_sar
-msgid "Billed Output Per 1K Sar"
-msgstr "المحتسب للإخراج لكل 1000 (ريال)"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__billed_cached_per_1k_sar
-msgid "Billed Cached Per 1K Sar"
-msgstr "المحتسب للرموز المخزنة لكل 1000 (ريال)"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__fx_usd_to_sar
-msgid "Fx Usd To Sar"
-msgstr "سعر صرف الدولار إلى الريال"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__markup_pct
-msgid "Markup Pct"
-msgstr "نسبة هامش الربح"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__effective_from
-msgid "Effective From"
-msgstr "ساري من"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__effective_to
-msgid "Effective To"
-msgstr "ساري حتى"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__is_published
-msgid "Is Published"
-msgstr "تم نشره "
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__notes
-msgid "Notes"
-msgstr "الملاحظات"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__scope
-msgid "Scope"
-msgstr "النطاق "
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__daily_sar
-msgid "Daily Sar"
-msgstr "اليومي (ريال)"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__monthly_sar
-msgid "Monthly Sar"
-msgstr "الشهري (ريال)"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__warn_at
-msgid "Warn At"
-msgstr "التحذير عند"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__enforce
-msgid "Enforce"
-msgstr "إلزام"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__used_today_sar
-msgid "Used Today Sar"
-msgstr "المستخدم اليوم (ريال)"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__used_month_sar
-msgid "Used Month Sar"
-msgstr "المستخدم هذا الشهر (ريال)"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__remaining_daily_sar
-msgid "Remaining Daily Sar"
-msgstr "المتبقي اليومي (ريال)"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__remaining_monthly_sar
-msgid "Remaining Monthly Sar"
-msgstr "المتبقي الشهري (ريال)"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__retrieved_context
-msgid "Retrieved Context"
-msgstr "السياق المسترجع"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__grounded
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__grounded__grounded
-msgid "Grounded"
-msgstr "مستند إلى مصادر"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__persona__assistant
-msgid "Assistant"
-msgstr "المساعد"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__persona__analyst
-msgid "Analyst"
-msgstr "محلل"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__persona__coach
-msgid "Coach"
-msgstr "مدرب"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__persona__bot
-msgid "Bot"
-msgstr "Bot "
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__persona__extractor
-msgid "Extractor"
-msgstr "المستخرج"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__locale__ar
-msgid "Arabic"
-msgstr "اللغة العربية "
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__locale__en
-msgid "English"
-msgstr "English"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__locale__both
-msgid "Both / auto-detect"
-msgstr "كلاهما / اكتشاف تلقائي"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__response_style__analytical
-msgid "Analytical (low temperature)"
-msgstr "تحليلي (حرارة منخفضة)"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__response_style__balanced
-msgid "Balanced (default)"
-msgstr "متوازن (افتراضي)"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__response_style__creative
-msgid "Creative (high temperature)"
-msgstr "إبداعي (حرارة عالية)"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__model_class__cheap
-msgid "Cheap (lite — short replies)"
-msgstr "اقتصادي (خفيف — ردود قصيرة)"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__model_class__fast
-msgid "Fast (default for chat)"
-msgstr "سريع (افتراضي للدردشة)"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__model_class__balanced
-msgid "Balanced (compare / forecast / report)"
-msgstr "متوازن (مقارنة / توقع / تقرير)"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__surface_ids__chat
-msgid "Chatbot (Discuss)"
-msgstr "روبوت الدردشة (المناقشة)"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__surface_ids__chatter
-msgid "Chatter (record forms)"
-msgstr "سجل المحادثة (نماذج السجلات)"
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_run__conversation_id
+msgid ""
+"Loose pointer (model+id or chat conv id). String so this module has no hard "
+"dep on ab_ai_chatbot."
+msgstr ""
+"مؤشّر مرن (النموذج+المعرّف أو معرّف المحادثة). نص حتى لا يعتمد هذا التطبيق "
+"على ab_ai_chatbot."
 
 #. module: ab_ai_agent
 #: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__surface_ids__composer
@@ -898,160 +1428,24 @@ msgid "Mail / HTML composer"
 msgstr "محرر البريد / HTML"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__surface_ids__website
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__surface__website
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_skill__surfaces__website
-msgid "Public website"
-msgstr "الموقع العام"
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_usage_price_book_list
+msgid "Markup %"
+msgstr "نسبة الهامش ٪"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__surface_ids__cron
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__surface__cron
-msgid "Cron / background"
-msgstr "مجدول / خلفية"
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__markup_pct
+msgid "Markup Pct"
+msgstr "نسبة هامش الربح"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__surface_ids__all
-msgid "All surfaces"
-msgstr "جميع الواجهات"
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__max_cost_usd
+msgid "Max Cost Usd"
+msgstr "الحد الأقصى للتكلفة (دولار)"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_tool__category__retrieval
-msgid "Information Retrieval"
-msgstr "استرجاع المعلومات"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_tool__category__navigation
-msgid "UI Navigation"
-msgstr "التنقل في الواجهة"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_tool__category__write
-msgid "Write / Mutation"
-msgstr "كتابة / تعديل"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_tool__category__memory
-msgid "Memory"
-msgstr "الذاكرة"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_tool__category__analysis
-msgid "Analysis / Compute"
-msgstr "التحليل / الحساب"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_tool__category__integration
-msgid "External Integration"
-msgstr "تكامل خارجي"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_tool__dispatch_kind__python
-msgid "Python callable (services.tool_dispatcher)"
-msgstr "دالة بايثون (services.tool_dispatcher)"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_tool__dispatch_kind__server_action
-msgid "ir.actions.server record"
-msgstr "سجل ir.actions.server"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_skill__accent__blue
-msgid "Ghaima Blue"
-msgstr "أزرق غيمة"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_skill__accent__navy
-msgid "Ghaima Navy"
-msgstr "كحلي غيمة"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_skill__accent__cyan
-msgid "Ghaima Cyan"
-msgstr "سماوي غيمة"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_skill__accent__gold
-msgid "Gold"
-msgstr "ذهبي"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_skill__accent__green
-msgid "Green (positive)"
-msgstr "أخضر (إيجابي)"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_skill__accent__rose
-msgid "Rose (caution)"
-msgstr "وردي (تحذير)"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_skill__surfaces__chat
-msgid "Chat (Discuss + systray)"
-msgstr "الدردشة (المناقشة + شريط النظام)"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_skill__surfaces__chatter
-msgid "Record chatter button"
-msgstr "زر سجل المحادثة"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_skill__surfaces__cron
-msgid "Background cron"
-msgstr "مهمة خلفية مجدولة"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__surface__chat
-msgid "Chat"
-msgstr "الدردشة"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__surface__chatter
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__surface__chatter
-msgid "Record chatter"
-msgstr "سجل محادثة السجل"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__surface__compose
-msgid "Composer"
-msgstr "محرر الرسائل"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__surface__skill
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__surface__skill
-msgid "Skill launcher"
-msgstr "مشغل المهارات"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__surface__cron
-msgid "Cron"
-msgstr "Cron"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__surface__api
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__surface__api
-msgid "External API"
-msgstr "واجهة API خارجية"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__state__planning
-msgid "Planning"
-msgstr "التخطيط"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__state__tool
-msgid "Running tool"
-msgstr "تشغيل الأداة"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__state__reflect
-msgid "Reflecting"
-msgstr "جارٍ التفكير"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__state__done
-msgid "Done"
-msgstr "منتهي "
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__max_hops
+msgid "Max Hops"
+msgstr "الحد الأقصى للقفزات"
 
 #. module: ab_ai_agent
 #: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__state__maxhops
@@ -1059,118 +1453,78 @@ msgid "Max hops reached"
 msgstr "تم بلوغ الحد الأقصى للقفزات"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__state__cost_capped
-msgid "Cost cap hit"
-msgstr "تم بلوغ سقف التكلفة"
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_tool__category__memory
+msgid "Memory"
+msgstr "الذاكرة"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__state__budget
-msgid "Budget exceeded"
-msgstr "تم تجاوز الميزانية"
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_usage_local_log_search
+msgid "Model"
+msgstr "النموذج"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__state__error
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__status__error
-msgid "Error"
-msgstr "خطأ"
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__model_class
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__model_class
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__model_class
+msgid "Model Class"
+msgstr "فئة النموذج"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__state__cancelled
-msgid "Cancelled"
-msgstr "تم الإلغاء "
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__model_name
+msgid "Model Name"
+msgstr "اسم النموذج"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__routed_via__gateway
-msgid "Central Gateway"
-msgstr "البوابة المركزية"
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__model_used
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__model_used
+msgid "Model Used"
+msgstr "النموذج المستخدم"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__routed_via__direct
-msgid "Direct Provider"
-msgstr "المزود المباشر"
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_search
+msgid "Model class"
+msgstr "فئة النموذج"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__routed_via__sim
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__routed_via__sim
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__status__sim
-msgid "Simulation"
-msgstr "محاكاة"
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__monthly_sar
+msgid "Monthly Sar"
+msgstr "الشهري (ريال)"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__routed_via__cache
-msgid "Response Cache (G.1)"
-msgstr "ذاكرة الردود (G.1)"
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
+msgid "Mute response sound"
+msgstr "كتم صوت الردود"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__verdict__verified
-msgid "Verified"
-msgstr "متحقق منه"
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__name
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__name
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__name
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_topic__name
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__name
+msgid "Name"
+msgstr "الاسم"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__grounded__partial
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__verdict__partial
-msgid "Partial"
-msgstr "جزئي"
+#: model:ai.agent.topic,name:ab_ai_agent.topic_navigation
+msgid "Navigation"
+msgstr "التنقل"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__verdict__unverified
-msgid "Unverified"
-msgstr "غير متحقق منه"
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
+msgid "Not helpful"
+msgstr "إجابة غير مفيدة"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__verdict__policy_violation
-msgid "Policy Violation"
-msgstr "مخالفة السياسة"
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_usage_local_log_search
+msgid "Not reconciled"
+msgstr "غير مُطابَق"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__feedback__up
-msgid "Thumbs up"
-msgstr "إعجاب"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__feedback__down
-msgid "Thumbs down"
-msgstr "عدم إعجاب"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__surface__chat
-msgid "Chatbot"
-msgstr "برنامج الدردشة الآلي "
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__surface__scan
-msgid "Document Scanner"
-msgstr "ماسح المستندات"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__surface__report
-msgid "Daily Report"
-msgstr "التقرير اليومي"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__surface__dashboard
-msgid "Dashboard"
-msgstr "لوحة البيانات "
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__surface__agent
-msgid "Agent runtime"
-msgstr "بيئة تشغيل الوكيل"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__routed_via__gateway
-msgid "Gateway"
-msgstr "البوّابة"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__routed_via__direct
-msgid "Direct"
-msgstr "مباشر"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__routed_via__cache
-msgid "Response cache hit"
-msgstr "إصابة ذاكرة الردود"
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__notes
+msgid "Notes"
+msgstr "الملاحظات"
 
 #. module: ab_ai_agent
 #: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_budget__state__ok
@@ -1179,24 +1533,82 @@ msgid "OK"
 msgstr "موافق"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__status__quota
-msgid "Quota exceeded"
-msgstr "تم تجاوز الحصة"
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_form
+msgid "One-line description of this agent's purpose..."
+msgstr "وصف من سطر واحد لغرض هذا الوكيل…"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__status__budget
-msgid "Local budget capped"
-msgstr "تم بلوغ سقف الميزانية المحلية"
+#: model:ir.model.constraint,message:ab_ai_agent.constraint_ai_usage_price_book_unique_model_effective
+msgid "Only one price row per (provider, model, effective date)."
+msgstr "صف سعر واحد فقط لكل (مزوّد، نموذج، تاريخ سريان)."
 
 #. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__status__cost_capped
-msgid "Per-run cost capped"
-msgstr "تم بلوغ سقف تكلفة التشغيل"
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
+msgid "Open"
+msgstr "فتح"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__status__rate_limited
-msgid "Rate limited"
-msgstr "تم تقييد المعدل"
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_form
+msgid "Open Chat"
+msgstr "فتح المحادثة"
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,description:ab_ai_agent.tool_open_graph
+msgid ""
+"Open a chart view — bar / line / pie. Use for \"chart sales by month\", "
+"\"pie chart of customers by country\". One measure + group-by field, plus "
+"mode."
+msgstr ""
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,description:ab_ai_agent.tool_open_list
+msgid ""
+"Open a filtered list view of a model. Use for \"show me all overdue "
+"invoices\", \"list draft sale orders\". Supports domain filters and group-"
+"by."
+msgstr ""
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,description:ab_ai_agent.tool_open_record
+msgid ""
+"Open a specific record in its form view. Use when the user names a specific "
+"entity — \"open sale order 42\", \"show me invoice INV/2026/00045\". Returns"
+" an action that paints an \"Open\" chip the user clicks to navigate."
+msgstr ""
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,description:ab_ai_agent.tool_open_pivot
+msgid ""
+"Open an analytical pivot view. Use for \"pivot sales by product and month\","
+" \"breakdown of expenses by department\". Specify measures + row/column "
+"groupbys."
+msgstr ""
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,description:ab_ai_agent.tool_open_action
+msgid ""
+"Open any server-registered action by its xmlid. Use for built-in reports: "
+"'account.action_account_pl_report' for P&L, "
+"'account.action_account_balance_report' for balance sheet, "
+"'sale.action_orders' for sales list. Also works for any module-defined "
+"action."
+msgstr ""
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/web/chatter_patch.xml:0
+msgid "Open in a full dialog"
+msgstr "فتح في نافذة كاملة"
+
+#. module: ab_ai_agent
+#: model:ai.agent.topic,description:ab_ai_agent.topic_navigation
+msgid ""
+"Open records, lists, pivots, graphs, reports — let the user navigate the app"
+" by voice or chat."
+msgstr ""
+"فتح السجلات والقوائم والجداول المحورية والرسوم والتقارير — تمكين المستخدم من"
+" التنقل بالصوت أو المحادثة."
 
 #. module: ab_ai_agent
 #: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_price_book__provider__openai
@@ -1204,44 +1616,39 @@ msgid "OpenAI"
 msgstr "OpenAI"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_price_book__provider__google
-msgid "Google"
-msgstr "Google"
+#: model:ir.ui.menu,name:ab_ai_agent.menu_ai_ops
+msgid "Operations"
+msgstr "العمليات"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_price_book__provider__anthropic
-msgid "Anthropic"
-msgstr "Anthropic"
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_run__record_ref
+msgid "Optional record the agent was working on."
+msgstr "السجل الذي كان الوكيل يعمل عليه (اختياري)."
 
 #. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_price_book__provider__local
-msgid "Local"
-msgstr "محلي"
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_usage_local_log__record_ref
+msgid "Optional — which record the call was about."
+msgstr "اختياري — السجل الذي يتعلق به الاستدعاء."
 
 #. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_price_book__model_class__cheap
-msgid "Cheap"
-msgstr "اقتصادي"
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_run__retrieved_context
+msgid ""
+"Organisation-knowledge (RAG) block injected for this question. Empty = the "
+"answer had no KB grounding."
+msgstr ""
+"كتلة معرفة المؤسسة المحقونة لهذا السؤال. فارغة = الإجابة بلا استناد إلى "
+"قاعدة المعرفة."
 
 #. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_price_book__model_class__fast
-msgid "Fast"
-msgstr "سريع"
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_run__verdict
+msgid "Output from the validator (no-apology rule, citation check, etc.)."
+msgstr "مخرجات المدقّق (قاعدة عدم الاعتذار، فحص الاستشهاد، إلخ)."
 
 #. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_price_book__model_class__balanced
-msgid "Balanced"
-msgstr "متوازن"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_budget__scope__company
-msgid "Company-wide"
-msgstr "على مستوى الشركة"
-
-#. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_budget__scope__user
-msgid "Per user"
-msgstr "لكل مستخدم"
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__grounded__partial
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__verdict__partial
+msgid "Partial"
+msgstr "جزئي"
 
 #. module: ab_ai_agent
 #: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_budget__scope__agent
@@ -1254,16 +1661,1143 @@ msgid "Per surface"
 msgstr "لكل واجهة"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_budget__state__warn
-msgid "Warn"
-msgstr "تحذير"
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_budget__scope__user
+msgid "Per user"
+msgstr "لكل مستخدم"
 
 #. module: ab_ai_agent
-#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_budget__state__blocked
-msgid "Blocked"
-msgstr "محجوب"
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent__max_cost_usd
+msgid ""
+"Per-run USD ceiling. Run aborts with cost_capped state once accumulated "
+"usage exceeds this value. 0 = unlimited."
+msgstr ""
+"سقف بالدولار لكل تشغيلة. تتوقف التشغيلة بحالة cost_capped عند تجاوز "
+"الاستهلاك المتراكم هذه القيمة. ٠ = بلا حد."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__status__cost_capped
+msgid "Per-run cost capped"
+msgstr "تم بلوغ سقف تكلفة التشغيل"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_form
+msgid "Performance (30 days)"
+msgstr "الأداء (٣٠ يوماً)"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_form
+msgid "Permissions"
+msgstr "الصلاحيات"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__persona
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_search
+msgid "Persona"
+msgstr "الشخصية"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__state__planning
+msgid "Planning"
+msgstr "التخطيط"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__verdict__policy_violation
+msgid "Policy Violation"
+msgstr "مخالفة السياسة"
+
+#. module: ab_ai_agent
+#: model:ir.ui.menu,name:ab_ai_agent.menu_ai_pricebook
+msgid "Price Book"
+msgstr "دليل الأسعار"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__surface_ids
+msgid "Primary Surface"
+msgstr "الواجهة الرئيسية"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__prompt_excerpt
+msgid "Prompt Excerpt"
+msgstr "مقتطف الموجه"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__prompt_tokens
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__prompt_tokens
+msgid "Prompt Tokens"
+msgstr "رموز الموجه"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_form
+msgid "Prompt template"
+msgstr "قالب الموجّه"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__provider
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__provider
+msgid "Provider"
+msgstr "المزود"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__provider_cached_per_1k_usd
+msgid "Provider Cached Per 1K Usd"
+msgstr "سعر المزود للرموز المخزنة لكل 1000 (دولار)"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__provider_input_per_1k_usd
+msgid "Provider Input Per 1K Usd"
+msgstr "سعر المزود للإدخال لكل 1000 (دولار)"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__provider_output_per_1k_usd
+msgid "Provider Output Per 1K Usd"
+msgstr "سعر المزود للإخراج لكل 1000 (دولار)"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__provider_used
+msgid "Provider Used"
+msgstr "المزود المستخدم"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_usage_local_log__cached_tokens
+msgid ""
+"Provider prompt-cache (Anthropic cache_control / Gemini cachedContent) — "
+"billed cheaper than prompt_tokens."
+msgstr ""
+"ذاكرة الموجّه لدى المزوّد (Anthropic cache_control / Gemini cachedContent) —"
+" تُفوتر أرخص من رموز الموجّه."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_usage_local_log__web_grounding_calls
+msgid "Provider web-search tool invocations on this call."
+msgstr "عدد استدعاءات أداة البحث على الويب لدى المزوّد في هذا الطلب."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__surface_ids__website
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__surface__website
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_skill__surfaces__website
+msgid "Public website"
+msgstr "الموقع العام"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_search
+msgid "Public-facing"
+msgstr "متاح للعملاء"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_tool__dispatch_kind__python
+msgid "Python callable (services.tool_dispatcher)"
+msgstr "دالة بايثون (services.tool_dispatcher)"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_form
+msgid ""
+"Qualify lead {lead_id}: produce a 1-100 score and a 2-sentence rationale..."
+msgstr ""
+"Qualify lead {lead_id}: produce a 1-100 score and a 2-sentence rationale..."
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_run_form
+msgid "Quality"
+msgstr "الجودة"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__question
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_run_form
+msgid "Question"
+msgstr "السؤال"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
+msgid "Quick skills"
+msgstr "مهام سريعة"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__status__quota
+msgid "Quota exceeded"
+msgstr "تم تجاوز الحصة"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__status__rate_limited
+msgid "Rate limited"
+msgstr "تم تقييد المعدل"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__reconciled_at
+msgid "Reconciled At"
+msgstr "وقت التسوية"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__reconciled_with_central
+msgid "Reconciled With Central"
+msgstr "مسوّى مع المركز"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__record_ref
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__record_ref
+msgid "Record Ref"
+msgstr "مرجع السجل"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__surface__chatter
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__surface__chatter
+msgid "Record chatter"
+msgstr "سجل محادثة السجل"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_skill__surfaces__chatter
+msgid "Record chatter button"
+msgstr "زر سجل المحادثة"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
+msgid "Refine"
+msgstr "أعد الصياغة"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__state__reflect
+msgid "Reflecting"
+msgstr "جارٍ التفكير"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__remaining_daily_sar
+msgid "Remaining Daily Sar"
+msgstr "المتبقي اليومي (ريال)"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__remaining_monthly_sar
+msgid "Remaining Monthly Sar"
+msgstr "المتبقي الشهري (ريال)"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__request_id
+msgid "Request"
+msgstr "طلب"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_run_form
+msgid "Request Context"
+msgstr "سياق الطلب"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent__allow_write_actions
+msgid ""
+"Required for tools that mutate data. The chip-driven two-phase confirmation "
+"flow still applies on top."
+msgstr ""
+"مطلوب للأدوات التي تعدّل البيانات. ويبقى مسار التأكيد المزدوج عبر الأزرار "
+"مطبّقاً فوق ذلك."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__requires_pii
+msgid "Requires Pii"
+msgstr "يتطلب بيانات شخصية"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__requires_record_context
+msgid "Requires Record Context"
+msgstr "يتطلب سياق سجل"
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,description:ab_ai_agent.tool_find_menu
+msgid ""
+"Resolve \"where do I do X?\" into real menu entries this user can open, with"
+" the full path and the action behind it. Use for any how-do-I / where-is "
+"question (\"where do I create a credit note?\", \"وين أسوي فاتورة مرتجع؟\", "
+"\"how do I add an employee?\"). Each match carries an action_xmlid you can "
+"pass to open_action so the answer includes a working button. When matches is"
+" empty, say plainly that they do not have access and suggest asking an "
+"administrator — never invent a menu path."
+msgstr ""
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__response
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_run_form
+msgid "Response"
+msgstr "الاستجابة"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__routed_via__cache
+msgid "Response Cache (G.1)"
+msgstr "ذاكرة الردود (G.1)"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__response_style
+msgid "Response Style"
+msgstr "أسلوب الاستجابة"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__routed_via__cache
+msgid "Response cache hit"
+msgstr "إصابة ذاكرة الردود"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__group_ids
+msgid "Restricted to Groups"
+msgstr "مقيد بالمجموعات"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__retrieved_context
+msgid "Retrieved Context"
+msgstr "السياق المسترجع"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_run_form
+msgid "Retrieved knowledge (RAG)"
+msgstr "المعرفة المُسترجَعة"
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,description:ab_ai_agent.tool_date_reference
+msgid ""
+"Returns a cheat-sheet of today's date plus common relative dates (yesterday,"
+" tomorrow, this week, last month, this quarter). Use this whenever the user "
+"mentions a relative timeframe — never compute relative dates yourself."
+msgstr ""
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,description:ab_ai_agent.tool_echo
+msgid ""
+"Returns its input as-is. Diagnostic tool; do not use in production answers."
+msgstr ""
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_skill__accent__rose
+msgid "Rose (caution)"
+msgstr "وردي (تحذير)"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__routed_via
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__routed_via
+msgid "Routed Via"
+msgstr "موجه عبر"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_usage_price_book__model_class
+msgid ""
+"Routing class. The runtime uses this to translate an agent's model_class "
+"hint into a model name."
+msgstr ""
+"فئة التوجيه. يستخدمها المشغّل لترجمة تلميح model_class الخاص بالوكيل إلى اسم"
+" نموذج."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__run_count
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__run_count
+msgid "Run Count"
+msgstr "عدد مرات التشغيل"
+
+#. module: ab_ai_agent
+#: model:ir.actions.act_window,name:ab_ai_agent.action_ai_agent_run
+#: model:ir.ui.menu,name:ab_ai_agent.menu_ai_agent_run
+msgid "Run History"
+msgstr "سجل التشغيل"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__state__tool
+msgid "Running tool"
+msgstr "تشغيل الأداة"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_list
+msgid "Runs (30d)"
+msgstr "التشغيلات (٣٠ يوماً)"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_usage_local_log_list
+msgid "SAR (billable)"
+msgstr "ر.س (قابل للفوترة)"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__schema
+msgid "Schema"
+msgstr "المخطط"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__scope
+msgid "Scope"
+msgstr "النطاق "
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__sequence
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__sequence
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__sequence
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_topic__sequence
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__sequence
+msgid "Sequence"
+msgstr "تسلسل "
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__server_action_id
+msgid "Server Action"
+msgstr "إجراء الخادم "
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_skill__kpi_label
+msgid ""
+"Short label of the business KPI this skill contributes to (e.g. \"Lead "
+"response time\", \"DSO\"). Shown in the cost-center dashboard alongside the "
+"skill spend."
+msgstr ""
+"تسمية مختصرة لمؤشر الأداء الذي تساهم فيه هذه المهارة (مثل «زمن الاستجابة "
+"للعميل المحتمل»، «متوسط فترة التحصيل»). تظهر في لوحة مراكز التكلفة بجانب "
+"إنفاق المهارة."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__routed_via__sim
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__routed_via__sim
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__status__sim
+msgid "Simulation"
+msgstr "محاكاة"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__skill_id
+msgid "Skill"
+msgstr "المهارة "
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent_skill.py:0
+msgid "Skill '%(name)s' needs placeholder value: %(key)s"
+msgstr "تحتاج المهارة '%(name)s' إلى قيمة العنصر النائب: %(key)s"
+
+#. module: ab_ai_agent
+#: model:ir.model.constraint,message:ab_ai_agent.constraint_ai_agent_skill_unique_code_per_agent
+msgid "Skill code must be unique within an agent."
+msgstr "يجب أن يكون رمز المهارة فريداً داخل الوكيل."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__surface__skill
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__surface__skill
+msgid "Skill launcher"
+msgstr "مشغل المهارات"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__skill_ids
+#: model:ir.ui.menu,name:ab_ai_agent.menu_ai_agent_skills
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_form
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_skill_list
+msgid "Skills"
+msgstr "المهارات"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
+msgid "Sources used"
+msgstr "المصادر المستخدمة"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent__code
+msgid ""
+"Stable identifier (e.g. ghaima_assistant). Used by the runtime to look up "
+"the agent and by data XML to seed personas."
+msgstr ""
+"معرّف ثابت (مثل ghaima_assistant). يستخدمه المشغّل للعثور على الوكيل "
+"وتستخدمه ملفات XML لتهيئة الشخصيات."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_tool__code
+msgid ""
+"Stable identifier exposed to the LLM as the tool name. Lowercase snake_case;"
+" matches the Python dispatcher key."
+msgstr ""
+"معرّف ثابت يُعرض على النموذج اللغوي كاسم للأداة. أحرف صغيرة بصيغة "
+"snake_case؛ يطابق مفتاح الموزّع في Python."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
+msgid "Start here"
+msgstr "ابدأ من هنا"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__started_at
+msgid "Started At"
+msgstr "بدأ في"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__state
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__state
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_run_search
+msgid "State"
+msgstr "الولاية "
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_run_form
+msgid "Stats"
+msgstr "الإحصاءات"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__status
+msgid "Status"
+msgstr "الحالة"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
+msgid "Stop recording"
+msgstr "إيقاف التسجيل"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_list
+msgid "Success"
+msgstr "ناجحة"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__success_rate
+msgid "Success Rate"
+msgstr "معدل النجاح"
+
+#. module: ab_ai_agent
+#: model:ai.agent.skill,user_prompt_template:ab_ai_agent.agent_ghaima_assistant_skill_summary
+msgid ""
+"Summarise the chatter conversation on {model} id {id} (\"{record_name}\"). "
+"Keep the summary to 3–5 bullets. Highlight: decisions made, actions still "
+"pending, the last update."
+msgstr ""
+
+#. module: ab_ai_agent
+#: model:ai.agent.skill,name:ab_ai_agent.agent_ghaima_assistant_skill_summary
+msgid "Summarise this thread"
+msgstr "لخّص هذه المحادثة"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__surface
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__surface
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__surface
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_run_search
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_usage_local_log_search
+msgid "Surface"
+msgstr "السطح "
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__surfaces
+msgid "Surfaces"
+msgstr "الواجهات"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_kanban
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_list
+msgid "System"
+msgstr "النظام"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_form
+msgid "System Agent"
+msgstr "وكيل النظام"
+
+#. module: ab_ai_agent
+#: model:ai.agent.topic,name:ab_ai_agent.topic_system_guidance
+msgid "System Guidance"
+msgstr "إرشاد النظام"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__system_prompt
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__system_prompt
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_form
+msgid "System Prompt"
+msgstr "موجه النظام"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_search
+msgid "System agents"
+msgstr "وكلاء النظام"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent__is_system
+msgid ""
+"System agents cannot be deleted from the UI — only ops with super-user "
+"rights can remove them."
+msgstr ""
+"لا يمكن حذف وكلاء النظام من الواجهة — يمكن إزالتهم فقط بصلاحيات المستخدم "
+"الخارق."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent.py:0
+msgid ""
+"System agents cannot be deleted. Archive them instead by unchecking the "
+"Active field."
+msgstr ""
+"لا يمكن حذف وكلاء النظام. أرشِفهم بدلاً من ذلك بإلغاء تحديد حقل «نشط»."
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_run_form
+msgid "System prompt sent to the model"
+msgstr "موجّه النظام المُرسل إلى النموذج"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
+msgid "Tap to speak"
+msgstr "اضغط للتحدث"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_skill__kpi_target_text
+msgid "Target description, e.g. \"< 24h\", \"< 35 days\". Operator-readable."
+msgstr "وصف الهدف، مثل «< ٢٤ ساعة»، «< ٣٥ يوماً». مقروء للمشغّل."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent.py:0
+msgid "The code 'ghaima_assistant' is reserved for the system agent."
+msgstr "الرمز 'ghaima_assistant' محجوز لوكيل النظام."
+
+#. module: ab_ai_agent
+#: model:ai.agent,description:ab_ai_agent.agent_ghaima_assistant
+msgid ""
+"The default Ghaima companion. Answers questions about the ERP, the business,"
+" and Ghaima's product. Adapts language to the user."
+msgstr ""
+"الرفيق الافتراضي في غيمه. يجيب عن الأسئلة حول النظام والأعمال ومنتج غيمه، "
+"ويتكيف مع لغة المستخدم."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_run__system_prompt
+msgid ""
+"The exact composed system prompt sent to the model (persona + snapshot + "
+"retrieved knowledge + topics)."
+msgstr ""
+"موجّه النظام المُركَّب الذي أُرسل فعلياً إلى النموذج (الشخصية + اللقطة + "
+"المعرفة المسترجعة + المواضيع)."
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,description:ab_ai_agent.tool_recent_records
+msgid ""
+"The most recently ADDED records of a business object, straight from the "
+"database. Use for \"latest invoice added\", \"last 5 sale orders\", \"newest"
+" customers\", \"most recent POS orders\". NEVER answer these from prior "
+"conversation context — call this. kind: invoices | bills | sale_orders | "
+"pos_orders | purchase_orders | customers. limit 1-50 (default 10). Returns a"
+" ready data table; write one short sentence highlighting the newest item."
+msgstr ""
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_usage_local_log_search
+msgid "This month"
+msgstr "هذا الشهر"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__feedback__down
+msgid "Thumbs down"
+msgstr "عدم إعجاب"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__feedback__up
+msgid "Thumbs up"
+msgstr "إعجاب"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__timestamp
+msgid "Timestamp"
+msgstr "الطابع الزمني"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_token_meter/ai_agent_token_meter.xml:0
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_run_search
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_usage_local_log_search
+msgid "Today"
+msgstr "اليوم"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent_tool.py:0
+msgid "Tool '%(name)s' has malformed JSON schema: %(err)s"
+msgstr "مخطط JSON للأداة '%(name)s' غير صالح: %(err)s"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent_tool.py:0
+msgid "Tool '%(name)s' schema must be a JSON object."
+msgstr "يجب أن يكون مخطط الأداة '%(name)s' كائن JSON."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent_tool.py:0
+msgid "Tool '%(name)s' schema root must be type=object."
+msgstr "يجب أن يكون جذر مخطط الأداة '%(name)s' من النوع object."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__tool_calls_json
+msgid "Tool Calls Json"
+msgstr "استدعاءات الأدوات JSON"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_run_form
+msgid "Tool calls"
+msgstr "استدعاءات الأدوات"
+
+#. module: ab_ai_agent
+#: model:ir.model.constraint,message:ab_ai_agent.constraint_ai_agent_tool_unique_code
+msgid "Tool code must be unique across the database."
+msgstr "يجب أن يكون رمز الأداة فريداً على مستوى قاعدة البيانات."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_tool__requires_pii
+msgid ""
+"Tool legitimately reads PII (customer names, emails). Agent must have "
+"allow_pii=True to invoke it."
+msgstr ""
+"الأداة تقرأ بيانات شخصية بشكل مشروع (أسماء العملاء، البريد). يجب أن يكون "
+"allow_pii=True للوكيل لاستدعائها."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_tool__is_write_action
+msgid ""
+"Tool mutates data. Pairs with the chip-driven two-phase confirmation flow — "
+"first call returns \"requires_confirmation\", second call (idempotency_key +"
+" confirm=True) executes."
+msgstr ""
+"الأداة تعدّل البيانات. تعمل مع مسار التأكيد المزدوج — الاستدعاء الأول يعيد "
+"\"requires_confirmation\"، والثاني (بمفتاح idempotency_key مع confirm=True) "
+"ينفّذ."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_topic__tool_ids
+#: model:ir.ui.menu,name:ab_ai_agent.menu_ai_agent_tools
+msgid "Tools"
+msgstr "الأدوات"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_form
+msgid "Tools attached directly (in addition to topic tools)."
+msgstr "الأدوات المرفقة مباشرة (إضافةً إلى أدوات المواضيع)."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent__tool_ids
+msgid "Tools attached directly to this agent (outside of any topic)."
+msgstr "الأدوات المرفقة مباشرة بهذا الوكيل (خارج أي موضوع)."
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_topic_form
+msgid "Tools in this topic"
+msgstr "أدوات هذا الموضوع"
+
+#. module: ab_ai_agent
+#: model:ir.model.constraint,message:ab_ai_agent.constraint_ai_agent_topic_unique_code
+msgid "Topic code must be unique across the database."
+msgstr "يجب أن يكون رمز الموضوع فريداً على مستوى قاعدة البيانات."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__topic_ids
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__topic_ids
+#: model:ir.ui.menu,name:ab_ai_agent.menu_ai_agent_topics
+msgid "Topics"
+msgstr "المواضيع"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_form
+msgid "Topics & Tools"
+msgstr "المواضيع والأدوات"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__total_cost_30d_usd
+msgid "Total Cost 30D Usd"
+msgstr "إجمالي تكلفة 30 يومًا (دولار)"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__total_tokens
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__total_tokens
+msgid "Total Tokens"
+msgstr "إجمالي الرموز"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_usage_local_log_list
+msgid "Total tokens"
+msgstr "إجمالي الرموز"
+
+#. module: ab_ai_agent
+#: model:ai.agent.topic,description:ab_ai_agent.topic_analytics
+msgid "Trends, comparisons and breakdowns of sales rendered as charts + KPIs."
+msgstr "الاتجاهات والمقارنات وتفصيل المبيعات معروضة كرسوم ومؤشرات أداء."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_run__tool_calls_json
+msgid "Truncated JSON: list of {tool, args, ok, duration_ms}."
+msgstr "JSON مختصر: قائمة من {tool, args, ok, duration_ms}."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_usage_local_log__prompt_excerpt
+msgid ""
+"Truncated, PII-redacted excerpt of the user prompt. For audit only — never "
+"the full prompt."
+msgstr ""
+"مقتطف مختصر ومحجوب البيانات الشخصية من موجّه المستخدم. للتدقيق فقط — ليس "
+"الموجّه الكامل."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
+msgid "Try asking"
+msgstr "جرّب أن تسأل"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_tool__category__navigation
+msgid "UI Navigation"
+msgstr "التنقل في الواجهة"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_usage_local_log_list
+msgid "USD"
+msgstr "دولار"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_usage_local_log__est_cost_sar
+msgid "USD × FX × markup; shown to the operator in the UI."
+msgstr "الدولار × سعر الصرف × الهامش؛ يُعرض للمشغّل في الواجهة."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_usage_price_book__fx_usd_to_sar
+msgid ""
+"USD → SAR conversion rate used when computing billed_*. Frozen at publish "
+"time so historical rows stay consistent."
+msgstr ""
+"سعر تحويل الدولار إلى الريال المستخدم في حساب billed_*. يُثبَّت عند النشر "
+"حتى تبقى السجلات التاريخية متسقة."
 
 #. module: ab_ai_agent
 #: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__grounded__ungrounded
 msgid "Ungrounded"
 msgstr "غير مستند إلى مصادر"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
+msgid "Unmute response sound"
+msgstr "تشغيل صوت الردود"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__verdict__unverified
+msgid "Unverified"
+msgstr "غير متحقق منه"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_usage_local_budget_form
+msgid "Used"
+msgstr "المستهلك"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__used_month_sar
+msgid "Used Month Sar"
+msgstr "المستخدم هذا الشهر (ريال)"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__used_today_sar
+msgid "Used Today Sar"
+msgstr "المستخدم اليوم (ريال)"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_topic_list
+msgid "Used by"
+msgstr "يستخدمها"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_topic__agent_ids
+msgid "Used by Agents"
+msgstr "مستخدم من الوكلاء"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__user_id
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__user_id
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__user_id
+#: model:res.groups,name:ab_ai_agent.group_ai_agent_user
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_usage_local_log_search
+msgid "User"
+msgstr "المستخدم"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__user_prompt_template
+msgid "User Prompt Template"
+msgstr "قالب موجه المستخدم"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent__skill_ids
+msgid ""
+"User-facing actions: \"Qualify this lead\", \"Draft reply\", \"Compare to "
+"last quarter\". Shown in the chat skill panel."
+msgstr ""
+"إجراءات موجّهة للمستخدم: «قيّم هذا العميل المحتمل»، «صُغ رداً»، «قارن بالربع"
+" السابق». تظهر في لوحة المهارات."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_run__feedback
+msgid "User-supplied rating after the run."
+msgstr "تقييم المستخدم بعد التشغيل."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__verdict
+msgid "Verdict"
+msgstr "الحكم"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_run__verdict__verified
+msgid "Verified"
+msgstr "متحقق منه"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_budget__state__warn
+msgid "Warn"
+msgstr "تحذير"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__warn_at
+msgid "Warn At"
+msgstr "التحذير عند"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_usage_local_budget__warn_at
+msgid "Warning threshold as a fraction (0.8 = 80%)."
+msgstr "عتبة التحذير ككسر (٠٫٨ = ٨٠٪)."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__web_grounding_calls
+msgid "Web Grounding Calls"
+msgstr "استدعاءات الاستناد إلى الويب"
+
+#. module: ab_ai_agent
+#: model:ai.agent.skill,name:ab_ai_agent.agent_ghaima_assistant_skill_next_action
+msgid "What should I do next?"
+msgstr "ما الذي يجب أن أفعله الآن؟"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_usage_local_log__est_cost_billable
+msgid "What the tenant pays. 0 when cache_hit or simulation."
+msgstr "ما يدفعه المستأجر. صفر عند إصابة الذاكرة المؤقتة أو المحاكاة."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_tool__description
+msgid ""
+"What the tool does — the LLM reads this to decide whether to call it. Keep "
+"it concrete, ≤ 200 words."
+msgstr ""
+"ما تفعله الأداة — يقرأه النموذج اللغوي ليقرر استدعاءها. اجعله محدداً، بحد "
+"أقصى ٢٠٠ كلمة."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent__allow_pii
+msgid ""
+"When True, the guardrails service skips PII redaction for this agent. "
+"Required for agents that must see real customer data (e.g. AR Chaser "
+"drafting personalised emails)."
+msgstr ""
+"عند التفعيل، تتخطى خدمة الحماية حجب البيانات الشخصية لهذا الوكيل. مطلوب "
+"للوكلاء الذين يحتاجون بيانات العملاء الحقيقية (مثل متابعة الذمم عند صياغة "
+"رسائل مخصصة)."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_tool__allow_end_message
+msgid ""
+"When True, the runtime appends a __end_message parameter to the schema. The "
+"LLM must populate it on the final tool call — that text becomes the user-"
+"visible response. Pattern from Odoo 19 native; eliminates \"agent loops "
+"after it already has the answer\"."
+msgstr ""
+"عند التفعيل، يضيف المشغّل المعامل __end_message إلى المخطط. على النموذج ملؤه"
+" في آخر استدعاء أداة — ويصبح ذلك النص هو الرد الظاهر للمستخدم. نمط مأخوذ من "
+"Odoo 19؛ يمنع دوران الوكيل بعد حصوله على الإجابة."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_skill__requires_record_context
+msgid ""
+"When True, the skill expects {model} + {id} placeholders. The chatter button"
+" populates them; standalone chat surfaces fall back to selecting a record "
+"first."
+msgstr ""
+"عند التفعيل، تتوقع المهارة العنصرين النائبين {model} و{id}. يملؤهما زر "
+"المحادثة؛ أما واجهات المحادثة المستقلة فتطلب اختيار سجل أولاً."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_tool__server_action_id
+msgid ""
+"When dispatch_kind=server_action, this action runs with arguments injected "
+"as the env.context."
+msgstr ""
+"عند dispatch_kind=server_action، يُنفَّذ هذا الإجراء مع حقن المعاملات في "
+"env.context."
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_topic_form
+msgid "When the user asks about X, call tool Y..."
+msgstr "عندما يسأل المستخدم عن X، استدعِ الأداة Y…"
+
+#. module: ab_ai_agent
+#: model:ai.agent.topic,instructions:ab_ai_agent.topic_date_math
+msgid ""
+"When the user references a relative period (\"today\", \"this month\", "
+"\"last quarter\", \"next week\"), call the `date_reference` tool first to "
+"get the exact date ranges; then use those dates in any downstream query."
+msgstr ""
+
+#. module: ab_ai_agent
+#: model:ai.agent.topic,instructions:ab_ai_agent.topic_navigation
+msgid ""
+"When the user wants to **see** something — not just a number, but the actual view in Odoo — call one of:\n"
+"- `open_action` for built-in reports: P&L (xmlid `account.action_account_pl_report`), Balance Sheet (`account.action_account_balance_report`), or any module action.\n"
+"- `open_record` to land on a specific record's form view (\"open SO 42\", \"show invoice INV/2026/00045\").\n"
+"- `open_list` for filtered list views (\"show overdue invoices\" → model=account.move with the matching domain).\n"
+"- `open_pivot` for cross-tab analysis (\"pivot sales by product and month\").\n"
+"- `open_graph` for charts (\"pie chart of customers by country\", \"bar chart of sales by branch\").\n"
+"\n"
+"When the user names a document by its number and asks to confirm / post / validate it (\"INV/2026/00001 please post\", \"SO00047 confirm\", \"WH/IN/00012 validate\", \"post payment PBNK1/2026/0003\"), call `record_action` with the exact reference. It picks the right finalize per type (confirm SO/PO, post invoice/bill/payment, validate picking) and is safe — if it's already finalized or the agent lacks write permission you'll be told.\n"
+"\n"
+"Always end with `__end_message` summarising what you opened/did (e.g. \"Opening the P&L for this month — the report should appear shortly.\" / \"Invoice INV/2026/00001 posted.\")."
+msgstr ""
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_skill__surfaces
+msgid ""
+"Where this skill appears. Chatter skills require requires_record_context."
+msgstr "أين تظهر هذه المهارة. مهارات المحادثة تتطلب requires_record_context."
+
+#. module: ab_ai_agent
+#: model:ai.agent.topic,description:ab_ai_agent.topic_hr_roll_call
+msgid "Who's at work, who's on leave, who's still clocked in."
+msgstr "من في العمل، ومن في إجازة، ومن لا يزال مسجّلاً للحضور."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
+msgid "Working…"
+msgstr "جارٍ التحليل…"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_tool__category__write
+msgid "Write / Mutation"
+msgstr "كتابة / تعديل"
+
+#. module: ab_ai_agent
+#: model:ai.agent.topic,instructions:ab_ai_agent.topic_system_guidance
+msgid ""
+"You also teach people how to use Ghaima. These questions are as important as the numbers.\n"
+"\n"
+"**Never guess where something lives.** Odoo menu layouts differ per install and per user's access. Always call a tool first:\n"
+"\n"
+"- `list_my_apps` — when the user asks what they can do, what they have access to, or where to begin (\"what can I do here?\", \"ما الذي يمكنني فعله؟\", \"I'm new\"). Answer ONLY from what it returns. If an app is not in the result the user cannot open it, so do not mention it.\n"
+"- `find_menu` — for every how-do-I / where-is question (\"where do I create a credit note?\", \"وين أسوي مرتجع؟\", \"how do I add an employee?\"). Give the returned `path` verbatim, then call `open_action` with the match's `action_xmlid` so the answer carries a working button.\n"
+"- `explain_screen` — when they ask what a screen, document type, field or status means. Use the real `key_fields` and `lifecycle` it returns rather than describing Odoo in general.\n"
+"\n"
+"**Permissions are part of the answer, not a footnote.** `explain_screen` reports what THIS user may do. When `write` is false, do not tell them to change anything — say who can and stop. When `find_menu` returns no matches, say plainly that they do not have access to it and suggest asking their administrator. Never soften this into a vague \"you may need permissions\" — be specific about what you checked.\n"
+"\n"
+"**Teach in the order they will act.** Lead with the destination (the menu path), then what they will see there, then the first thing to fill in. Two or three steps, not a manual. If the task genuinely needs more, offer to walk through it rather than dumping every step.\n"
+"\n"
+"**Never expose the plumbing.** Do not name a tool, a model, or a field's technical name in your reply, and never ask the user to supply one — they are business users, not developers. If you cannot tell which screen they mean, ask in their words (\"do you mean the customer invoices list, or the vendor bills?\").\n"
+"\n"
+"Always end with `__end_message`."
+msgstr ""
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_usage_local_log__central_audit_id_remote
+msgid "ai.usage.log.id on DBCLOUD after a successful reconcile."
+msgstr "معرّف ai.usage.log في DBCLOUD بعد تسوية ناجحة."
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_topic_form
+msgid "e.g. Information Retrieval"
+msgstr "مثال: استرجاع المعلومات"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_form
+msgid "e.g. Sales Coach"
+msgstr "مثال: مدرّب المبيعات"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_run__grounded
+msgid ""
+"grounded = a tool returned data or KB facts were injected; ungrounded = "
+"pure-LLM answer (the ones most likely to be inaccurate); partial = tools "
+"were tried but failed."
+msgstr ""
+"مستندة = أعادت أداة بيانات أو حُقنت حقائق من قاعدة المعرفة؛ غير مستندة = "
+"إجابة من النموذج وحده (الأكثر عرضة لعدم الدقة)؛ جزئية = جُرِّبت الأدوات "
+"لكنها فشلت."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_tool__dispatch_kind__server_action
+msgid "ir.actions.server record"
+msgstr "سجل ir.actions.server"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent.py:0
+msgid "max_hops must be between 1 and 20 (got %s)."
+msgstr "يجب أن تكون max_hops بين ١ و٢٠ (القيمة %s)."
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_topic_form
+msgid "retrieval"
+msgstr "استرجاع"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_kanban
+msgid "runs"
+msgstr "تشغيلات"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_run_trace/ai_agent_run_trace.xml:0
+msgid "s"
+msgstr "ث"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_form
+msgid "sales_coach"
+msgstr "sales_coach"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_skill__user_prompt_template
+msgid ""
+"str.format template with named placeholders. Example: \"Qualify lead "
+"{lead_id}: produce a 1-100 score and a 2-sentence rationale based on the "
+"partner + recent activities.\""
+msgstr ""
+"قالب str.format بعناصر نائبة مسمّاة. مثال: \"Qualify lead {lead_id}: produce"
+" a 1-100 score and a 2-sentence rationale based on the partner + recent "
+"activities.\""
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_token_meter/ai_agent_token_meter.xml:0
+msgid "tokens"
+msgstr "رموز"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_run_trace/ai_agent_run_trace.xml:0
+msgid "tool call"
+msgstr "استدعاء أداة"
+
+#. module: ab_ai_agent
+#: model:ai.agent.skill,user_prompt_template:ab_ai_agent.agent_ghaima_assistant_skill_compare
+msgid ""
+"{message}\n"
+"\n"
+"Compare these numbers against the same period last month. Include % change. Format the response as a short data_table with: metric | this period | last period | change."
+msgstr ""
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_run_trace/ai_agent_run_trace.xml:0
+msgid "· via"
+msgstr "· عبر"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_token_meter/ai_agent_token_meter.xml:0
+msgid "ر.س"
+msgstr "ر.س"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_run_search
+msgid "⚠ Ungrounded (likely inaccurate)"
+msgstr "⚠ غير مُوثَّقة بالبيانات (قد تكون غير دقيقة)"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_run_search
+msgid "👍 Thumbs up"
+msgstr "👍 مفيدة"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_run_search
+msgid "👎 Thumbs down"
+msgstr "👎 غير مفيدة"
