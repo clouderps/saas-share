@@ -299,3 +299,66 @@ class TestCreateOnConfirm(TransactionCase):
             type(self.env['sale.order'])._ai_command_create_missing)
         self.assertNotIn('sudo()', source,
                          'creating a missing record must never use sudo')
+
+
+@tagged('post_install', '-at_install', 'ghaima_ai_command')
+class TestBareValue(TransactionCase):
+    """"/create invoice abdalmola" — a value with no field name.
+
+    Reported from real use. The sweep found no pair, so the command
+    reported the partner missing, which reads as the assistant being
+    obtuse about something obvious.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.Command = cls.env['ai.agent.command']
+        cls.quote = cls.Command.search([('code', '=', 'create_quote')], limit=1)
+        cls.customer = cls.env['res.partner'].create(
+            {'name': 'Zzq Bare Customer', 'customer_rank': 1})
+
+    def test_bare_value_fills_the_single_required_field(self):
+        parsed, command = self.Command.parse_text(
+            '/create quote Zzq Bare Customer')
+        self.assertEqual(command, self.quote)
+        self.assertEqual(parsed['pairs'].get('partner_id'), 'Zzq Bare Customer')
+
+    def test_bare_value_creates_the_draft(self):
+        parsed, command = self.Command.parse_text(
+            '/create quote Zzq Bare Customer')
+        res = command.run(parsed['pairs'])
+        self.assertEqual(res['status'], 'created')
+        order = self.env['sale.order'].browse(res['id'])
+        self.assertEqual(order.partner_id, self.customer)
+
+    def test_extra_whitespace_survives(self):
+        """The report had a double space after the verb."""
+        parsed, _c = self.Command.parse_text(
+            '/create quote   Zzq Bare Customer')
+        self.assertEqual(parsed['pairs'].get('partner_id'), 'Zzq Bare Customer')
+
+    def test_explicit_key_still_wins(self):
+        parsed, _c = self.Command.parse_text(
+            '/create quote partner: Zzq Bare Customer; leftover words')
+        self.assertEqual(parsed['pairs'].get('partner_id'), 'Zzq Bare Customer')
+
+    def test_bare_value_still_resolves_normally(self):
+        """Absorbing the leftover is not assuming it is valid — an
+        unknown name must still come back as a question."""
+        parsed, command = self.Command.parse_text(
+            '/create quote Zzq Nobody Whatsoever')
+        res = command.run(parsed['pairs'])
+        self.assertEqual(res['status'], 'needs_input')
+
+    def test_not_applied_when_two_required_fields_are_empty(self):
+        """With more than one candidate there is nothing to infer, so
+        the bare text must stay leftover rather than be guessed at."""
+        model = self.env['sale.order']
+        pairs = model._ai_command_absorb_leftover({}, 'something')
+        # sale.order has exactly one required field, so this DOES fill.
+        self.assertEqual(pairs.get('partner_id'), 'something')
+        # …and with it already filled, nothing is overwritten.
+        kept = model._ai_command_absorb_leftover(
+            {'partner_id': 'first'}, 'second')
+        self.assertEqual(kept['partner_id'], 'first')

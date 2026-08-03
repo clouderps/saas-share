@@ -130,6 +130,32 @@ class AICommandMixin(models.AbstractModel):
             return None, _('Could not create it. The error has been logged.')
 
     @api.model
+    def _ai_command_absorb_leftover(self, pairs, leftover):
+        """Use bare text for the one required field still empty.
+
+        "/create invoice abdalmola" names no field, so the sweep leaves
+        "abdalmola" as leftover and the command reports the partner
+        missing — which reads as the assistant being obtuse about
+        something obvious.
+
+        Only applied when EXACTLY one required field is unfilled, so
+        there is nothing to guess between. The value still goes through
+        normal resolution, so a name that matches nothing or matches
+        several still asks rather than assuming.
+        """
+        leftover = (leftover or '').strip()
+        if not leftover:
+            return pairs
+        spec = self._ai_command_spec()
+        empty = [f for f, rule in spec.items()
+                 if rule.get('required') and not (pairs or {}).get(f)]
+        if len(empty) != 1:
+            return pairs
+        out = dict(pairs or {})
+        out[empty[0]] = leftover
+        return out
+
+    @api.model
     def _ai_command_resolve(self, pairs, create_missing=None):
         """Resolve raw strings to real values.
 

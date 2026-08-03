@@ -158,6 +158,9 @@ class AIAgentCommand(models.Model):
             alias_map = model._ai_command_alias_map() if model is not None else {}
             _verb, rest = parser.match_verb(text, list(verbs))
             pairs, leftover = parser.sweep_pairs(rest, alias_map)
+            # "/create invoice abdalmola" names no field; hand the bare
+            # remainder to the single required field still empty.
+            pairs = model._ai_command_absorb_leftover(pairs, leftover)
             result['pairs'], result['leftover'] = pairs, leftover
         return result, command
 
