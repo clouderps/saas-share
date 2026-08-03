@@ -516,7 +516,47 @@ def _compose_system_prompt(env, agent, *, locale='en', skill=None,
     customers, employees) injected up front so the model can answer
     overview questions without round-trips, and can spot what tool
     to call for deeper figures."""
+    # ── STABLE PREFIX ──────────────────────────────────────────
+    # Everything here depends only on the agent, not on the question,
+    # the data or the moment. It must come FIRST and stay byte-identical
+    # between turns, because that is the only thing a provider prefix
+    # cache can match on.
+    #
+    # It used to be interleaved: persona, then the live snapshot, then
+    # per-question RAG, and only THEN the report/chart/topic/tool blocks
+    # — several thousand invariant tokens sitting behind content that
+    # changes with every question. No two requests shared a prefix, so
+    # nothing was ever cacheable. Ordering is the whole fix; not one
+    # block was added or removed.
     parts = [agent.system_prompt or '']
+
+    # How to render reports (P&L, sales summary, etc.) as data_table.
+    parts.append(_report_rendering_block())
+
+    # How to answer trend/analytics questions with an accurate chart.
+    parts.append(_chart_rendering_block())
+
+    # Topic instructions.
+    if agent.topic_ids:
+        topic_text = '\n\n'.join(
+            f'### Topic: {t.name}\n{t.instructions or ""}'.strip()
+            for t in agent.topic_ids
+        )
+        parts.append(topic_text)
+
+    # Tool protocol — the largest invariant block, so it earns its place
+    # inside the cacheable prefix rather than after the volatile parts.
+    if agent.all_tool_ids:
+        parts.append(_tool_protocol_block(agent.all_tool_ids))
+
+    # ── VOLATILE SUFFIX ────────────────────────────────────────
+    # From here on the content varies by user, by data, by question or
+    # by the minute. Anything appended below this line shortens the
+    # cacheable prefix for everyone, so add with care.
+
+    # Caller context — who is asking, from where. Stable per user, but
+    # differs between users, so it cannot sit in the shared prefix.
+    parts.append(_user_context_block(env))
 
     # Today + date math (§3.8 borrowed pattern).
     date_block = tool_dispatcher.get('date_reference')(env, agent=agent)
@@ -536,35 +576,12 @@ def _compose_system_prompt(env, agent, *, locale='en', skill=None,
     if snapshot:
         parts.append(snapshot)
 
-    # Organisation knowledge (RAG) — semantic retrieval against the
-    # tenant knowledge base, scoped to the user's question. Restores
-    # the grounding the legacy chatbot path injected before the
-    # chatbot + Ask AI were unified onto this runtime.
+    # Organisation knowledge (RAG) — retrieved against THIS question, so
+    # it is the most volatile block and goes last before record context.
     kb = (org_knowledge if org_knowledge is not None
           else _org_knowledge_block(env, user_question))
     if kb:
         parts.append(kb)
-
-    # Caller context — who is asking, from where.
-    parts.append(_user_context_block(env))
-
-    # How to render reports (P&L, sales summary, etc.) as data_table.
-    parts.append(_report_rendering_block())
-
-    # How to answer trend/analytics questions with an accurate chart.
-    parts.append(_chart_rendering_block())
-
-    # Topic instructions.
-    if agent.topic_ids:
-        topic_text = '\n\n'.join(
-            f'### Topic: {t.name}\n{t.instructions or ""}'.strip()
-            for t in agent.topic_ids
-        )
-        parts.append(topic_text)
-
-    # Tool protocol.
-    if agent.all_tool_ids:
-        parts.append(_tool_protocol_block(agent.all_tool_ids))
 
     # Record context — when the call comes from chatter, we dump the
     # record's actual field values into the prompt so the LLM can
