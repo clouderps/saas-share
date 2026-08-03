@@ -417,6 +417,20 @@ def _builtin_list_my_apps(env, agent=None, **_kw):
     }
 
 
+def _menu_search(Menu, q, cap):
+    """Menus whose own name matches, else whose action name does.
+
+    Users ask for "credit note" when the menu is called "Refunds", so a
+    miss on the menu name is not a miss on the destination.
+    """
+    menus = Menu.search([('name', 'ilike', q)], limit=cap)
+    if menus:
+        return menus
+    return Menu.search([('action', '!=', False)], limit=400).filtered(
+        lambda m: q.lower() in (m.action.name or '').lower()
+    )[:cap]
+
+
 def _builtin_find_menu(env, agent=None, query=None, limit=6, **_kw):
     """Resolve "where do I do X?" to real, openable menu entries.
 
@@ -431,14 +445,23 @@ def _builtin_find_menu(env, agent=None, query=None, limit=6, **_kw):
         return {'error': 'ir.ui.menu unavailable'}
 
     q = str(query).strip()
+    cap = int(limit) * 3
     try:
-        menus = Menu.search([('name', 'ilike', q)], limit=int(limit) * 3)
-        if not menus:
-            # Fall back to matching the action's own name — users ask for
-            # "credit note", the menu is called "Refunds".
-            menus = Menu.search([('action', '!=', False)], limit=400).filtered(
-                lambda m: q.lower() in (m.action.name or '').lower()
-            )[:int(limit) * 3]
+        menus = _menu_search(Menu, q, cap)
+        if not menus and not (env.lang or '').startswith('en'):
+            # Whether a menu name is English or Arabic depends on which
+            # catalogues this tenant happens to have loaded, and BOTH
+            # directions miss:
+            #   menus English, query Arabic  -> the note sends the model
+            #     back with an English term, which then hits;
+            #   menus Arabic, query English  -> nothing sends it back,
+            #     and it concluded "you have no access to invoices" for
+            #     an administrator who had just created one.
+            # The en_US value is always present in the jsonb alongside
+            # any translation, so retrying there covers the second case
+            # without the model needing to know anything.
+            menus = Menu.browse(
+                _menu_search(Menu.with_context(lang='en_US'), q, cap).ids)
     except Exception as e:
         return {'error': f'menu search failed: {type(e).__name__}'}
 
@@ -457,12 +480,23 @@ def _builtin_find_menu(env, agent=None, query=None, limit=6, **_kw):
             break
 
     if not hits:
+        # An empty result is ambiguous: it means "no access" only if the
+        # query was in the language the menus are actually stored in.
+        # Menus are English on most tenants, so an Arabic question
+        # forwarded verbatim ("فاتورة") matches nothing — and the agent
+        # used to read that as a permission problem and tell the user to
+        # go ask an administrator for access they already had. Make the
+        # retry explicit before any conclusion is allowed.
         return {
             'query': q,
             'matches': [],
-            'note': ('Nothing this user can open matches. Say so plainly and '
-                     'suggest they ask an administrator for access — do NOT '
-                     'invent a menu path.'),
+            'note': ('No menu matched this WORD — that is not the same as '
+                     'no access. Menu names are usually stored in English. '
+                     'If you searched in another language, call find_menu '
+                     'again with the English term (فاتورة → "invoice", '
+                     'عميل → "customer") before saying anything. Only after '
+                     'an English search also comes back empty may you tell '
+                     'the user they lack access — and never invent a path.'),
         }
     return {'query': q, 'matches': hits}
 

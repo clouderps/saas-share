@@ -8,6 +8,7 @@ admin on the same call.
 """
 from odoo.tests.common import TransactionCase, tagged
 
+from odoo.addons.ab_ai_agent.services import runtime as rt
 from odoo.addons.ab_ai_agent.services import tool_dispatcher as td
 
 
@@ -78,11 +79,56 @@ class TestSystemGuidance(TransactionCase):
         self.assertGreaterEqual(len(admin.get('matches', [])),
                                 len(portal.get('matches', [])))
 
+    def test_empty_match_is_not_reported_as_missing_access(self):
+        """An Arabic word matching nothing must not read as "no access".
+
+        Menu names are stored in English on virtually every tenant, so an
+        Arabic question forwarded verbatim ("فاتورة") matches zero rows
+        even for an administrator. The agent used to take that empty
+        result at face value and tell the user to go ask an administrator
+        for access they already had. The note has to send it back for an
+        English retry before any conclusion is permitted.
+        """
+        res = td._builtin_find_menu(self.env, query='فاتورة')
+        self.assertEqual(res['matches'], [])
+        note = res['note']
+        self.assertIn('English', note)
+        self.assertNotIn('do not have access', note.split('Only after')[0],
+                         'no-access must come after the English retry')
+
+    def test_english_query_survives_a_translated_menu(self):
+        """Loading an Arabic catalogue must not hide the menu.
+
+        Once ir.ui.menu carries Arabic names, a search in the user's
+        Arabic context stops matching the English word — so the model
+        doing the right thing (querying in English, as the schema tells
+        it to) got an empty result and reported missing access to an
+        administrator. The en_US value lives in the same jsonb, so the
+        fallback finds it either way.
+        """
+        menu = self.env['ir.ui.menu'].search(
+            [('name', '=', 'Settings'), ('action', '!=', False)], limit=1)
+        if not menu:
+            self.skipTest('no actionable Settings menu in this database')
+        # Give the menu an Arabic name, exactly as --load-language does.
+        menu.with_context(lang='ar_001').name = 'الإعدادات'
+        arabic_env = self.env(context=dict(self.env.context, lang='ar_001'))
+        res = td._builtin_find_menu(arabic_env, query='Settings', limit=5)
+        self.assertTrue(res.get('matches'),
+                        'translated menu became unreachable in English')
+
+    def test_find_menu_schema_demands_an_english_query(self):
+        """The recovery note is the second line of defence; the schema is
+        the first. If it invites the user's own words the model forwards
+        Arabic and the search misses every time."""
+        tool = self.env.ref('ab_ai_agent.tool_find_menu')
+        self.assertIn('English', tool.schema)
+
     def test_no_match_tells_the_model_not_to_invent(self):
         res = td._builtin_find_menu(
             self.env, query='zzz-nonexistent-feature-zzz')
         self.assertEqual(res['matches'], [])
-        self.assertIn('do NOT', res['note'])
+        self.assertIn('never invent', res['note'].lower())
 
     # ── explain_screen ────────────────────────────────────────────
     def test_explain_requires_a_model(self):
@@ -147,3 +193,79 @@ class TestSystemGuidance(TransactionCase):
     def test_tools_are_registered(self):
         for code in ('list_my_apps', 'find_menu', 'explain_screen'):
             self.assertIsNotNone(td.get(code), f'{code} not registered')
+
+
+@tagged('post_install', '-at_install', 'ghaima_ai_agent')
+class TestActionMarkupAbsorbed(TransactionCase):
+    """The model writes button markup instead of calling open_action.
+
+    Answers render as plain text, so `<action-button …>` reached the user
+    as that literal string — in both Arabic and English, and it kept
+    doing it after the prompt was told not to. The runtime converts the
+    markup into the real action rather than relying on the model.
+    """
+
+    def test_markup_becomes_a_real_action(self):
+        text = ('Open it here.\n\n<action-button '
+                'action_xmlid="base.action_res_users">Open Users'
+                '</action-button>')
+        clean, action = rt._absorb_action_markup(self.env, text)
+        self.assertNotIn('action-button', clean)
+        self.assertNotIn('<', clean)
+        self.assertIn('Open Users', clean, 'the label is still prose')
+        self.assertTrue(action, 'a resolvable xmlid must yield an action')
+        self.assertEqual(action.get('res_model'), 'res.users')
+
+    def test_underscore_spelling_is_handled(self):
+        """The model uses both spellings, sometimes in the same session."""
+        clean, action = rt._absorb_action_markup(
+            self.env,
+            '<action_button action_xmlid="base.action_res_users">Go'
+            '</action_button>')
+        self.assertNotIn('action_button', clean)
+        self.assertTrue(action)
+
+    def test_direction_span_is_removed(self):
+        """The shell sets dir; a model-added span only prints as text."""
+        clean, _a = rt._absorb_action_markup(
+            self.env, 'المسار: <span dir="rtl">الفوترة / العملاء</span>')
+        self.assertNotIn('span', clean)
+        self.assertIn('الفوترة / العملاء', clean)
+
+    def test_unresolvable_xmlid_yields_no_button(self):
+        """A made-up xmlid must not produce a button that goes nowhere."""
+        clean, action = rt._absorb_action_markup(
+            self.env,
+            '<action-button action_xmlid="zzz.not_a_real_action">X'
+            '</action-button>')
+        self.assertIsNone(action)
+        self.assertNotIn('<', clean)
+
+    def test_plain_answer_is_untouched(self):
+        text = 'Billing / Customers / Invoices is where you create one.'
+        clean, action = rt._absorb_action_markup(self.env, text)
+        self.assertEqual(clean, text)
+        self.assertIsNone(action)
+
+    def test_written_out_tool_call_is_absorbed(self):
+        """Sometimes the model prints the tool call instead of making it.
+
+        Seen live: the answer contained
+        `{"action": "tool", "tool": "open_action", "args": {…}}` as prose.
+        It is intermittent, but when it happens the user reads raw JSON,
+        so the xmlid is honoured and the blob removed.
+        """
+        text = ('افتح من هنا: {"action": "tool", "tool": "open_action", '
+                '"args": {"action_xmlid": "base.action_res_users"}}')
+        clean, action = rt._absorb_action_markup(self.env, text)
+        self.assertNotIn('open_action', clean)
+        self.assertNotIn('{', clean)
+        self.assertIn('افتح من هنا', clean)
+        self.assertEqual((action or {}).get('res_model'), 'res.users')
+
+    def test_json_in_a_normal_answer_is_left_alone(self):
+        """Only a blob naming a tool is a mistake — other braces are not."""
+        text = 'Set the context to {"default_move_type": "out_invoice"}.'
+        clean, action = rt._absorb_action_markup(self.env, text)
+        self.assertEqual(clean, text)
+        self.assertIsNone(action)

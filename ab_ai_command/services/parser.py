@@ -24,7 +24,10 @@ from __future__ import annotations
 import re
 
 #: Pair separators. Newline counts so a pasted multi-line order works.
-_SPLIT = re.compile(r'[;\n]+')
+#: U+061B is the Arabic semicolon — it is what an Arabic keyboard layout
+#: actually emits, so a user typing the command in Arabic never produces
+#: the ASCII ";" and the whole line used to collapse into one pair.
+_SPLIT = re.compile('[;؛\n]+')
 
 #: ``key: value`` — the key is short and wordy ("partner name", "تاريخ"),
 #: the colon may be padded ("date :3/8/26" is common when typing fast).

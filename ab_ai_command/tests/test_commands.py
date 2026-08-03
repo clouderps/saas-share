@@ -411,6 +411,26 @@ class TestPreviewQuantity(TransactionCase):
             self._qty_in_preview('create_rfq', 'order_line',
                                  partner='Zzq Qty Vendor'), '3.0')
 
+    def test_zero_subtotal_is_printed_not_blanked(self):
+        """A free item must show 0.00, never an empty cell.
+
+        The preview built the cell with `subtotal or ''`, so a genuine
+        zero came out blank — indistinguishable from a subtotal we
+        failed to compute, on the money column of a document the user is
+        being asked to confirm.
+        """
+        free = self.env['product.product'].create(
+            {'name': 'Zzq Free Item', 'list_price': 0.0})
+        command = self.Command.search([('code', '=', 'create_invoice')], limit=1)
+        if not command:
+            self.skipTest('create_invoice not installed')
+        res = command.run({'partner_id': 'Zzq Qty Customer',
+                           'invoice_line_ids': '1x %s' % free.name})
+        self.assertEqual(res['status'], 'created', res.get('message', ''))
+        subtotal = res['preview']['lines'][0][2]
+        self.assertTrue(subtotal, 'zero subtotal rendered as an empty cell')
+        self.assertEqual(float(subtotal), 0.0)
+
     def test_rfq_refuses_a_customer_as_a_vendor(self):
         """Found while fixing the quantity display: the RFQ command
         correctly declines a partner who is a customer but not a

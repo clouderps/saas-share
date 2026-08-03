@@ -373,10 +373,22 @@ class AICommandMixin(models.AbstractModel):
                                        'quantity')
                      if f in line._fields),
                     1)
+                # `subtotal or ''` turned a real 0.00 into a blank cell —
+                # on a money column that reads as "we don't know" rather
+                # than "it is zero", which is the one thing a user about
+                # to confirm an invoice must not misread. Only a genuinely
+                # absent field is blank. Gulf currencies (KWD, BHD, OMR)
+                # carry 3 decimals, so take the precision from the line.
+                subtotal = getattr(line, 'price_subtotal', None)
+                if subtotal is None:
+                    shown = ''
+                else:
+                    dp = getattr(line.currency_id, 'decimal_places', 2)
+                    shown = f'{subtotal:.{dp if dp is not None else 2}f}'
                 lines.append([
                     line.product_id.display_name if line.product_id else '',
                     str(qty),
-                    str(getattr(line, 'price_subtotal', '') or ''),
+                    shown,
                 ])
 
         return {

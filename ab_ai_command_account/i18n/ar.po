@@ -1,0 +1,55 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* ab_ai_command_account
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-03 18:19+0000\n"
+"PO-Revision-Date: 2026-08-03 18:19+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ar_001\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: ab_ai_command_account
+#: model:ai.agent.command,example:ab_ai_command_account.command_create_bill:0
+msgid "/create bill vendor: Al Faisal Supplies; items: 20x flour"
+msgstr "/create bill مورد: مؤسسة الفيصل للتوريدات؛ أصناف: 20x طحين"
+
+#. module: ab_ai_command_account
+#: model:ai.agent.command,example:ab_ai_command_account.command_create_invoice:0
+msgid "/create invoice partner: Acme; date: 3/8/26; items: 2x latte"
+msgstr "/create invoice عميل: مؤسسة النخبة؛ تاريخ: 3/8/26؛ أصناف: 2x لاتيه"
+
+#. module: ab_ai_command_account
+#: model:ai.agent.command,name:ab_ai_command_account.command_create_invoice:0
+msgid "Create Customer Invoice"
+msgstr "إنشاء فاتورة عميل"
+
+#. module: ab_ai_command_account
+#: model:ai.agent.command,name:ab_ai_command_account.command_create_bill:0
+msgid "Create Vendor Bill"
+msgstr "إنشاء فاتورة مورّد"
+
+#. module: ab_ai_command_account
+#: model:ai.agent.command,description:ab_ai_command_account.command_create_invoice:0
+msgid ""
+"Draft a customer invoice. It is NOT posted — you review and post it "
+"yourself."
+msgstr "إنشاء مسودة فاتورة عميل. لا يتم ترحيلها — أنت من يراجعها ويرحّلها."
+
+#. module: ab_ai_command_account
+#: model:ai.agent.command,description:ab_ai_command_account.command_create_bill:0
+msgid ""
+"Draft a vendor bill. It is NOT posted — you review and post it yourself."
+msgstr "إنشاء مسودة فاتورة مورّد. لا يتم ترحيلها — أنت من يراجعها ويرحّلها."
+
+#. module: ab_ai_command_account
+#: model:ir.model,name:ab_ai_command_account.model_account_move:0
+msgid "Journal Entry"
+msgstr "قيد يومية"

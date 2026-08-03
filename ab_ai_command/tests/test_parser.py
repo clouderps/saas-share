@@ -71,10 +71,19 @@ class TestParser(TransactionCase):
         self.assertEqual(pairs['validity_date'], '3/8/26')
         self.assertEqual(pairs['partner_id'], 'Acme')
 
-    def test_arabic_keys(self):
+    def test_arabic_semicolon_separates_pairs(self):
+        """U+061B is what an Arabic keyboard emits.
+
+        This used to assert the opposite — that everything after the
+        Arabic semicolon stayed glued into the partner value — because
+        the split regex only knew the ASCII ";". That made an Arabic
+        user's entirely reasonable line silently produce a customer
+        literally named "عبدالمولى؛ تاريخ: 3/8/26".
+        """
         pairs, _l = parser.sweep_pairs(
             'عميل: عبدالمولى؛ تاريخ: 3/8/26', ALIASES)
-        self.assertEqual(pairs.get('partner_id'), 'عبدالمولى؛ تاريخ: 3/8/26')
+        self.assertEqual(pairs.get('partner_id'), 'عبدالمولى')
+        self.assertEqual(pairs.get('validity_date'), '3/8/26')
 
     def test_arabic_keys_with_semicolon(self):
         pairs, _l = parser.sweep_pairs('عميل: عبدالمولى; أصناف: لاتيه', ALIASES)

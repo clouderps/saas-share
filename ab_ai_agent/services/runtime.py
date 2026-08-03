@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import time
 
 from odoo import fields
@@ -425,6 +426,15 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
         if isinstance(result, dict) and result.get('action'):
             pending_action = result['action']
             break
+
+    # Models keep writing `<action-button action_xmlid="…">label</…>`
+    # into the prose instead of calling open_action, and the answer is
+    # plain text, so the user reads the tag itself. Telling the model not
+    # to did not stop it. Honour the intent instead: pull the xmlid out,
+    # resolve it the same way open_action would, and drop the markup.
+    rendered_text, inline_action = _absorb_action_markup(env, rendered_text)
+    if inline_action and not pending_action:
+        pending_action = inline_action
 
     # ── 7. Build the final envelope ───────────────────────────
     latency_ms = int((time.perf_counter() - started_perf) * 1000)
@@ -1140,6 +1150,66 @@ def _parse_response(text):
 #: the answer instead of acting on them, and the user then reads
 #: "…Opening this screen for you now. __end_message".
 _CONTROL_TOKENS = ('__end_message',)
+
+
+#: `<action-button action_xmlid="account.action_move_out_invoice">Open</…>`
+#: and the underscore spelling the model also produces, self-closing or not.
+_ACTION_MARKUP = re.compile(
+    r'<action[-_]button\b[^>]*?action_xmlid\s*=\s*["\']([^"\']+)["\'][^>]*>'
+    r'(?:(.*?)</action[-_]button>|)',
+    re.IGNORECASE | re.DOTALL)
+
+#: Direction wrappers the model adds around Arabic. The UI already sets
+#: dir on the shell, so these only ever reach the user as literal text.
+_DIR_MARKUP = re.compile(r'</?span\b[^>]*>', re.IGNORECASE)
+
+#: The other shape of the same mistake: instead of *calling* a tool the
+#: model writes the call out as JSON in its prose —
+#: `{"action": "tool", "tool": "open_action", "args": {…}}`. Intermittent,
+#: but when it happens the user reads raw JSON. One level of nesting is
+#: enough for the `args` object.
+_TOOL_JSON = re.compile(
+    r'\{[^{}]*"tool"\s*:\s*"[a-z_]+"[^{}]*(?:\{[^{}]*\}[^{}]*)*\}')
+
+#: Any xmlid the model named, whichever wrapper it used.
+_XMLID = re.compile(r'action_xmlid"?\s*[:=]\s*"?\'?([\w.]+\.[\w.]+)')
+
+
+def _absorb_action_markup(env, text):
+    """Turn hallucinated button markup into a real action.
+
+    Returns ``(clean_text, action_dict_or_None)``. The label inside the
+    tag is kept as prose so the sentence still reads, and the xmlid is
+    resolved through the same path open_action uses — an xmlid the user
+    cannot reach resolves to nothing rather than to a broken button.
+    """
+    if not text:
+        return text, None
+    found = []
+
+    def _swap(match):
+        found.append(match.group(1).strip())
+        return (match.group(2) or '').strip()
+
+    cleaned = _ACTION_MARKUP.sub(_swap, text)
+    cleaned = _DIR_MARKUP.sub('', cleaned)
+
+    # A written-out tool call carries no label worth keeping — drop the
+    # blob entirely, but honour the xmlid inside it first.
+    for blob in _TOOL_JSON.findall(cleaned):
+        found.extend(_XMLID.findall(blob))
+    cleaned = _TOOL_JSON.sub('', cleaned)
+    cleaned = '\n'.join(line.rstrip() for line in cleaned.split('\n')).strip()
+
+    if not found:
+        return cleaned, None
+    action = None
+    for xmlid in found:
+        result = tool_dispatcher._builtin_open_action(env, xmlid=xmlid)
+        if isinstance(result, dict) and result.get('action'):
+            action = result['action']
+            break
+    return cleaned, action
 
 
 def _strip_control_tokens(text):

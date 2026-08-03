@@ -1,0 +1,457 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* ab_ai_command
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-03 18:14+0000\n"
+"PO-Revision-Date: 2026-08-03 18:14+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ar_001\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: ab_ai_command
+#. odoo-python
+#: code:addons/ab_ai_command/models/ai_command_mixin.py:0
+msgid "\"%s\" is not a number."
+msgstr "‏\"%s\" ليس رقماً."
+
+#. module: ab_ai_command
+#. odoo-python
+#: code:addons/ab_ai_command/models/ai_command_mixin.py:0
+msgid "%s is required."
+msgstr "%s مطلوب."
+
+#. module: ab_ai_command
+#: model_terms:ir.ui.view,arch_db:ab_ai_command.view_ai_agent_command_form
+msgid "/create quote partner: Acme; items: 2x latte"
+msgstr ""
+
+#. module: ab_ai_command
+#: model:ir.model,name:ab_ai_command.model_ai_agent_command:0
+#: model_terms:ir.ui.view,arch_db:ab_ai_command.view_ai_agent_command_form:0
+msgid "AI Command"
+msgstr "أمر الذكاء الاصطناعي"
+
+#. module: ab_ai_command
+#: model:ir.model,name:ab_ai_command.model_ai_command_mixin:0
+msgid "AI Command Target"
+msgstr "هدف أمر الذكاء الاصطناعي"
+
+#. module: ab_ai_command
+#: model:ir.actions.act_window,name:ab_ai_command.action_ai_agent_command:0
+#: model:ir.ui.menu,name:ab_ai_command.menu_ai_agent_command:0
+#: model_terms:ir.ui.view,arch_db:ab_ai_command.view_ai_agent_command_list:0
+msgid "AI Commands"
+msgstr "أوامر الذكاء الاصطناعي"
+
+#. module: ab_ai_command
+#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__active:0
+msgid "Active"
+msgstr "نشط"
+
+#. module: ab_ai_command
+#. odoo-javascript
+#: code:addons/ab_ai_command/static/src/command_palette.js:0
+msgid "Almost there"
+msgstr "بقيت خطوة"
+
+#. module: ab_ai_command
+#. odoo-javascript
+#: code:addons/ab_ai_command/static/src/command_palette.js:0
+msgid "Cancel"
+msgstr "إلغاء"
+
+#. module: ab_ai_command
+#. odoo-javascript
+#: code:addons/ab_ai_command/static/src/command_palette.js:0
+msgid "Cancelled. Nothing was created."
+msgstr "تم الإلغاء. لم يتم إنشاء أي شيء."
+
+#. module: ab_ai_command
+#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__code:0
+msgid "Code"
+msgstr "الرمز"
+
+#. module: ab_ai_command
+#. odoo-javascript
+#: code:addons/ab_ai_command/static/src/command_palette.js:0
+msgid "Command"
+msgstr "أمر"
+
+#. module: ab_ai_command
+#: model:ir.model.constraint,message:ab_ai_command.constraint_ai_agent_command_code_uniq:0
+msgid "Command code must be unique."
+msgstr "يجب أن يكون رمز الأمر فريداً."
+
+#. module: ab_ai_command
+#. odoo-javascript
+#: code:addons/ab_ai_command/static/src/command_palette.js:0
+msgid "Commands"
+msgstr "الأوامر"
+
+#. module: ab_ai_command
+#: model_terms:ir.actions.act_window,help:ab_ai_command.action_ai_agent_command
+msgid ""
+"Commands are shipped by their own bridge modules — install\n"
+"               Sales, Purchase or Employees to get theirs."
+msgstr ""
+
+#. module: ab_ai_command
+#. odoo-python
+#: code:addons/ab_ai_command/models/ai_command_mixin.py:0
+msgid "Could not create \"%s\"."
+msgstr "تعذّر إنشاء \"%s\"."
+
+#. module: ab_ai_command
+#. odoo-python
+#: code:addons/ab_ai_command/models/ai_command_mixin.py:0
+msgid "Could not create it. The error has been logged."
+msgstr "تعذّر الإنشاء. تم تسجيل الخطأ."
+
+#. module: ab_ai_command
+#. odoo-python
+#: code:addons/ab_ai_command/models/ai_agent_command.py:0
+msgid "Could not create the %s. The error has been logged."
+msgstr "تعذّر إنشاء %s. تم تسجيل الخطأ."
+
+#. module: ab_ai_command
+#: model:ai.agent.tool,description:ab_ai_command.tool_run_command
+msgid ""
+"Create a DRAFT business document (quotation, purchase request, employee) "
+"from what the user asked for. Pass `command` (e.g. create_quote) plus "
+"`fields` you extracted — partner/vendor name, date, and items as free text "
+"like \"2x latte, 1 espresso\". Alternatively pass the raw `text` when the "
+"user typed a slash command. It only ever creates a draft; it never confirms "
+"or posts. When it returns needs_input, ask the user ONLY the listed "
+"questions and offer any options verbatim — never choose for them."
+msgstr ""
+
+#. module: ab_ai_command
+#. odoo-javascript
+#: code:addons/ab_ai_command/static/src/command_palette.js:0
+msgid "Create and continue"
+msgstr "إنشاء والمتابعة"
+
+#. module: ab_ai_command
+#: model:ai.agent.topic,description:ab_ai_command.topic_commands
+msgid ""
+"Create draft quotations, purchase requests and employee records from what "
+"the user types."
+msgstr ""
+
+#. module: ab_ai_command
+#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: ab_ai_command
+#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: ab_ai_command
+#. odoo-javascript
+#: code:addons/ab_ai_command/static/src/command_palette.js:0
+msgid "Creating…"
+msgstr "جارٍ الإنشاء…"
+
+#. module: ab_ai_command
+#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__description:0
+msgid "Description"
+msgstr "الوصف"
+
+#. module: ab_ai_command
+#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: ab_ai_command
+#: model:ai.agent.topic,name:ab_ai_command.topic_commands:0
+msgid "Document Commands"
+msgstr "أوامر المستندات"
+
+#. module: ab_ai_command
+#. odoo-javascript
+#: code:addons/ab_ai_command/static/src/command_palette.js:0
+msgid "Draft"
+msgstr "مسودة"
+
+#. module: ab_ai_command
+#. odoo-javascript
+#: code:addons/ab_ai_command/static/src/command_palette.js:0
+msgid "Draft created — nothing is confirmed yet."
+msgstr "تم إنشاء مسودة — لم يتم تأكيد أي شيء بعد."
+
+#. module: ab_ai_command
+#. odoo-javascript
+#: code:addons/ab_ai_command/static/src/command_palette.js:0
+msgid "Draft — nothing is confirmed"
+msgstr "مسودة — غير مؤكدة"
+
+#. module: ab_ai_command
+#: model_terms:ir.ui.view,arch_db:ab_ai_command.view_ai_agent_command_form:0
+msgid ""
+"Empty = anyone who can create the target model. Create access on that model "
+"is always checked as well."
+msgstr ""
+"فارغ = أي مستخدم يملك صلاحية الإنشاء على النموذج الهدف. يتم التحقق من صلاحية"
+" الإنشاء على ذلك النموذج في كل الأحوال."
+
+#. module: ab_ai_command
+#: model:ir.model.fields,help:ab_ai_command.field_ai_agent_command__group_ids:0
+msgid ""
+"Empty = anyone who can create the target model. The model ACL is always "
+"checked on top of this."
+msgstr ""
+"فارغ = أي مستخدم يملك صلاحية الإنشاء على النموذج الهدف. يتم تطبيق صلاحيات "
+"النموذج فوق ذلك دائماً."
+
+#. module: ab_ai_command
+#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__example:0
+msgid "Example"
+msgstr "مثال"
+
+#. module: ab_ai_command
+#. odoo-javascript
+#: code:addons/ab_ai_command/static/src/command_palette.js:0
+msgid "I need one more thing before I can draft this."
+msgstr "أحتاج معلومة واحدة إضافية قبل إعداد المسودة."
+
+#. module: ab_ai_command
+#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__id
+msgid "ID"
+msgstr ""
+
+#. module: ab_ai_command
+#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__icon:0
+msgid "Icon"
+msgstr "الأيقونة"
+
+#. module: ab_ai_command
+#. odoo-javascript
+#: code:addons/ab_ai_command/static/src/command_palette.js:0
+msgid "Item"
+msgstr "الصنف"
+
+#. module: ab_ai_command
+#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: ab_ai_command
+#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: ab_ai_command
+#: model:ai.agent.tool,description:ab_ai_command.tool_list_commands
+msgid ""
+"List the document-creation commands THIS user may run. Call it when the user"
+" asks what they can create, or before offering any command, so you never "
+"suggest one they cannot use. Ground your answer only in what it returns."
+msgstr ""
+
+#. module: ab_ai_command
+#. odoo-python
+#: code:addons/ab_ai_command/models/ai_agent_command.py:0
+msgid "Model \"%s\" is not installed."
+msgstr "النموذج \"%s\" غير مثبّت."
+
+#. module: ab_ai_command
+#. odoo-python
+#: code:addons/ab_ai_command/models/ai_agent_command.py:0
+msgid "Model \"%s\" must inherit ai.command.mixin to be used as a command target."
+msgstr "يجب أن يرث النموذج \"%s\" الصنف ai.command.mixin لاستخدامه كهدف لأمر."
+
+#. module: ab_ai_command
+#: model:ir.model.fields,help:ab_ai_command.field_ai_agent_command__target_model:0
+msgid "Model to create. Must inherit ai.command.mixin."
+msgstr "النموذج المراد إنشاؤه. يجب أن يرث ai.command.mixin."
+
+#. module: ab_ai_command
+#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__name:0
+msgid "Name"
+msgstr "الاسم"
+
+#. module: ab_ai_command
+#: model_terms:ir.actions.act_window,help:ab_ai_command.action_ai_agent_command:0
+msgid "No AI commands yet"
+msgstr "لا توجد أوامر ذكاء اصطناعي بعد"
+
+#. module: ab_ai_command
+#. odoo-python
+#: code:addons/ab_ai_command/models/ai_command_mixin.py:0
+msgid "No match for \"%s\". Create it as a new contact?"
+msgstr "لا توجد نتيجة مطابقة لـ \"%s\". هل ننشئه كجهة اتصال جديدة؟"
+
+#. module: ab_ai_command
+#. odoo-python
+#: code:addons/ab_ai_command/models/ai_command_mixin.py:0
+msgid "No product matches \"%s\". Create it?"
+msgstr "لا يوجد منتج مطابق لـ \"%s\". هل ننشئه؟"
+
+#. module: ab_ai_command
+#: model:ir.model.fields,help:ab_ai_command.field_ai_agent_command__example:0
+msgid "One realistic example, shown as placeholder text."
+msgstr "مثال واقعي واحد، يظهر كنص إرشادي."
+
+#. module: ab_ai_command
+#. odoo-javascript
+#: code:addons/ab_ai_command/static/src/command_palette.js:0
+msgid "Open"
+msgstr "فتح"
+
+#. module: ab_ai_command
+#. odoo-javascript
+#: code:addons/ab_ai_command/static/src/command_palette.js:0
+msgid "Preparing the draft…"
+msgstr "جارٍ إعداد المسودة…"
+
+#. module: ab_ai_command
+#: model:ir.model.fields,help:ab_ai_command.field_ai_agent_command__context:0
+msgid ""
+"Python dict merged into the target model's context, e.g. "
+"{'ai_command_move_type': 'out_invoice'}. Lets two commands share one model "
+"without the model guessing which one ran — an invoice command must never "
+"produce a vendor bill because a field was mis-extracted."
+msgstr ""
+"قاموس Python يُدمج في سياق النموذج الهدف، مثل {'ai_command_move_type': "
+"'out_invoice'}. يتيح لأمرين مشاركة نموذج واحد دون أن يخمّن النموذج أيهما "
+"نُفِّذ — يجب ألا ينتج أمر الفاتورة فاتورة مورّد أبداً بسبب خطأ في استخراج "
+"حقل."
+
+#. module: ab_ai_command
+#. odoo-javascript
+#: code:addons/ab_ai_command/static/src/command_palette.js:0
+msgid "Qty"
+msgstr "الكمية"
+
+#. module: ab_ai_command
+#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__group_ids:0
+msgid "Restricted to"
+msgstr "مقصور على"
+
+#. module: ab_ai_command
+#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__sequence:0
+msgid "Sequence"
+msgstr "التسلسل"
+
+#. module: ab_ai_command
+#: model:ir.model.fields,help:ab_ai_command.field_ai_agent_command__description:0
+msgid "Shown in the palette under the verb."
+msgstr "يظهر في لوحة الأوامر أسفل الفعل."
+
+#. module: ab_ai_command
+#: model_terms:ir.ui.view,arch_db:ab_ai_command.view_ai_agent_command_form:0
+msgid "Shown under the verb in the / palette."
+msgstr "يظهر أسفل الفعل في لوحة الأوامر \"/\"."
+
+#. module: ab_ai_command
+#: model:ir.model.fields,help:ab_ai_command.field_ai_agent_command__code:0
+msgid "Stable identifier, e.g. create_quote."
+msgstr "معرّف ثابت، مثل create_quote."
+
+#. module: ab_ai_command
+#. odoo-javascript
+#: code:addons/ab_ai_command/static/src/command_palette.js:0
+msgid "Subtotal"
+msgstr "الإجمالي الفرعي"
+
+#. module: ab_ai_command
+#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__target_model:0
+msgid "Target Model"
+msgstr "النموذج الهدف"
+
+#. module: ab_ai_command
+#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__context:0
+msgid "Target context"
+msgstr "سياق الهدف"
+
+#. module: ab_ai_command
+#. odoo-javascript
+#: code:addons/ab_ai_command/static/src/command_palette.js:0
+msgid "That is not a command you can run."
+msgstr "هذا ليس أمراً يمكنك تنفيذه."
+
+#. module: ab_ai_command
+#. odoo-javascript
+#: code:addons/ab_ai_command/static/src/command_palette.js:0
+msgid "The command could not be run."
+msgstr "تعذّر تنفيذ الأمر."
+
+#. module: ab_ai_command
+#. odoo-javascript
+#: code:addons/ab_ai_command/static/src/command_palette.js:0
+msgid "Total"
+msgstr "الإجمالي"
+
+#. module: ab_ai_command
+#: model:ir.model.constraint,message:ab_ai_command.constraint_ai_agent_command_verb_uniq:0
+msgid "Two commands cannot share a verb."
+msgstr "لا يمكن لأمرين استخدام نفس الفعل."
+
+#. module: ab_ai_command
+#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__verb:0
+msgid "Verb"
+msgstr "الفعل"
+
+#. module: ab_ai_command
+#: model:ir.model.fields,help:ab_ai_command.field_ai_agent_command__verb:0
+msgid ""
+"What the user types after the slash, e.g. \"create quote\". Matched longest-"
+"first, so a more specific verb always wins over a shorter one that prefixes "
+"it."
+msgstr ""
+"ما يكتبه المستخدم بعد الشرطة المائلة، مثل \"create quote\". تتم المطابقة "
+"بالأطول أولاً، فالفعل الأكثر تحديداً يفوز دائماً على الأقصر الذي يسبقه."
+
+#. module: ab_ai_command
+#. odoo-python
+#: code:addons/ab_ai_command/models/ai_command_mixin.py:0
+msgid "Which partner?"
+msgstr "أي جهة؟"
+
+#. module: ab_ai_command
+#: model_terms:ir.ui.view,arch_db:ab_ai_command.view_ai_agent_command_form:0
+msgid "Who can run it"
+msgstr "من يمكنه التنفيذ"
+
+#. module: ab_ai_command
+#: model:ai.agent.topic,instructions:ab_ai_command.topic_commands
+msgid ""
+"You can create draft documents for the user.\n"
+"\n"
+"- `list_commands` — what THIS user may create. Check it before offering anything; never name a command absent from the result.\n"
+"- `run_command` — create the draft. Pass `command` plus the `fields` you extracted from what they said. Items go as free text (\"2x latte, 1 espresso\"); the resolver handles barcodes, names and quantities.\n"
+"\n"
+"**Everything you create is a DRAFT.** Say so. Never claim an order is confirmed or an invoice posted — those are separate actions the user takes themselves.\n"
+"\n"
+"**Never choose an identity for the user.** When the result is `needs_input`, ask only the questions listed and repeat the options exactly. Three customers called \"abdalmola\" means you ask which one; it never means you pick the first.\n"
+"\n"
+"**Surface assumptions.** A remaining `confirm` question means we read something a particular way — usually a date, since 3/8/26 is read differently by locale. Show what we assumed so a wrong reading is caught before it matters.\n"
+"\n"
+"Always end with `__end_message`."
+msgstr ""
+
+#. module: ab_ai_command
+#. odoo-python
+#: code:addons/ab_ai_command/models/ai_agent_command.py:0
+msgid "You do not have permission to run \"%s\"."
+msgstr "لا تملك صلاحية تنفيذ \"%s\"."
+
+#. module: ab_ai_command
+#: model_terms:ir.ui.view,arch_db:ab_ai_command.view_ai_agent_command_form
+msgid "create quote"
+msgstr ""
+
+#. module: ab_ai_command
+#: model_terms:ir.ui.view,arch_db:ab_ai_command.view_ai_agent_command_form:0
+msgid "e.g. Create Quotation"
+msgstr "مثال: إنشاء عرض سعر"

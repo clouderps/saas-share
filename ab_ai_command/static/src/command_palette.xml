@@ -3,7 +3,12 @@
 
     <!-- The "/" palette, above the composer. -->
     <t t-name="ab_ai_command.Palette">
-        <div class="o_ai_cmd_palette" role="listbox" t-att-aria-label="cmdLabels.commands">
+        <!-- labels, not cmdLabels: the palette only ever renders inside
+             the console composer, which has the getter. ResultCard needs
+             the t-set indirection because the bubble names it its own way;
+             the palette does not, and reading cmdLabels here crashed the
+             whole component on the first "/". -->
+        <div class="o_ai_cmd_palette" role="listbox" t-att-aria-label="labels.commands">
             <button t-foreach="filteredCommands" t-as="cmd" t-key="cmd.code"
                     type="button" role="option"
                     class="o_ai_cmd_palette__item"

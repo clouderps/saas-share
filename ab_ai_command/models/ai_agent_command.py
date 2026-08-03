@@ -43,9 +43,13 @@ class AIAgentCommand(models.Model):
     target_model = fields.Char(
         required=True,
         help='Model to create. Must inherit ai.command.mixin.')
+    # Both are read by the user, not by code — the palette prints them
+    # verbatim — so they have to translate like any other visible label.
     description = fields.Text(
+        translate=True,
         help='Shown in the palette under the verb.')
     example = fields.Char(
+        translate=True,
         help='One realistic example, shown as placeholder text.')
     icon = fields.Char(default='fa-plus-circle')
     context = fields.Char(
