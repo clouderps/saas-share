@@ -202,7 +202,11 @@ _QTY_SUFFIX = re.compile(r'^(.+?)\s*[x×*]\s*(\d+(?:[.,]\d+)?)\s*$', re.I)
 _QTY_PLAIN = re.compile(r'^(.+?)\s+(\d+(?:[.,]\d+)?)\s*$')
 
 
-_PRICE = re.compile(r'^(.*?)\s*[@]\s*(\d+(?:[.,]\d+)?)\s*$')
+#: "@ 90", "price 90", "at 90", "بسعر 90" — people say it every way and
+#: none of them is more correct than the others.
+_PRICE = re.compile(
+    r'^(.*?)\s*(?:@|\bprice\b|\bat\b|\bfor\b|بسعر|بـ)\s*'
+    r'(\d+(?:[.,]\d+)?)\s*$', re.I | re.U)
 
 
 def split_price(chunk):

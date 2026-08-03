@@ -79,6 +79,60 @@ def match_verb(text, verbs):
     return None, text
 
 
+#: Prepositions people put before a value: "for abdalmola", "to Acme",
+#: "لـ عبدالمولى". They carry no meaning for us and would otherwise end
+#: up inside the name we search for.
+_LEAD_PREP = re.compile(r'^\s*(?:for|to|from|of|لـ|ل|الى|إلى|من)\s+',
+                        re.I | re.U)
+
+
+def strip_leading_preposition(value):
+    """'for abdalmola' → 'abdalmola'. Applied to values, never keys."""
+    return _LEAD_PREP.sub('', (value or '').strip(), count=1).strip()
+
+
+def split_on_aliases(text, alias_map, max_alias_words=3):
+    """Split unpunctuated text at the alias words inside it.
+
+    "for abdalmola items services price 90" has no separator, so the
+    whole tail used to land in the first field. Walking the words and
+    starting a new pair whenever one matches an alias recovers what the
+    user meant without asking them to add semicolons they never think
+    about.
+
+    Longest alias wins at each position, so "partner name" binds as one
+    key rather than "partner" leaving "name" in the value. Returns
+    ``(pairs, leading)`` — leading is anything before the first alias.
+    """
+    words = (text or '').split()
+    if not words:
+        return {}, ''
+
+    marks = []                      # (word index, field, alias length)
+    i = 0
+    while i < len(words):
+        for take in range(min(max_alias_words, len(words) - i), 0, -1):
+            field = alias_map.get(normalise_key(' '.join(words[i:i + take])))
+            if field:
+                marks.append((i, field, take))
+                i += take
+                break
+        else:
+            i += 1
+
+    if not marks:
+        return {}, ' '.join(words)
+
+    leading = ' '.join(words[:marks[0][0]])
+    pairs = {}
+    for n, (start, field, take) in enumerate(marks):
+        end = marks[n + 1][0] if n + 1 < len(marks) else len(words)
+        value = strip_leading_preposition(' '.join(words[start + take:end]))
+        if value:
+            pairs.setdefault(field, value)
+    return pairs, leading
+
+
 def _match_bare_alias(chunk, alias_map):
     """``partner abdalmola`` → ('partner_id', 'abdalmola').
 
@@ -93,7 +147,7 @@ def _match_bare_alias(chunk, alias_map):
     for take in range(min(4, len(words) - 1), 0, -1):
         field = alias_map.get(normalise_key(' '.join(words[:take])))
         if field:
-            return field, ' '.join(words[take:]).strip()
+            return field, strip_leading_preposition(' '.join(words[take:]))
     return None, None
 
 
@@ -120,15 +174,18 @@ def sweep_pairs(text, alias_map):
         m = _PAIR.match(chunk)
         if not m:
             # No colon. People type "partner abdalmola" as often as
-            # "partner: abdalmola", and refusing that is the parser
-            # being pedantic about punctuation the user never agreed to.
-            field, value = _match_bare_alias(chunk, alias_map)
-            if field and value:
-                pairs.setdefault(field, value)
+            # "partner: abdalmola", and a whole sentence may carry
+            # several fields with no punctuation at all.
+            found, leading = split_on_aliases(chunk, alias_map)
+            if found:
+                for field, value in found.items():
+                    pairs.setdefault(field, value)
+                if leading:
+                    leftover.append(leading)
             else:
                 leftover.append(chunk.strip())
             continue
-        raw_key, value = m.group(1), m.group(2).strip()
+        raw_key, value = m.group(1), strip_leading_preposition(m.group(2))
         field = alias_map.get(normalise_key(raw_key))
         if field and value:
             # First occurrence wins; a repeated key is more likely a typo

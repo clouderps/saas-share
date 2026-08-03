@@ -162,3 +162,26 @@ class TestParser(TransactionCase):
         pairs, leftover = parser.sweep_pairs('for Acme tomorrow', ALIASES)
         self.assertEqual(pairs, {})
         self.assertIn('Acme', leftover)
+
+    # ── prepositions and spoken price forms ───────────────────────
+    def test_leading_preposition_is_dropped(self):
+        """"create invoice for abdalmola" — searching for "for
+        abdalmola" matches nobody."""
+        self.assertEqual(parser.strip_leading_preposition('for abdalmola'),
+                         'abdalmola')
+        for text in ('to Acme', 'لـ عبدالمولى', 'الى Acme'):
+            self.assertNotIn(text.split()[0],
+                             parser.strip_leading_preposition(text))
+
+    def test_preposition_inside_a_name_is_kept(self):
+        """"Forte Trading" must not lose its first four letters."""
+        self.assertEqual(
+            parser.strip_leading_preposition('Forte Trading'), 'Forte Trading')
+
+    def test_bare_alias_strips_the_preposition(self):
+        pairs, _l = parser.sweep_pairs('partner for abdalmola', ALIASES)
+        self.assertEqual(pairs['partner_id'], 'abdalmola')
+
+    def test_keyed_value_strips_the_preposition(self):
+        pairs, _l = parser.sweep_pairs('partner: for abdalmola', ALIASES)
+        self.assertEqual(pairs['partner_id'], 'abdalmola')

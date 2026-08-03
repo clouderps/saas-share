@@ -199,3 +199,29 @@ class TestProductResolver(TransactionCase):
         lines, _p = resolvers.resolve_product_lines(
             self.env, 'Zzq Latte، ZZQ-ESP')
         self.assertEqual(len(lines), 2)
+
+
+@tagged('post_install', '-at_install', 'ghaima_ai_command')
+class TestSpokenPriceForms(TransactionCase):
+    """People price a line every way except the one we happened to
+    implement. "@ 90" was the only form that worked."""
+
+    def test_every_price_form_parses(self):
+        for text, expected in (
+                ('services @ 90',      (90.0, 'services')),
+                ('services price 90',  (90.0, 'services')),
+                ('services at 90',     (90.0, 'services')),
+                ('services for 90',    (90.0, 'services')),
+                ('services بسعر 90',   (90.0, 'services')),
+                ('2x services price 90.5', (90.5, '2x services'))):
+            self.assertEqual(resolvers.split_price(text), expected,
+                             'failed on %r' % text)
+
+    def test_no_price_leaves_the_chunk_whole(self):
+        self.assertEqual(resolvers.split_price('2x latte'), (None, '2x latte'))
+
+    def test_a_name_containing_at_is_not_mangled(self):
+        """"Coffee at Home" has no price — the digits are what make it
+        a price, and there are none."""
+        self.assertEqual(resolvers.split_price('Coffee at Home'),
+                         (None, 'Coffee at Home'))

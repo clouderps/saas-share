@@ -143,7 +143,10 @@ class AICommandMixin(models.AbstractModel):
         normal resolution, so a name that matches nothing or matches
         several still asks rather than assuming.
         """
-        leftover = (leftover or '').strip()
+        from ..services.parser import strip_leading_preposition
+        # "create invoice for abdalmola" — the preposition is noise, and
+        # searching for "for abdalmola" matches nobody.
+        leftover = strip_leading_preposition(leftover)
         if not leftover:
             return pairs
         spec = self._ai_command_spec()
