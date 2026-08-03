@@ -32,6 +32,7 @@
                             <field name="code"/>
                             <field name="target_model"/>
                             <field name="icon"/>
+                            <field name="context"/>
                         </group>
                         <group>
                             <field name="sequence"/>

@@ -48,6 +48,13 @@ class AIAgentCommand(models.Model):
     example = fields.Char(
         help='One realistic example, shown as placeholder text.')
     icon = fields.Char(default='fa-plus-circle')
+    context = fields.Char(
+        string='Target context',
+        help="Python dict merged into the target model's context, e.g. "
+             "{'ai_command_move_type': 'out_invoice'}. Lets two commands "
+             "share one model without the model guessing which one ran — "
+             "an invoice command must never produce a vendor bill because "
+             "a field was mis-extracted.")
     sequence = fields.Integer(default=10)
     active = fields.Boolean(default=True, index=True)
     group_ids = fields.Many2many(
@@ -116,6 +123,22 @@ class AIAgentCommand(models.Model):
             })
         return out
 
+    def _command_context(self):
+        """Extra context for the target model. Never trusted from a
+        request — it comes from the command record, which only an
+        administrator can edit."""
+        raw = (self.sudo().context or '').strip()
+        if not raw:
+            return {}
+        try:
+            from odoo.tools.safe_eval import safe_eval
+            value = safe_eval(raw)
+            return value if isinstance(value, dict) else {}
+        except Exception:
+            _logger.warning('command %s has an unreadable context: %r',
+                            self.sudo().code, raw)
+            return {}
+
     # ── Execution ──────────────────────────────────────────────
 
     @api.model
@@ -130,6 +153,8 @@ class AIAgentCommand(models.Model):
             # Re-sweep with the target model's own aliases now that we
             # know which model we are filling.
             model = self.env.get(command.target_model)
+            if model is not None:
+                model = model.with_context(**command._command_context())
             alias_map = model._ai_command_alias_map() if model is not None else {}
             _verb, rest = parser.match_verb(text, list(verbs))
             pairs, leftover = parser.sweep_pairs(rest, alias_map)
@@ -156,6 +181,7 @@ class AIAgentCommand(models.Model):
             return {'status': 'error',
                     'message': _('Model "%s" is not installed.')
                                % self.sudo().target_model}
+        model = model.with_context(**self._command_context())
 
         values, questions = model._ai_command_resolve(
             pairs or {}, create_missing=create_missing)

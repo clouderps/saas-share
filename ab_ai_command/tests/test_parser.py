@@ -130,3 +130,35 @@ class TestParser(TransactionCase):
         self.assertTrue(parser.looks_like_command('/create quote'))
         self.assertFalse(parser.looks_like_command('create quote'))
         self.assertFalse(parser.looks_like_command(''))
+
+    # ── bare aliases (no colon) ───────────────────────────────────
+    def test_pair_without_a_colon(self):
+        """Reported from real use: "/create invoice partner abdalmola".
+        Refusing that is the parser being pedantic about punctuation the
+        user never agreed to."""
+        pairs, _l = parser.sweep_pairs('partner abdalmola', ALIASES)
+        self.assertEqual(pairs, {'partner_id': 'abdalmola'})
+
+    def test_multi_word_alias_without_a_colon(self):
+        pairs, _l = parser.sweep_pairs('partner name abdalmola', ALIASES)
+        self.assertEqual(pairs, {'partner_id': 'abdalmola'},
+                         'the longest alias must win, not just "partner"')
+
+    def test_mixed_colon_and_bare(self):
+        pairs, _l = parser.sweep_pairs(
+            'partner abdalmola; date: 3/8/26; items 2x latte', ALIASES)
+        self.assertEqual(pairs, {'partner_id': 'abdalmola',
+                                 'validity_date': '3/8/26',
+                                 'order_line': '2x latte'})
+
+    def test_bare_alias_needs_a_value(self):
+        pairs, leftover = parser.sweep_pairs('partner', ALIASES)
+        self.assertEqual(pairs, {})
+        self.assertIn('partner', leftover)
+
+    def test_prose_is_not_mistaken_for_a_bare_pair(self):
+        """"for Acme tomorrow" starts with no alias, so it stays free
+        text for the model rather than being force-fit to a field."""
+        pairs, leftover = parser.sweep_pairs('for Acme tomorrow', ALIASES)
+        self.assertEqual(pairs, {})
+        self.assertIn('Acme', leftover)

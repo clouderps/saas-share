@@ -79,6 +79,24 @@ def match_verb(text, verbs):
     return None, text
 
 
+def _match_bare_alias(chunk, alias_map):
+    """``partner abdalmola`` → ('partner_id', 'abdalmola').
+
+    Matches the LONGEST alias that prefixes the chunk, so "partner name
+    abdalmola" binds the whole two-word alias rather than leaving "name"
+    glued to the value.
+    """
+    words = (chunk or '').strip().split()
+    if len(words) < 2:
+        return None, None
+    # Try the longest prefix first — aliases are at most a few words.
+    for take in range(min(4, len(words) - 1), 0, -1):
+        field = alias_map.get(normalise_key(' '.join(words[:take])))
+        if field:
+            return field, ' '.join(words[take:]).strip()
+    return None, None
+
+
 def sweep_pairs(text, alias_map):
     """Extract ``key: value`` pairs from free text.
 
@@ -101,7 +119,14 @@ def sweep_pairs(text, alias_map):
             continue
         m = _PAIR.match(chunk)
         if not m:
-            leftover.append(chunk.strip())
+            # No colon. People type "partner abdalmola" as often as
+            # "partner: abdalmola", and refusing that is the parser
+            # being pedantic about punctuation the user never agreed to.
+            field, value = _match_bare_alias(chunk, alias_map)
+            if field and value:
+                pairs.setdefault(field, value)
+            else:
+                leftover.append(chunk.strip())
             continue
         raw_key, value = m.group(1), m.group(2).strip()
         field = alias_map.get(normalise_key(raw_key))
