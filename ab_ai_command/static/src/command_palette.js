@@ -233,6 +233,14 @@ patch(AiAgentChat.prototype, {
         }
     },
 
+    /** Open the record the command created. */
+    openCommandRecord(cmd) {
+        const action = cmd && cmd.preview && cmd.preview.action;
+        if (action && this.actionService) {
+            this.actionService.doAction(action);
+        }
+    },
+
     cancelCommand(msg) {
         msg.commandResult = { status: "cancelled" };
         msg.creatable = [];
@@ -248,6 +256,7 @@ patch(AiAgentChat.prototype, {
             subtotal: _t("Subtotal"),
             total: _t("Total"),
             createAndContinue: _t("Create and continue"),
+            openRecord: _t("Open"),
             cancel: _t("Cancel"),
         });
     },

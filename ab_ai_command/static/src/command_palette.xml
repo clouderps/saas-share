@@ -58,6 +58,14 @@
                         <span class="o_ai_cmd_ccy" t-esc="cmd.preview.currency"/>
                     </strong>
                 </p>
+                <div t-if="cmd.preview.action" class="o_ai_cmd_actions">
+                    <button type="button" class="o_ai_cmd_btn o_ai_cmd_btn--primary"
+                            t-on-click="() => this.openCommandRecord(cmd)">
+                        <i class="fa fa-external-link" aria-hidden="true"/>
+                        <span t-esc="cmdLabels.openRecord"/>
+                    </button>
+                </div>
+
                 <!-- Assumptions we had to make — a date read one way
                      when the other reading is also a real date. -->
                 <div t-foreach="cmd.questions" t-as="q" t-key="q_index"

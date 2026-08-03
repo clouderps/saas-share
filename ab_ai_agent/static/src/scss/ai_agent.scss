@@ -41,6 +41,25 @@
 
     --ai-font-body:     var(--ghaima-font-body, "Vazirmatn", system-ui, sans-serif);
     --ai-font-heading:  var(--ghaima-font-heading, "Drystick", "Vazirmatn", sans-serif);
+
+    // Type scale (1.25 major third). The old card used 0.9rem for a
+    // title and 0.925rem for body — nearly the same size, so nothing
+    // read as more important than anything else.
+    --ai-text-xs:       0.75rem;
+    --ai-text-sm:       0.8125rem;
+    --ai-text-base:     0.9375rem;
+    --ai-text-lg:       1.125rem;
+    --ai-text-xl:       1.375rem;
+    --ai-figure:        2rem;      // the number is the point of the answer
+    --ai-leading-tight: 1.25;
+    --ai-leading:       1.6;
+
+    // Editorial surfaces: a warm page, a tinted card header and a brand
+    // rail down the leading edge.
+    --ai-surface:       #FFFFFF;
+    --ai-surface-sunk:  #FAFAFC;
+    --ai-header-tint:   rgba(0, 95, 246, 0.045);
+    --ai-rail:          4px;
 }
 
 // ─── 1. Backend chat shell ──────────────────────────────────────────
@@ -243,8 +262,9 @@
         flex: 1;
         margin: 0;
         min-width: 0;
-        font-size: 0.875rem;
+        font-size: var(--ai-text-sm);
         font-weight: 500;
+        letter-spacing: 0.01em;
         color: var(--ai-ghaima-muted);
     }
 
@@ -265,9 +285,11 @@
     overflow: hidden;
     margin-block-end: var(--ai-step-5);
 
-    // A hairline of brand colour on the leading edge marks the card as
-    // system output without tinting the whole surface.
-    border-inline-start: 3px solid var(--ai-ghaima-blue);
+    // A solid brand rail down the leading edge. Wider than a hairline
+    // so the card reads as one object at a glance rather than a box
+    // with a stripe.
+    border-inline-start: var(--ai-rail) solid var(--ai-ghaima-blue);
+    box-shadow: var(--ai-shadow-md);
 
     &.is-pending {
         border-inline-start-color: var(--ai-ghaima-cyan);
@@ -281,9 +303,9 @@
         display: flex;
         align-items: center;
         gap: var(--ai-step-2);
-        padding: var(--ai-step-2) var(--ai-step-3);
+        padding: var(--ai-step-3) var(--ai-step-4);
         border-block-end: 1px solid var(--ai-ghaima-line);
-        background: var(--ai-ghaima-bg);
+        background: var(--ai-header-tint);
     }
 
     &.is-collapsed &__head {
@@ -295,9 +317,10 @@
         min-width: 0;
         margin: 0;
         font-family: var(--ai-font-heading);
-        font-size: 0.9rem;
+        font-size: var(--ai-text-lg);
         font-weight: 600;
-        line-height: 1.3;
+        letter-spacing: -0.01em;
+        line-height: var(--ai-leading-tight);
         color: var(--ai-ghaima-ink);
         overflow: hidden;
         text-overflow: ellipsis;
@@ -344,9 +367,9 @@
     }
 
     &__body {
-        padding: var(--ai-step-3);
-        font-size: 0.925rem;
-        line-height: 1.55;
+        padding: var(--ai-step-5) var(--ai-step-4);
+        font-size: var(--ai-text-base);
+        line-height: var(--ai-leading);
         color: var(--ai-ghaima-ink);
 
         > :last-child { margin-block-end: 0; }
@@ -365,9 +388,9 @@
         display: flex;
         align-items: center;
         gap: var(--ai-step-2);
-        padding: var(--ai-step-2) var(--ai-step-3);
+        padding: var(--ai-step-3) var(--ai-step-4);
         border-block-start: 1px solid var(--ai-ghaima-line);
-        background: var(--ai-ghaima-bg);
+        background: var(--ai-surface-sunk);
     }
 
     // Primary: take me to the thing this answer is about.
@@ -1093,4 +1116,169 @@
 
 @media (max-width: 767.98px) {
     .o-mail-Chatter-aiInline__body { height: 320px; }
+}
+
+// ─── 11. Editorial layer ────────────────────────────────────────────
+//
+// The answer's point is usually a number, so the number gets the size.
+// These target the ab_ai_ui block kit from the outside rather than
+// forking it — one renderer, restyled in context.
+
+.o_ai_answer__body {
+    .o_ai_kpi_grid,
+    .o_ai_ui_kpi_grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: var(--ai-step-5);
+        margin-block-end: var(--ai-step-5);
+    }
+
+    // A figure and its label, not a boxed tile. Removing the box is what
+    // makes the number read as the answer rather than as a widget.
+    [class*="kpi"] [class*="value"],
+    [class*="kpi__value"] {
+        display: block;
+        font-family: var(--ai-font-heading);
+        font-size: var(--ai-figure);
+        font-weight: 600;
+        line-height: 1.05;
+        letter-spacing: -0.02em;
+        font-variant-numeric: tabular-nums;
+        color: var(--ai-ghaima-ink);
+        // A figure is read left-to-right even in an RTL sentence.
+        direction: ltr;
+        unicode-bidi: isolate;
+        text-align: start;
+    }
+
+    [class*="kpi"] [class*="label"],
+    [class*="kpi__label"] {
+        display: block;
+        margin-block-start: var(--ai-step-1);
+        padding-block-start: var(--ai-step-1);
+        border-block-start: 2px solid var(--ai-ghaima-line);
+        font-size: var(--ai-text-xs);
+        font-weight: 500;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        color: var(--ai-ghaima-muted);
+    }
+
+    table {
+        inline-size: 100%;
+        border-collapse: collapse;
+        margin-block-end: var(--ai-step-4);
+        font-size: var(--ai-text-sm);
+
+        th {
+            font-size: var(--ai-text-xs);
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--ai-ghaima-muted);
+            border-block-end: 2px solid var(--ai-ghaima-line);
+            padding: var(--ai-step-2) var(--ai-step-2);
+            text-align: start;
+        }
+        td {
+            padding: var(--ai-step-2);
+            border-block-end: 1px solid var(--ai-ghaima-line);
+            font-variant-numeric: tabular-nums;
+        }
+        tr:last-child td { border-block-end: none; }
+        // Numeric columns align on the decimal, which is the only way a
+        // column of figures is actually comparable by eye.
+        td + td, th + th { text-align: end; }
+    }
+}
+
+// ─── 12. Landing: capability groups ─────────────────────────────────
+//
+// The panel used to open on a near-blank card and a flat list of chips,
+// which showed the assistant's range as "some sentences". Grouping by
+// what each opener DOES tells a new user what the thing is for in one
+// glance — and the examples inside each group are still drawn from the
+// user's real access, never a fixed list.
+
+.o_ai_start {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ai-step-5);
+    // Sits after the card footer, so it carries the body's own padding
+    // rather than inheriting it — without this the group titles ran out
+    // to the card's border.
+    padding: var(--ai-step-4) var(--ai-step-4) var(--ai-step-5);
+}
+
+.o_ai_start__group {
+    &-title {
+        display: flex;
+        align-items: center;
+        gap: var(--ai-step-2);
+        margin: 0 0 var(--ai-step-2);
+        font-size: var(--ai-text-xs);
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--ai-ghaima-muted);
+
+        &::after {
+            content: "";
+            flex: 1;
+            block-size: 1px;
+            background: var(--ai-ghaima-line);
+        }
+    }
+
+    &-items {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: var(--ai-step-2);
+    }
+}
+
+.o_ai_start__item {
+    display: flex;
+    align-items: center;
+    gap: var(--ai-step-3);
+    appearance: none;
+    inline-size: 100%;
+    text-align: start;
+    background: var(--ai-surface);
+    border: 1px solid var(--ai-ghaima-line);
+    border-radius: var(--ai-radius-md);
+    padding: var(--ai-step-3);
+    font-size: var(--ai-text-sm);
+    line-height: var(--ai-leading-tight);
+    color: var(--ai-ghaima-ink);
+    cursor: pointer;
+    min-block-size: 44px;
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.05s;
+
+    i {
+        flex-shrink: 0;
+        inline-size: 28px;
+        block-size: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--ai-radius-sm);
+        background: var(--ai-header-tint);
+        color: var(--ai-ghaima-blue);
+        font-size: 0.8rem;
+    }
+
+    &:hover {
+        border-color: var(--ai-ghaima-blue);
+        box-shadow: var(--ai-shadow-sm);
+    }
+    &:active { transform: translateY(1px); }
+    &:focus-visible {
+        outline: 2px solid var(--ai-ghaima-blue);
+        outline-offset: 2px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .o_ai_start__item { transition: none; }
 }

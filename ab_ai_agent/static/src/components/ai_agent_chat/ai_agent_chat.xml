@@ -130,15 +130,20 @@
                                  actually reach — never a fixed list.
                                  Only in-card when there is no sidebar to
                                  host them, otherwise they appear twice. -->
-                            <div t-if="msg.isWelcome and state.starters.length and props.hideSidebar"
-                                 class="o_ai_agent_examples">
-                                <button t-foreach="state.starters" t-as="ex" t-key="ex_index"
-                                        class="o_ai_agent_example_chip"
-                                        type="button"
-                                        t-on-click="() => this.onExamplePick(ex)">
-                                    <i t-attf-class="fa {{ex.icon}}" aria-hidden="true"/>
-                                    <span t-esc="ex.text"/>
-                                </button>
+                            <div t-if="msg.isWelcome and state.groups.length"
+                                 class="o_ai_start">
+                                <div t-foreach="state.groups" t-as="grp" t-key="grp.code"
+                                     class="o_ai_start__group">
+                                    <p class="o_ai_start__group-title" t-esc="grp.title"/>
+                                    <div class="o_ai_start__group-items">
+                                        <button t-foreach="grp.items" t-as="ex" t-key="ex_index"
+                                                type="button" class="o_ai_start__item"
+                                                t-on-click="() => this.onExamplePick(ex)">
+                                            <i t-attf-class="fa {{ex.icon}}" aria-hidden="true"/>
+                                            <span t-esc="ex.text"/>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </article>
                     </t>
@@ -170,7 +175,8 @@
                         <AiAgentSkillCard t-foreach="skills" t-as="s" t-key="s.code"
                                           skill="s" onPick.bind="onSkillPick"/>
                     </div>
-                    <div t-else="" class="o_ai_agent_skill_panel">
+                    <div t-elif="!state.groups.length and state.starters.length"
+                         class="o_ai_agent_skill_panel">
                         <p class="o_ai_agent_skill_panel__title" t-esc="labels.tryAsking"/>
                         <div class="o_ai_agent_sidebar_hints">
                             <button t-foreach="state.starters" t-as="ex" t-key="ex_index"

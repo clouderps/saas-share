@@ -84,13 +84,42 @@ class AIAgentController(http.Controller):
                           else 'What should I do next?')},
             ]}
 
-        # Always-safe openers — they work for every user because the
-        # tools behind them answer from that user's own access.
-        out = [
+        # Grouped by what the opener DOES. A flat list showed the
+        # assistant's range as "some sentences"; the groups tell a new
+        # user what it is for in one glance. Contents stay derived from
+        # real access — the grouping is presentation, not a fixed menu.
+        groups = [
+            {'code': 'ask',
+             'title': 'اسأل عن بياناتك' if arabic else 'Ask about your data',
+             'items': []},
+            {'code': 'create',
+             'title': 'أنشئ مستنداً' if arabic else 'Create a document',
+             'items': []},
+            {'code': 'learn',
+             'title': 'تعرّف على النظام' if arabic else 'Find your way around',
+             'items': []},
+        ]
+        by_code = {g['code']: g for g in groups}
+
+        by_code['learn']['items'].append(
             {'icon': 'fa-th-large',
              'text': ('ما الذي يمكنني فعله في النظام؟' if arabic
-                      else 'What can I do in the system?')},
-        ]
+                      else 'What can I do in the system?')})
+        by_code['learn']['items'].append(
+            {'icon': 'fa-map-signs',
+             'text': ('وين أسوي فاتورة؟' if arabic
+                      else 'Where do I create an invoice?')})
+
+        # Only commands this user may actually run, same filter the
+        # palette uses — never offer a door that is locked.
+        Command = env.get('ai.agent.command')
+        if Command is not None:
+            for cmd in Command.palette_for_user(env.user)[:3]:
+                by_code['create']['items'].append(
+                    {'icon': cmd.get('icon') or 'fa-plus-circle',
+                     'text': '/%s ' % cmd['verb']})
+
+        out = []
 
         from ..services.tool_dispatcher import _builtin_list_my_apps
         apps = (_builtin_list_my_apps(env) or {}).get('apps') or []
@@ -100,22 +129,26 @@ class AIAgentController(http.Controller):
         for app in apps:
             if app['name'] in skip:
                 continue
-            out.append({
+            by_code['ask']['items'].append({
                 'icon': 'fa-arrow-circle-o-right',
                 'text': (f"ما الجديد في {app['name']}؟" if arabic
                          else f"What's happening in {app['name']}?"),
             })
-            if len(out) >= 5:
+            if len(by_code['ask']['items']) >= 3:
                 break
 
-        if len(out) == 1:
+        if not by_code['ask']['items']:
             # No back-office apps at all (portal user).
-            out.append({
+            by_code['learn']['items'].append({
                 'icon': 'fa-question-circle',
                 'text': ('كيف أستخدم بوابة العملاء؟' if arabic
                          else 'How do I use the customer portal?'),
             })
-        return {'success': True, 'starters': out}
+
+        groups = [g for g in groups if g['items']]
+        # Flat list kept for callers that predate the grouping.
+        out = [i for g in groups for i in g['items']]
+        return {'success': True, 'starters': out, 'groups': groups}
 
     # ── Per-record conversation lookup ─────────────────────────
 

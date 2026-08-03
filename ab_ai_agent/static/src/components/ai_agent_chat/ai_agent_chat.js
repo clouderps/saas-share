@@ -107,6 +107,7 @@ export class AiAgentChat extends Component {
             // _loadStarters. Empty until that resolves; the template
             // simply renders no chips in the meantime.
             starters: [],
+            groups: [],
             // Voice (manager-only, gated by props.enableVoice)
             recording: false,
             speechAvailable: typeof window !== "undefined"
@@ -172,9 +173,11 @@ export class AiAgentChat extends Component {
             });
             if (res && res.starters) {
                 this.state.starters = res.starters;
+                this.state.groups = res.groups || [];
             }
         } catch (e) {
             this.state.starters = [];
+            this.state.groups = [];
         }
     }
 
@@ -463,7 +466,18 @@ export class AiAgentChat extends Component {
     }
 
     onExamplePick(prompt) {
-        this._send(prompt.text);
+        const text = (prompt && prompt.text) || "";
+        if (text.trim().startsWith("/")) {
+            // A command opener is the START of a command — put it in the
+            // box for the user to finish, rather than sending a verb
+            // with no arguments.
+            this.state.input = text;
+            if (this.textareaRef.el) {
+                this.textareaRef.el.focus();
+            }
+            return;
+        }
+        this._send(text);
     }
 
     /** Quick navigation actions emitted by the runtime via env action. */

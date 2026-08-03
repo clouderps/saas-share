@@ -383,6 +383,18 @@ class AICommandMixin(models.AbstractModel):
             'model': self._name,
             'id': self.id,
             'name': self.display_name,
+            # A draft you cannot reach is a draft you will not check.
+            # Ship the act_window with the preview so the card can offer
+            # a real button rather than telling the user where to look.
+            'action': {
+                'type': 'ir.actions.act_window',
+                'res_model': self._name,
+                'res_id': self.id,
+                'views': [[False, 'form']],
+                'view_mode': 'form',
+                'target': 'current',
+                'name': self.display_name,
+            },
             'header': rows,
             'lines': lines,
             'total': getattr(self, 'amount_total', None),
