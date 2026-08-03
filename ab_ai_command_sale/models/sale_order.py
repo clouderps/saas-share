@@ -20,7 +20,7 @@ class SaleOrder(models.Model):
                 # rather than silently not matching.
                 'aliases': ['partner', 'partner name', 'customer', 'client',
                             'عميل', 'اسم العميل', 'زبون'],
-                'resolver': 'partner', 'customer': True,
+                'resolver': 'partner', 'customer': True, 'allow_create': True,
                 'required': True, 'label': 'Customer',
             },
             'validity_date': {
@@ -35,11 +35,17 @@ class SaleOrder(models.Model):
             'order_line': {
                 'aliases': ['items', 'item', 'products', 'lines', 'أصناف',
                             'المنتجات', 'بنود'],
-                'resolver': 'product_lines',
+                'resolver': 'product_lines', 'allow_create': True,
             },
         }
 
     @api.model
     def _ai_command_line_vals(self, line):
-        return {'product_id': line['product_id'],
+        vals = {'product_id': line['product_id'],
                 'product_uom_qty': line['qty']}
+        # An inline "@ 14" wins over the pricelist. It is the only price
+        # a just-created product has, and when the product already
+        # existed the user typing a price means they meant that price.
+        if line.get('price_unit') is not None:
+            vals['price_unit'] = line['price_unit']
+        return vals

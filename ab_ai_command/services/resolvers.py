@@ -28,13 +28,22 @@ _logger = logging.getLogger(__name__)
 MAX_ALTERNATIVES = 5
 
 
-def _envelope(value=None, display='', confidence='none', alternatives=None, note=''):
+def _envelope(value=None, display='', confidence='none', alternatives=None,
+              note='', can_create=False, proposed=None):
+    """``can_create`` marks a miss that the user could resolve by making
+    the record. It is only ever an *offer* — creation happens on a
+    second, explicit call. Silently creating on a miss turns every typo
+    into a duplicate partner or a junk product in the catalogue, which
+    is why ab_scan_docs gates the same behaviour behind a config flag
+    and routes products through an approval workflow."""
     return {
         'value': value,
         'display': display,
         'confidence': confidence,
         'alternatives': alternatives or [],
         'note': note,
+        'can_create': can_create,
+        'proposed': proposed or {},
     }
 
 
@@ -85,8 +94,14 @@ def resolve_partner(env, text, customer=None):
             if elsewhere:
                 return _envelope(
                     note=('"%s" exists but is not marked as a %s.'
-                          % (text, 'customer' if customer else 'vendor')))
-        return _envelope(note='no partner matches "%s"' % text)
+                          % (text, 'customer' if customer else 'vendor')),
+                    can_create=False)
+        return _envelope(
+            note='no partner matches "%s"' % text,
+            can_create=True,
+            proposed={'name': text,
+                      'customer_rank': 1 if customer is not False else 0,
+                      'supplier_rank': 1 if customer is False else 0})
 
     if len(found) > 1:
         return _envelope(
@@ -187,6 +202,25 @@ _QTY_SUFFIX = re.compile(r'^(.+?)\s*[x×*]\s*(\d+(?:[.,]\d+)?)\s*$', re.I)
 _QTY_PLAIN = re.compile(r'^(.+?)\s+(\d+(?:[.,]\d+)?)\s*$')
 
 
+_PRICE = re.compile(r'^(.*?)\s*[@]\s*(\d+(?:[.,]\d+)?)\s*$')
+
+
+def split_price(chunk):
+    """``2x latte @ 14`` → (14.0, '2x latte').
+
+    Lets the user price an item inline, which matters when the product
+    does not exist yet: creating it with a silent price of 0 puts a
+    zero-value line on a real quotation.
+    """
+    m = _PRICE.match((chunk or '').strip())
+    if not m:
+        return None, (chunk or '').strip()
+    try:
+        return float(m.group(2).replace(',', '.')), m.group(1).strip()
+    except ValueError:
+        return None, (chunk or '').strip()
+
+
 def split_quantity(chunk):
     """``2x latte`` / ``latte x2`` / ``latte 2`` → (qty, 'latte')."""
     chunk = (chunk or '').strip()
@@ -247,7 +281,10 @@ def resolve_product(env, text):
         tier = 'likely'
 
     if not found:
-        return _envelope(note='no product matches "%s"' % text)
+        return _envelope(
+            note='no product matches "%s"' % text,
+            can_create=True,
+            proposed={'name': text})
     if len(found) > 1:
         return _envelope(
             confidence='ambiguous',
@@ -271,11 +308,18 @@ def resolve_product_lines(env, text):
         chunk = chunk.strip()
         if not chunk:
             continue
-        qty, name = split_quantity(chunk)
+        price, rest = split_price(chunk)
+        qty, name = split_quantity(rest)
         res = resolve_product(env, name)
         if res['value'] and res['confidence'] in ('exact', 'likely'):
-            lines.append({'product_id': res['value'], 'name': res['display'],
-                          'qty': qty, 'confidence': res['confidence']})
+            line = {'product_id': res['value'], 'name': res['display'],
+                    'qty': qty, 'confidence': res['confidence']}
+            if price is not None:
+                line['price_unit'] = price
+            lines.append(line)
         else:
-            problems.append({'chunk': chunk, 'query': name, 'result': res})
+            if res.get('can_create') and price is not None:
+                res['proposed']['list_price'] = price
+            problems.append({'chunk': chunk, 'query': name,
+                             'qty': qty, 'price': price, 'result': res})
     return lines, problems

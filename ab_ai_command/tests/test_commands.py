@@ -171,3 +171,131 @@ class TestCommandPermissions(TransactionCase):
         before = self.env['sale.order'].search_count([])
         self.quote.with_user(self.portal).run({'partner_id': 'x'})
         self.assertEqual(self.env['sale.order'].search_count([]), before)
+
+
+@tagged('post_install', '-at_install', 'ghaima_ai_command')
+class TestCreateOnConfirm(TransactionCase):
+    """Search first; offer to create only when nothing matched; create
+    only when the user says yes.
+
+    Auto-creating on a miss is how a catalogue fills with "Latte",
+    "latte " and "Late", and how a customer list grows a second
+    "abdalmula". The offer step is what prevents that.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.Command = cls.env['ai.agent.command']
+        cls.quote = cls.Command.search([('code', '=', 'create_quote')], limit=1)
+        cls.known = cls.env['res.partner'].create(
+            {'name': 'Zzq Known Customer', 'customer_rank': 1})
+        cls.product = cls.env['product.product'].create(
+            {'name': 'Zzq Known Latte', 'list_price': 11.0})
+
+    # ── existing records still win ────────────────────────────────
+    def test_existing_partner_is_used_not_duplicated(self):
+        before = self.env['res.partner'].search_count(
+            [('name', '=', 'Zzq Known Customer')])
+        res = self.quote.run({'partner_id': 'Zzq Known Customer',
+                              'order_line': 'Zzq Known Latte'},
+                             create_missing={'partner_id': True})
+        self.assertEqual(res['status'], 'created')
+        self.assertEqual(
+            self.env['res.partner'].search_count(
+                [('name', '=', 'Zzq Known Customer')]), before,
+            'a match must never create a second record')
+
+    # ── miss becomes an offer, not a record ───────────────────────
+    def test_unknown_partner_is_offered_not_created(self):
+        before = self.env['res.partner'].search_count([])
+        res = self.quote.run({'partner_id': 'Zzq Brand New Person',
+                              'order_line': 'Zzq Known Latte'})
+        self.assertEqual(res['status'], 'needs_input')
+        self.assertEqual(self.env['res.partner'].search_count([]), before,
+                         'nothing may be created without an explicit yes')
+        question = next(q for q in res['questions'] if q['field'] == 'partner_id')
+        self.assertEqual(question['kind'], 'create_offer')
+        self.assertTrue(question['can_create'])
+        self.assertEqual(question['proposed']['name'], 'Zzq Brand New Person')
+        self.assertIn('partner_id', res['creatable'])
+
+    def test_unknown_product_is_offered_not_created(self):
+        res = self.quote.run({'partner_id': 'Zzq Known Customer',
+                              'order_line': 'Zzq Never Seen Item'})
+        self.assertEqual(res['status'], 'needs_input')
+        question = next(q for q in res['questions'] if q['field'] == 'order_line')
+        self.assertEqual(question['kind'], 'create_offer')
+
+    # ── confirmation creates ──────────────────────────────────────
+    def test_confirming_creates_the_partner_and_the_quote(self):
+        res = self.quote.run({'partner_id': 'Zzq Confirmed Person',
+                              'order_line': 'Zzq Known Latte'},
+                             create_missing={'partner_id': True})
+        self.assertEqual(res['status'], 'created')
+        partner = self.env['res.partner'].search(
+            [('name', '=', 'Zzq Confirmed Person')], limit=1)
+        self.assertTrue(partner)
+        self.assertTrue(partner.customer_rank,
+                        'created from a quote, so it is a customer')
+        order = self.env['sale.order'].browse(res['id'])
+        self.assertEqual(order.partner_id, partner)
+
+    def test_confirming_creates_the_product_with_its_inline_price(self):
+        res = self.quote.run({'partner_id': 'Zzq Known Customer',
+                              'order_line': '3x Zzq New Pastry @ 7.5'},
+                             create_missing={'order_line': True})
+        self.assertEqual(res['status'], 'created')
+        product = self.env['product.product'].search(
+            [('name', '=', 'Zzq New Pastry')], limit=1)
+        self.assertTrue(product)
+        self.assertEqual(product.list_price, 7.5,
+                         'a product created mid-order must not be priced 0')
+        line = self.env['sale.order'].browse(res['id']).order_line
+        self.assertEqual(line.product_uom_qty, 3)
+        self.assertEqual(line.price_unit, 7.5)
+
+    def test_ambiguity_is_not_a_create_offer(self):
+        """Two matches means pick one, never make a third."""
+        self.env['res.partner'].create(
+            {'name': 'Zzq Dup Alpha', 'customer_rank': 1})
+        self.env['res.partner'].create(
+            {'name': 'Zzq Dup Beta', 'customer_rank': 1})
+        res = self.quote.run({'partner_id': 'Zzq Dup',
+                              'order_line': 'Zzq Known Latte'},
+                             create_missing={'partner_id': True})
+        self.assertEqual(res['status'], 'needs_input')
+        question = next(q for q in res['questions'] if q['field'] == 'partner_id')
+        self.assertNotEqual(question['kind'], 'create_offer')
+        self.assertEqual(len(question['options']), 2)
+
+    def test_a_failed_create_becomes_a_question_not_a_traceback(self):
+        """Creating runs as the requesting user, so an access rule or a
+        model constraint refusing it is a NORMAL outcome. It must come
+        back as something the assistant can say out loud."""
+        from unittest.mock import patch
+        from odoo.exceptions import AccessError
+
+        Sale = type(self.env['sale.order'])
+        with patch.object(Sale, '_ai_command_create_missing',
+                          side_effect=AccessError('nope, not allowed')):
+            res = self.quote.run(
+                {'partner_id': 'Zzq Refused Person',
+                 'order_line': 'Zzq Known Latte'},
+                create_missing={'partner_id': True})
+
+        self.assertEqual(res['status'], 'needs_input')
+        question = next(q for q in res['questions'] if q['field'] == 'partner_id')
+        self.assertIn('not allowed', question['message'])
+        self.assertFalse(
+            self.env['res.partner'].sudo().search_count(
+                [('name', '=', 'Zzq Refused Person')]))
+
+    def test_create_runs_as_the_requesting_user(self):
+        """The guarantee that matters: creation is not sudo, so it cannot
+        become a way around create rights on res.partner."""
+        import inspect
+        source = inspect.getsource(
+            type(self.env['sale.order'])._ai_command_create_missing)
+        self.assertNotIn('sudo()', source,
+                         'creating a missing record must never use sudo')

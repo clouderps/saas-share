@@ -136,7 +136,7 @@ class AIAgentCommand(models.Model):
             result['pairs'], result['leftover'] = pairs, leftover
         return result, command
 
-    def run(self, pairs, dry_run=False):
+    def run(self, pairs, dry_run=False, create_missing=None):
         """Resolve and create a draft. Returns a result dict.
 
         ``status``:
@@ -157,11 +157,19 @@ class AIAgentCommand(models.Model):
                     'message': _('Model "%s" is not installed.')
                                % self.sudo().target_model}
 
-        values, questions = model._ai_command_resolve(pairs or {})
+        values, questions = model._ai_command_resolve(
+            pairs or {}, create_missing=create_missing)
         blocking = [q for q in questions if q['kind'] != 'confirm']
         if blocking:
-            return {'status': 'needs_input', 'command': self.sudo().code,
-                    'questions': questions, 'resolved': list(values)}
+            return {
+                'status': 'needs_input', 'command': self.sudo().code,
+                'questions': questions, 'resolved': list(values),
+                # Fields the user could unblock by agreeing to create the
+                # record. Echoed so the caller knows exactly what to pass
+                # back in create_missing.
+                'creatable': [q['field'] for q in questions
+                              if q.get('can_create')],
+            }
 
         if dry_run:
             return {'status': 'dry_run', 'command': self.sudo().code,

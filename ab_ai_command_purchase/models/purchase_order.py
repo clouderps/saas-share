@@ -15,7 +15,7 @@ class PurchaseOrder(models.Model):
                             'مورد', 'اسم المورد'],
                 # customer=False → resolve against suppliers, and say so
                 # when the name exists but is not set up as one.
-                'resolver': 'partner', 'customer': False,
+                'resolver': 'partner', 'customer': False, 'allow_create': True,
                 'required': True, 'label': 'Vendor',
             },
             'date_planned': {
@@ -30,7 +30,7 @@ class PurchaseOrder(models.Model):
             'order_line': {
                 'aliases': ['items', 'item', 'products', 'lines', 'أصناف',
                             'المنتجات', 'بنود'],
-                'resolver': 'product_lines',
+                'resolver': 'product_lines', 'allow_create': True,
             },
         }
 
@@ -41,5 +41,7 @@ class PurchaseOrder(models.Model):
         vals = {'product_id': line['product_id'], 'product_qty': line['qty']}
         product = self.env['product.product'].browse(line['product_id'])
         vals['name'] = product.display_name
-        vals['price_unit'] = product.standard_price
+        vals['price_unit'] = (line['price_unit']
+                              if line.get('price_unit') is not None
+                              else product.standard_price)
         return vals

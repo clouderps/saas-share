@@ -34,6 +34,7 @@ from __future__ import annotations
 import logging
 
 from odoo import _, api, models
+from odoo.exceptions import AccessError, UserError, ValidationError
 
 from ..services import resolvers
 
@@ -81,15 +82,70 @@ class AICommandMixin(models.AbstractModel):
     # ── Resolution ─────────────────────────────────────────────
 
     @api.model
-    def _ai_command_resolve(self, pairs):
+    def _ai_command_missing_model(self, field, rule):
+        """Model to create when ``field`` matched nothing."""
+        return {'partner': 'res.partner',
+                'product_lines': 'product.product'}.get(rule.get('resolver'))
+
+    @api.model
+    def _ai_command_create_missing(self, field, rule, proposed):
+        """Create the record a resolver could not find.
+
+        Runs as the requesting user, so someone without create rights on
+        res.partner cannot mint partners through a command. Bridges can
+        override to add defaults (a product needs a UoM and a type; a
+        vendor needs supplier_rank).
+        """
+        model_name = self._ai_command_missing_model(field, rule)
+        if not model_name or not proposed:
+            return None
+        Model = self.env.get(model_name)
+        if Model is None:
+            return None
+        vals = dict(proposed)
+        if model_name == 'product.product':
+            # A product created mid-order is a real catalogue record.
+            # Keep it minimal and storable rather than guessing at
+            # accounting configuration.
+            vals.setdefault('type', 'consu')
+            vals.setdefault('list_price', 0.0)
+        return Model.create(vals)
+
+    @api.model
+    def _ai_command_try_create_missing(self, field, rule, proposed):
+        """``_ai_command_create_missing`` behind a guard.
+
+        Returns ``(record, error_message)``. Creating runs as the
+        requesting user, so a record rule or a missing-rights error is a
+        NORMAL outcome here, not an exception the caller should crash
+        on — the user simply cannot make that record and needs telling.
+        """
+        try:
+            return self._ai_command_create_missing(field, rule, proposed), None
+        except (AccessError, UserError, ValidationError) as e:
+            return None, str(e)
+        except Exception:
+            _logger.exception('could not create missing %s for %s',
+                              rule.get('resolver'), self._name)
+            return None, _('Could not create it. The error has been logged.')
+
+    @api.model
+    def _ai_command_resolve(self, pairs, create_missing=None):
         """Resolve raw strings to real values.
 
         Returns ``(values, questions)``. ``questions`` is what the user
         still has to answer — a missing required field, an ambiguous
         partner, a product that matched nothing. A non-empty
         ``questions`` means nothing is created.
+
+        ``create_missing`` is a ``{field: True}`` map naming the fields
+        the user has explicitly agreed to create records for. Absent it,
+        a miss is only ever reported as an offer — creating on a miss by
+        default turns "abdalmula" into a second customer instead of a
+        question.
         """
         spec = self._ai_command_spec()
+        create_missing = create_missing or {}
         values, questions = {}, []
 
         for field, raw in (pairs or {}).items():
@@ -103,11 +159,31 @@ class AICommandMixin(models.AbstractModel):
                     self.env, raw, customer=rule.get('customer'))
                 if res['confidence'] in ('exact', 'likely'):
                     values[field] = res['value']
+                elif (res.get('can_create') and rule.get('allow_create')
+                        and create_missing.get(field)):
+                    record, error = self._ai_command_try_create_missing(
+                        field, rule, res['proposed'])
+                    if record:
+                        values[field] = record.id
+                    else:
+                        questions.append({
+                            'field': field, 'kind': 'partner', 'query': raw,
+                            'message': error or (
+                                _('Could not create "%s".') % raw),
+                            'options': [],
+                        })
                 else:
+                    offer = bool(res.get('can_create') and rule.get('allow_create'))
                     questions.append({
-                        'field': field, 'kind': 'partner', 'query': raw,
-                        'message': res['note'] or _('Which partner?'),
+                        'field': field,
+                        'kind': 'create_offer' if offer else 'partner',
+                        'query': raw,
+                        'message': (_('No match for "%s". Create it as a new '
+                                      'contact?') % raw) if offer
+                                   else (res['note'] or _('Which partner?')),
                         'options': res['alternatives'],
+                        'can_create': offer,
+                        'proposed': res.get('proposed') or {},
                     })
 
             elif kind == 'date':
@@ -127,14 +203,40 @@ class AICommandMixin(models.AbstractModel):
 
             elif kind == 'product_lines':
                 lines, problems = resolvers.resolve_product_lines(self.env, raw)
+                still = []
+                for problem in problems:
+                    res = problem['result']
+                    offer = bool(res.get('can_create') and rule.get('allow_create'))
+                    if offer and create_missing.get(field):
+                        record, error = self._ai_command_try_create_missing(
+                            field, rule, res['proposed'])
+                        if error:
+                            res = dict(res, note=error, can_create=False)
+                            problem = dict(problem, result=res)
+                            offer = False
+                        if record:
+                            line = {'product_id': record.id,
+                                    'name': record.display_name,
+                                    'qty': problem.get('qty') or 1.0,
+                                    'confidence': 'created'}
+                            if problem.get('price') is not None:
+                                line['price_unit'] = problem['price']
+                            lines.append(line)
+                            continue
+                    still.append((problem, offer))
                 if lines:
                     values[field] = lines
-                for problem in problems:
+                for problem, offer in still:
                     questions.append({
-                        'field': field, 'kind': 'product',
+                        'field': field,
+                        'kind': 'create_offer' if offer else 'product',
                         'query': problem['query'],
-                        'message': problem['result']['note'],
+                        'message': (_('No product matches "%s". Create it?')
+                                    % problem['query']) if offer
+                                   else problem['result']['note'],
                         'options': problem['result']['alternatives'],
+                        'can_create': offer,
+                        'proposed': problem['result'].get('proposed') or {},
                     })
 
             elif kind == 'number':

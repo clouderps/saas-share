@@ -35,7 +35,7 @@ def _builtin_list_commands(env, agent=None, **_kw):
 
 
 def _builtin_run_command(env, agent=None, command=None, fields=None,
-                         text=None, **_kw):
+                         text=None, create_missing=None, **_kw):
     """Create a draft document from a command.
 
     Accepts either an explicit ``command`` code plus a ``fields`` dict
@@ -73,12 +73,20 @@ def _builtin_run_command(env, agent=None, command=None, fields=None,
                      'list above. Do not invent one.'),
         }
 
-    result = record.run(pairs)
+    if isinstance(create_missing, list):
+        create_missing = {f: True for f in create_missing}
+    result = record.run(pairs, create_missing=create_missing)
     if result.get('status') == 'needs_input':
         result['note'] = (
             'Nothing was created. Ask the user ONLY about the questions '
             'listed, in their own words, and offer the options verbatim '
-            'when there are any. Never pick one for them.')
+            'when there are any. Never pick one for them. '
+            'For a question of kind create_offer the record does not '
+            'exist yet — ask whether to create it, and only if they say '
+            'yes call this tool again with the same fields plus '
+            'create_missing set to those field names. Never set '
+            'create_missing without being asked: a typo would become a '
+            'duplicate customer or a junk product.')
     elif result.get('status') == 'created':
         result['note'] = (
             'A DRAFT was created — nothing is confirmed or posted. Show '
