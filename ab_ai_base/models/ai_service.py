@@ -651,6 +651,11 @@ class AIProviderService(models.AbstractModel):
             data = response.json()
             text = data['candidates'][0]['content']['parts'][0]['text'].strip()
             api_usage = data.get('usageMetadata', {})
+            # Whether Gemini caches our prefix is not something we can
+            # infer — log exactly what it reports so the question is
+            # settled by evidence. DEBUG level, so it costs nothing in
+            # production.
+            _logger.debug('gemini usageMetadata: %s', api_usage)
             usage = {
                 'prompt_tokens': api_usage.get('promptTokenCount', 0),
                 'completion_tokens': api_usage.get('candidatesTokenCount', 0),
