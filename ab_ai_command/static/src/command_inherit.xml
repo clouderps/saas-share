@@ -12,7 +12,11 @@
         </xpath>
 
         <xpath expr="//div[hasclass('o_ai_answer__body')]" position="inside">
-            <t t-if="msg.commandResult" t-call="ab_ai_command.Result"/>
+            <t t-if="msg.commandResult" t-call="ab_ai_command.ResultCard">
+                <t t-set="cmd" t-value="msg.commandResult"/>
+                <t t-set="cmdMsg" t-value="msg"/>
+                <t t-set="cmdLabels" t-value="labels"/>
+            </t>
         </xpath>
 
     </t>

@@ -362,3 +362,63 @@ class TestBareValue(TransactionCase):
         kept = model._ai_command_absorb_leftover(
             {'partner_id': 'first'}, 'second')
         self.assertEqual(kept['partner_id'], 'first')
+
+
+@tagged('post_install', '-at_install', 'ghaima_ai_command')
+class TestPreviewQuantity(TransactionCase):
+    """The preview must print the quantity that is actually on the line.
+
+    Each family names the field differently — sale.order.line
+    product_uom_qty, purchase.order.line product_qty, account.move.line
+    quantity — and falling through to a default printed "1" on an
+    invoice line holding 2. A wrong number on the card the user is about
+    to confirm is worse than no card.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.Command = cls.env['ai.agent.command']
+        # Customer-facing and vendor-facing commands resolve the partner
+        # against different roles, so the fixture needs both.
+        cls.customer = cls.env['res.partner'].create(
+            {'name': 'Zzq Qty Customer', 'customer_rank': 1})
+        cls.vendor = cls.env['res.partner'].create(
+            {'name': 'Zzq Qty Vendor', 'supplier_rank': 1})
+        cls.product = cls.env['product.product'].create(
+            {'name': 'Zzq Qty Item', 'list_price': 10.0})
+
+    def _qty_in_preview(self, code, field, partner='Zzq Qty Customer'):
+        command = self.Command.search([('code', '=', code)], limit=1)
+        if not command:
+            self.skipTest('%s not installed' % code)
+        res = command.run({'partner_id': partner,
+                           field: '3x Zzq Qty Item'})
+        self.assertEqual(res['status'], 'created', res.get('message', ''))
+        lines = res['preview']['lines']
+        self.assertTrue(lines, 'preview has no lines')
+        return lines[0][1]
+
+    def test_quote_shows_the_real_quantity(self):
+        self.assertEqual(self._qty_in_preview('create_quote', 'order_line'), '3.0')
+
+    def test_invoice_shows_the_real_quantity(self):
+        self.assertEqual(
+            self._qty_in_preview('create_invoice', 'invoice_line_ids'), '3.0')
+
+    def test_rfq_shows_the_real_quantity(self):
+        self.assertEqual(
+            self._qty_in_preview('create_rfq', 'order_line',
+                                 partner='Zzq Qty Vendor'), '3.0')
+
+    def test_rfq_refuses_a_customer_as_a_vendor(self):
+        """Found while fixing the quantity display: the RFQ command
+        correctly declines a partner who is a customer but not a
+        supplier, rather than silently raising a purchase order against
+        someone you sell to."""
+        command = self.Command.search([('code', '=', 'create_rfq')], limit=1)
+        if not command:
+            self.skipTest('create_rfq not installed')
+        res = command.run({'partner_id': 'Zzq Qty Customer',
+                           'order_line': '3x Zzq Qty Item'})
+        self.assertEqual(res['status'], 'needs_input')

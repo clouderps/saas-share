@@ -359,9 +359,17 @@ class AICommandMixin(models.AbstractModel):
         line_field = self._ai_command_line_field()
         if line_field and line_field in self._fields:
             for line in self[line_field]:
-                qty = getattr(line, 'product_uom_qty', None)
-                if qty is None:
-                    qty = getattr(line, 'product_qty', 1)
+                # Each document family names the quantity differently —
+                # sale.order.line product_uom_qty, purchase.order.line
+                # product_qty, account.move.line quantity. Falling
+                # through to a default printed "1" on an invoice line
+                # that actually held 2, which is a wrong number on a
+                # financial preview the user is about to confirm.
+                qty = next(
+                    (line[f] for f in ('product_uom_qty', 'product_qty',
+                                       'quantity')
+                     if f in line._fields),
+                    1)
                 lines.append([
                     line.product_id.display_name if line.product_id else '',
                     str(qty),
