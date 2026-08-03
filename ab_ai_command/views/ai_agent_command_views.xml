@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_ai_agent_command_list" model="ir.ui.view">
+        <field name="name">ai.agent.command.list</field>
+        <field name="model">ai.agent.command</field>
+        <field name="arch" type="xml">
+            <list string="AI Commands">
+                <field name="sequence" widget="handle"/>
+                <field name="verb"/>
+                <field name="name"/>
+                <field name="target_model"/>
+                <field name="group_ids" widget="many2many_tags"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_ai_agent_command_form" model="ir.ui.view">
+        <field name="name">ai.agent.command.form</field>
+        <field name="model">ai.agent.command</field>
+        <field name="arch" type="xml">
+            <form string="AI Command">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="e.g. Create Quotation"/></h1>
+                        <h3><field name="verb" placeholder="create quote"/></h3>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="target_model"/>
+                            <field name="icon"/>
+                        </group>
+                        <group>
+                            <field name="sequence"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <group string="Who can run it">
+                        <field name="group_ids" widget="many2many_tags" nolabel="1"
+                               help="Empty = anyone who can create the target model. Create access on that model is always checked as well."/>
+                    </group>
+                    <group>
+                        <field name="description" placeholder="Shown under the verb in the / palette."/>
+                        <field name="example" placeholder="/create quote partner: Acme; items: 2x latte"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_ai_agent_command" model="ir.actions.act_window">
+        <field name="name">AI Commands</field>
+        <field name="res_model">ai.agent.command</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No AI commands yet</p>
+            <p>Commands are shipped by their own bridge modules — install
+               Sales, Purchase or Employees to get theirs.</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_ai_agent_command"
+              name="AI Commands"
+              parent="ab_ai_agent.menu_ai_agents_section"
+              action="action_ai_agent_command"
+              sequence="35"/>
+
+</odoo>

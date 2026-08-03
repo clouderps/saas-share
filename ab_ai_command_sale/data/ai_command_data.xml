@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+        <record id="command_create_quote" model="ai.agent.command">
+            <field name="name">Create Quotation</field>
+            <field name="code">create_quote</field>
+            <field name="verb">create quote</field>
+            <field name="target_model">sale.order</field>
+            <field name="icon">fa-file-text-o</field>
+            <field name="sequence">10</field>
+            <field name="description">Draft a quotation. Nothing is confirmed — you review it first.</field>
+            <field name="example">/create quote partner: Acme; date: 3/8/26; items: 2x latte, 1x espresso</field>
+            <field name="group_ids" eval="[(6, 0, [ref('sales_team.group_sale_salesman')])]"/>
+        </record>
+    </data>
+</odoo>

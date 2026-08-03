@@ -191,7 +191,12 @@ class AIAgent(models.Model):
         agent = self.search([('code', '=', 'ghaima_assistant')], limit=1)
         if not agent:
             return False
+        # Any module can opt a topic in by setting auto_attach — the core
+        # does not need to know the topic exists. That is what lets a
+        # bridge (ab_ai_command, and whatever ships next) deliver a
+        # capability to tenants that already exist.
         wanted = self.env['ai.agent.topic'].search([
+            '|', ('auto_attach', '=', True),
             ('code', 'in', ['system_guidance'])])
         missing = wanted - agent.topic_ids
         if missing:

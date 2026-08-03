@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+        <record id="command_create_rfq" model="ai.agent.command">
+            <field name="name">Create Purchase Request</field>
+            <field name="code">create_rfq</field>
+            <field name="verb">create rfq</field>
+            <field name="target_model">purchase.order</field>
+            <field name="icon">fa-shopping-basket</field>
+            <field name="sequence">20</field>
+            <field name="description">Draft a request for quotation. Nothing is confirmed — you review it first.</field>
+            <field name="example">/create rfq vendor: Al Faisal Supplies; items: 20x flour, 5x sugar</field>
+            <field name="group_ids" eval="[(6, 0, [ref('purchase.group_purchase_user')])]"/>
+        </record>
+    </data>
+</odoo>

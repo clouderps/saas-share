@@ -50,6 +50,7 @@ Always end with `__end_message` summarising what you opened/did (e.g. "Opening t
             <field name="name">System Guidance</field>
             <field name="code">system_guidance</field>
             <field name="description">Explain what Ghaima does, what this user can reach, where to perform a task, and what a screen means — grounded in their real permissions.</field>
+            <field name="auto_attach" eval="True"/>
             <field name="instructions">You also teach people how to use Ghaima. These questions are as important as the numbers.
 
 **Never guess where something lives.** Odoo menu layouts differ per install and per user's access. Always call a tool first:

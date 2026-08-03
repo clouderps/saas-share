@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+
+        <record id="tool_list_commands" model="ai.agent.tool">
+            <field name="name">List runnable commands</field>
+            <field name="code">list_commands</field>
+            <field name="category">navigation</field>
+            <field name="description">List the document-creation commands THIS user may run. Call it when the user asks what they can create, or before offering any command, so you never suggest one they cannot use. Ground your answer only in what it returns.</field>
+            <field name="schema">{"type": "object", "properties": {}}</field>
+            <field name="dispatch_kind">python</field>
+        </record>
+
+        <record id="tool_run_command" model="ai.agent.tool">
+            <field name="name">Create a document from a command</field>
+            <field name="code">run_command</field>
+            <field name="category">write</field>
+            <field name="description">Create a DRAFT business document (quotation, purchase request, employee) from what the user asked for. Pass `command` (e.g. create_quote) plus `fields` you extracted — partner/vendor name, date, and items as free text like "2x latte, 1 espresso". Alternatively pass the raw `text` when the user typed a slash command. It only ever creates a draft; it never confirms or posts. When it returns needs_input, ask the user ONLY the listed questions and offer any options verbatim — never choose for them.</field>
+            <field name="schema">{"type": "object", "properties": {"command": {"type": "string", "description": "Command code, e.g. create_quote"}, "fields": {"type": "object", "description": "Extracted values keyed by field or alias, e.g. {\"partner_id\": \"abdalmola\", \"order_line\": \"2x latte\"}"}, "text": {"type": "string", "description": "Raw slash-command text, when the user typed one"}}}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="is_write_action" eval="True"/>
+            <field name="allow_end_message" eval="True"/>
+        </record>
+
+        <record id="topic_commands" model="ai.agent.topic">
+            <field name="name">Document Commands</field>
+            <field name="code">commands</field>
+            <field name="description">Create draft quotations, purchase requests and employee records from what the user types.</field>
+            <field name="auto_attach" eval="True"/>
+            <field name="instructions">You can create draft documents for the user.
+
+- `list_commands` — what THIS user may create. Check it before offering anything; never name a command absent from the result.
+- `run_command` — create the draft. Pass `command` plus the `fields` you extracted from what they said. Items go as free text ("2x latte, 1 espresso"); the resolver handles barcodes, names and quantities.
+
+**Everything you create is a DRAFT.** Say so. Never claim an order is confirmed or an invoice posted — those are separate actions the user takes themselves.
+
+**Never choose an identity for the user.** When the result is `needs_input`, ask only the questions listed and repeat the options exactly. Three customers called "abdalmola" means you ask which one; it never means you pick the first.
+
+**Surface assumptions.** A remaining `confirm` question means we read something a particular way — usually a date, since 3/8/26 is read differently by locale. Show what we assumed so a wrong reading is caught before it matters.
+
+Always end with `__end_message`.</field>
+            <field name="tool_ids" eval="[(6, 0, [
+                ref('tool_list_commands'),
+                ref('tool_run_command'),
+            ])]"/>
+        </record>
+
+        <function model="ai.agent" name="_heal_core_topics"/>
+
+    </data>
+</odoo>

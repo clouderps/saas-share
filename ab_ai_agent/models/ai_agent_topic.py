@@ -22,6 +22,15 @@ class AIAgentTopic(models.Model):
     active = fields.Boolean(default=True)
     description = fields.Text(translate=True)
 
+    auto_attach = fields.Boolean(
+        string='Attach to the default assistant',
+        default=False,
+        help='When set, _heal_core_topics links this topic to the default '
+             'assistant on every upgrade. Lets a module ship a capability '
+             'that reaches existing tenants — the assistant record is '
+             'noupdate=True in deployed databases, so a topic added to its '
+             'seed data alone would never arrive.')
+
     # Instructions injected into the agent's system prompt right after
     # the persona block. Topic instructions tell the LLM how + when
     # to use the topic's tools; the agent's own prompt sets the tone.
