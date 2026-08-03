@@ -1284,6 +1284,64 @@
 }
 
 
+// ─── 12b. Past chats drawer ─────────────────────────────────────────
+//
+// Shared history with the floating bubble. Built entirely on the tokens
+// above so dark mode and RTL need no rule of their own — the padding is
+// logical, so the drawer sits under the header in both directions.
+
+.o_ai_history {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-block-size: 40vh;
+    overflow-y: auto;
+    padding: var(--ai-space-2, 8px);
+    background: var(--ai-surface-sunk, #F7F8FC);
+    border-block-end: 1px solid var(--ai-ghaima-line, #E6E8F0);
+}
+
+.o_ai_history__empty {
+    margin: 0;
+    padding: var(--ai-space-3, 12px);
+    text-align: center;
+    color: var(--ai-ghaima-muted, #6B7280);
+    font-size: var(--ai-text-sm, 0.875rem);
+}
+
+.o_ai_history__item {
+    display: flex;
+    align-items: center;
+    gap: var(--ai-space-2, 8px);
+    inline-size: 100%;
+    padding: var(--ai-space-2, 8px) var(--ai-space-3, 12px);
+    border: 0;
+    border-radius: var(--ai-radius-sm, 6px);
+    background: transparent;
+    color: var(--ai-ghaima-ink, #1A1F36);
+    font-size: var(--ai-text-sm, 0.875rem);
+    text-align: start;
+    cursor: pointer;
+
+    &:hover { background: var(--ai-surface, #FFF); }
+
+    // The rail marks the open chat, on the leading edge in both
+    // directions — logical property, no mirrored rule.
+    &.is-active {
+        background: var(--ai-surface, #FFF);
+        box-shadow: inset var(--ai-rail, 4px) 0 0 0 var(--ghaima-blue, #005FF6);
+    }
+}
+
+.o_ai_history__name { flex: 1 1 auto; min-inline-size: 0; }
+
+.o_ai_history__count {
+    flex: 0 0 auto;
+    color: var(--ai-ghaima-muted, #6B7280);
+    font-variant-numeric: tabular-nums;
+    font-size: var(--ai-text-xs, 0.75rem);
+}
+
 // ─── 13. Dark mode ──────────────────────────────────────────────────
 //
 // ab_ghaima_theme signals dark two ways — Bootstrap 5.3's data-bs-theme

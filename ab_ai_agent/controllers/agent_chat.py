@@ -15,6 +15,7 @@ the public website widget hits a separate auth='public' route.
 """
 from __future__ import annotations
 
+import json
 import logging
 
 from odoo import http, _
@@ -192,6 +193,138 @@ class AIAgentController(http.Controller):
             'agent_id': conv.agent_id.id if conv and conv.agent_id else False,
         }
 
+    # ── Conversations ──────────────────────────────────────────
+    #
+    # The console used to be stateless: every visit started from a blank
+    # welcome, and nothing it said was ever written down. Meanwhile the
+    # floating bubble and the old full-page chat both persisted to
+    # ai.chat.conversation — so the same user, asking the same assistant,
+    # had two different memories depending on which door they came in.
+    #
+    # These endpoints put the console on those same rows. They live here
+    # rather than calling /ai_chat/* directly because ab_ai_agent ships in
+    # saas-share and must install with no chatbot module present; when
+    # ai.chat.conversation is absent every one of them degrades to
+    # "unavailable" and the console simply behaves as it did before.
+
+    @http.route('/ai_agent/conversation/list', type='json', auth='user',
+                methods=['POST'])
+    def conversation_list(self, limit=30, **_kw):
+        Conv = request.env.get('ai.chat.conversation')
+        if Conv is None:
+            return {'success': True, 'available': False, 'conversations': []}
+        convs = Conv.search(
+            [('user_id', '=', request.env.uid), ('record_ref', '=', False)],
+            limit=int(limit))
+        return {
+            'success': True,
+            'available': True,
+            'conversations': [{
+                'id': c.id,
+                'name': c.name or _('New Chat'),
+                'message_count': c.message_count,
+                'updated': str(c.write_date or ''),
+            } for c in convs],
+        }
+
+    @http.route('/ai_agent/conversation/messages', type='json', auth='user',
+                methods=['POST'])
+    def conversation_messages(self, conversation_id=None, **_kw):
+        Conv = request.env.get('ai.chat.conversation')
+        if Conv is None or not conversation_id:
+            return {'success': True, 'available': False, 'messages': []}
+        conv = Conv.browse(int(conversation_id))
+        # Ownership is checked by the record rule; browse + read raises
+        # for someone else's chat rather than leaking it.
+        if not conv.exists():
+            return {'success': False, 'error': 'not_found'}
+        conv.check_access('read')
+        return {
+            'success': True,
+            'available': True,
+            'conversation_id': conv.id,
+            'name': conv.name or '',
+            'agent_id': conv.agent_id.id if conv.agent_id else False,
+            'messages': _serialise_messages(conv),
+        }
+
+    @http.route('/ai_agent/conversation/new', type='json', auth='user',
+                methods=['POST'])
+    def conversation_new(self, agent_code=None, **_kw):
+        Conv = request.env.get('ai.chat.conversation')
+        if Conv is None:
+            return {'success': True, 'available': False, 'conversation_id': 0}
+        vals = {'name': _('New Chat')}
+        if agent_code:
+            agent = request.env['ai.agent'].get_by_code(agent_code)
+            if agent:
+                vals['agent_id'] = agent.id
+        conv = Conv.create(vals)
+        return {'success': True, 'available': True, 'conversation_id': conv.id}
+
+    @http.route('/ai_agent/conversation/open', type='json', auth='user',
+                methods=['POST'])
+    def conversation_open(self, conversation_id=None, agent_code=None, **_kw):
+        """The console's landing call: resume where the user left off.
+
+        Reopening the assistant and finding an empty screen is the thing
+        that made the console feel like a different product from the
+        bubble. Pick up the most recent chat instead, and only start a
+        fresh one when there is genuinely nothing to resume.
+        """
+        Conv = request.env.get('ai.chat.conversation')
+        if Conv is None:
+            return {'success': True, 'available': False, 'conversation_id': 0,
+                    'messages': []}
+        conv = Conv.browse(int(conversation_id)) if conversation_id else Conv
+        if conv and conv.exists():
+            conv.check_access('read')
+        else:
+            conv = Conv.search(
+                [('user_id', '=', request.env.uid),
+                 ('record_ref', '=', False)], limit=1)
+        if not conv:
+            return self.conversation_new(agent_code=agent_code)
+        return {
+            'success': True,
+            'available': True,
+            'conversation_id': conv.id,
+            'name': conv.name or '',
+            'agent_id': conv.agent_id.id if conv.agent_id else False,
+            'messages': _serialise_messages(conv),
+        }
+
+    @http.route('/ai_agent/action/confirm', type='json', auth='user',
+                methods=['POST'])
+    def action_confirm(self, conversation_id=None, action=None, **_kw):
+        """Run a write the assistant proposed, after the user agreed.
+
+        Confirmation chips carry a structured payload rather than a
+        prompt, and running them must not go back through the model: the
+        user already agreed to a specific captured call, so re-asking
+        risks executing something subtly different from what was shown.
+        This replays the captured tool with confirm=true — deterministic
+        and idempotent through the audit log.
+        """
+        Conv = request.env.get('ai.chat.conversation')
+        if Conv is None:
+            return {'success': False, 'error': 'confirmation_unavailable'}
+        if not (conversation_id and isinstance(action, dict)):
+            return {'success': False, 'error': 'bad_request'}
+        conv = Conv.browse(int(conversation_id))
+        if not conv.exists():
+            return {'success': False, 'error': 'not_found'}
+        conv.check_access('write')
+        try:
+            result = conv.execute_action(action)
+        except Exception:
+            _logger.exception('Confirmed action failed')
+            # Never surface the raw exception: it can carry SQL, record
+            # ids and field names the user has no business seeing.
+            return {'success': False,
+                    'error': _('That action could not be completed.')}
+        return {'success': True, 'result': result or {}}
+
     # ── Run ────────────────────────────────────────────────────
 
     @http.route('/ai_agent/run', type='json', auth='user', methods=['POST'])
@@ -275,6 +408,18 @@ class AIAgentController(http.Controller):
                 )
             except Exception:
                 conv = None
+        elif Conv is not None and kwargs.get('conversation_id'):
+            # The console now carries a real conversation id. Routing the
+            # turn through it is what makes the answer visible from the
+            # bubble and from Discuss — the three surfaces stopped being
+            # three separate memories the moment this branch existed.
+            try:
+                candidate = Conv.browse(int(kwargs['conversation_id']))
+                if candidate.exists():
+                    candidate.check_access('write')
+                    conv = candidate
+            except Exception:
+                conv = None
         if conv is not None:
             # Stamp the conversation's agent in case it was created
             # with a different default earlier.
@@ -330,6 +475,32 @@ class AIAgentController(http.Controller):
             'period': period,
             'summary': request.env['ai.usage.local.log'].sudo().usage_summary(period),
         }
+
+
+def _serialise_messages(conv):
+    """Past turns in the shape the console renders live ones.
+
+    envelope_json is the reason history is worth reopening: without it a
+    reloaded chart or KPI grid degrades to the plain sentence beside it,
+    so yesterday's answer looks poorer than it was when it arrived.
+    """
+    out = []
+    for m in conv.message_ids.sorted('id'):
+        envelope = None
+        if m.envelope_json:
+            try:
+                envelope = json.loads(m.envelope_json)
+            except (ValueError, TypeError):
+                envelope = None      # plain text is a fine fallback
+        out.append({
+            'id': m.id,
+            'role': m.role,
+            'text': m.content or '',
+            'envelope': envelope,
+            'rating': m.user_rating,
+            'created': str(m.create_date or ''),
+        })
+    return out
 
 
 def _persona_accent(persona):

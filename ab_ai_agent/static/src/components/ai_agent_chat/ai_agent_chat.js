@@ -63,8 +63,11 @@ export class AiAgentChat extends Component {
         recordName: { type: String, optional: true },
         // Optional initial message (deep-link / shared prompts)
         initialMessage: { type: String, optional: true },
-        // Loose conversation pointer for cache/history grouping
-        conversationId: { type: String, optional: true },
+        // Conversation to open with. A real ai.chat.conversation id once
+        // the chatbot module is installed (the bubble's expand button
+        // passes the chat it was showing); still accepts the old free
+        // string used as a loose cache-grouping key.
+        conversationId: { type: [String, Number], optional: true },
         // Mute the sidebar — used in narrow surfaces
         hideSidebar: { type: Boolean, optional: true },
         // Locale override (default = user.lang)
@@ -108,6 +111,15 @@ export class AiAgentChat extends Component {
             // simply renders no chips in the meantime.
             starters: [],
             groups: [],
+            // Shared history. The console used to forget everything the
+            // moment it closed, while the bubble beside it remembered —
+            // same user, same assistant, two different memories. These
+            // stay empty (and the history button hidden) when the
+            // chatbot module is not installed.
+            conversationId: 0,
+            conversations: [],
+            showHistory: false,
+            historyAvailable: false,
             // Voice (manager-only, gated by props.enableVoice)
             recording: false,
             speechAvailable: typeof window !== "undefined"
@@ -147,7 +159,14 @@ export class AiAgentChat extends Component {
                     this._addAssistantWelcome();
                 }
             } else {
-                this._addAssistantWelcome();
+                // Standalone console: resume the user's last chat — the
+                // same rows the bubble writes — so arriving by either
+                // door lands in one continuous conversation.
+                const resumed = await this._openConversation(
+                    this.props.conversationId);
+                if (!resumed) {
+                    this._addAssistantWelcome();
+                }
             }
             // Auto-send the initial prompt if the parent passed one.
             if (this.props.initialMessage) {
@@ -179,6 +198,160 @@ export class AiAgentChat extends Component {
             this.state.starters = [];
             this.state.groups = [];
         }
+    }
+
+    /**
+     * A chip inside an answer was clicked.
+     *
+     * <SuggestionChips/> bubbles `ai-chip-pick` and the host decides what
+     * it means. Two shapes:
+     *
+     *   - `action` — a captured write the user is agreeing to. Replayed
+     *     through the confirm endpoint, never back through the model:
+     *     they approved a specific call, and re-asking could produce a
+     *     different one.
+     *   - `prompt` — a disambiguation ("did you mean last month?").
+     *     Ordinary send.
+     *
+     * The console had no listener at all, so every clarification and
+     * every confirmation chip was inert — the button moved and nothing
+     * happened.
+     */
+    async onChipPick(ev) {
+        const detail = ev?.detail || {};
+        if (detail.action?.type) {
+            await this._confirmAction(detail.action, detail.label);
+            return;
+        }
+        if (detail.prompt) {
+            await this._send(detail.prompt);
+        }
+    }
+
+    async _confirmAction(action, label) {
+        if (this.state.isThinking) {
+            return;
+        }
+        if (!this.state.conversationId) {
+            // Nothing to replay against — the capture lives on the
+            // conversation. Say so rather than failing silently.
+            this._pushPlain(this.labels.confirmUnavailable);
+            return;
+        }
+        // Echo the user's decision so the transcript reads as a dialogue.
+        this.state.messages.push({
+            role: "user",
+            id: `c-${Date.now()}`,
+            text: label || this.labels.confirmed,
+        });
+        this.state.isThinking = true;
+        this.state.thinkingLabel = this.labels.applying;
+        try {
+            const res = await this.aiAgent.confirmAction({
+                conversationId: this.state.conversationId,
+                action,
+            });
+            this._pushPlain(res?.success
+                ? (res.result?.content || this.labels.done)
+                : (res?.error || this.labels.confirmFailed));
+        } catch (e) {
+            this._pushPlain(this.labels.confirmFailed);
+        } finally {
+            this.state.isThinking = false;
+        }
+    }
+
+    _pushPlain(text) {
+        const agent = this.activeAgent;
+        this.state.messages.push({
+            role: "assistant",
+            id: `p-${Date.now()}`,
+            text,
+            agentName: agent?.name || "Ghaima Assistant",
+            agentAccent: agent?.accent || "blue",
+            collapsed: false,
+            showTrace: false,
+        });
+    }
+
+    /**
+     * Resume the shared conversation. Returns true when prior turns
+     * were painted, so the caller knows whether a welcome is still due.
+     */
+    async _openConversation(conversationId) {
+        const res = await this.aiAgent.openConversation({
+            conversationId,
+            agentCode: this.props.agentCode,
+        });
+        if (!res?.available) {
+            return false;               // no chatbot module — stay stateless
+        }
+        this.state.historyAvailable = true;
+        this.state.conversationId = res.conversation_id || 0;
+        this._refreshConversations();   // fire-and-forget; the list is not
+                                        // needed to paint the transcript
+        return this._paintMessages(res.messages);
+    }
+
+    /** Repaint the stream from stored turns. */
+    _paintMessages(messages) {
+        this.state.messages = [];
+        if (!messages?.length) {
+            return false;
+        }
+        const agent = this.activeAgent;
+        for (const m of messages) {
+            this.state.messages.push({
+                role: m.role === "user" ? "user" : "assistant",
+                id: `h-${m.id}`,
+                text: m.text,
+                // envelope_json is why reopening is worth doing: without
+                // it a stored chart degrades to the sentence beside it.
+                envelope: m.envelope || null,
+                feedback: m.rating > 0 ? "up" : (m.rating < 0 ? "down" : null),
+                agentName: agent?.name || "Ghaima Assistant",
+                agentAccent: agent?.accent || "blue",
+                isHistorical: true,
+            });
+        }
+        return true;
+    }
+
+    async _refreshConversations() {
+        const res = await this.aiAgent.listConversations();
+        this.state.conversations = res?.conversations || [];
+        this.state.historyAvailable = !!res?.available;
+    }
+
+    toggleHistory() {
+        this.state.showHistory = !this.state.showHistory;
+        if (this.state.showHistory) {
+            this._refreshConversations();
+        }
+    }
+
+    async selectConversation(id) {
+        if (!id || id === this.state.conversationId) {
+            this.state.showHistory = false;
+            return;
+        }
+        const res = await this.aiAgent.loadConversation(id);
+        if (res?.success) {
+            this.state.conversationId = id;
+            if (!this._paintMessages(res.messages)) {
+                this._addAssistantWelcome();
+            }
+        }
+        this.state.showHistory = false;
+    }
+
+    async startNewConversation() {
+        const res = await this.aiAgent.newConversation(this.props.agentCode);
+        this.state.conversationId = res?.conversation_id || 0;
+        this.state.messages = [];
+        this.state.showHistory = false;
+        this._addAssistantWelcome();
+        this._refreshConversations();
     }
 
     async _loadRecordHistory() {
@@ -435,6 +608,14 @@ export class AiAgentChat extends Component {
             stopRecording: _t("Stop recording"),
             answer: _t("Answer"),
             welcome: _t("Start here"),
+            history: _t("Past chats"),
+            newChat: _t("New chat"),
+            noHistory: _t("No earlier chats yet"),
+            confirmed: _t("Confirmed"),
+            applying: _t("Applying…"),
+            done: _t("Done."),
+            confirmFailed: _t("That action could not be completed."),
+            confirmUnavailable: _t("This chat has no saved history, so there is nothing to confirm against. Ask again and confirm from the new answer."),
         };
     }
 
@@ -573,8 +754,19 @@ export class AiAgentChat extends Component {
                     model: this.props.recordModel, id: this.props.recordId,
                 } : null,
                 locale: this.props.locale,
-                conversationId: this.props.conversationId,
+                // The live conversation wins over the prop: the prop is
+                // only the id we were opened with, and the user may have
+                // switched chats since.
+                conversationId: this.state.conversationId
+                    || this.props.conversationId,
             });
+            // First turn of a brand-new chat mints the row server-side.
+            if (envelope.conversation_id) {
+                if (envelope.conversation_id !== this.state.conversationId) {
+                    this.state.conversationId = envelope.conversation_id;
+                }
+                this._refreshConversations();
+            }
             const agent = this.activeAgent;
             this.state.messages.push({
                 role: "assistant",

@@ -35,6 +35,24 @@
                     <p class="o_ai_agent_chat__subtitle text-truncate" t-esc="headerSubtitle"/>
                 </div>
                 <AiAgentTokenMeter compact="props.surface !== 'chat'"/>
+                <!-- Shared with the floating bubble and Discuss: these
+                     read the same ai.chat.conversation rows, so a chat
+                     started in one surface is continued in another.
+                     Hidden entirely when no chatbot module is installed
+                     and there is therefore nothing to remember. -->
+                <button t-if="state.historyAvailable"
+                        class="o_ai_agent_chat__icon_btn"
+                        t-att-class="{ 'is-muted': state.showHistory }"
+                        type="button" t-on-click="toggleHistory"
+                        t-att-title="labels.history">
+                    <i class="fa fa-history"/>
+                </button>
+                <button t-if="state.historyAvailable"
+                        class="o_ai_agent_chat__icon_btn"
+                        type="button" t-on-click="startNewConversation"
+                        t-att-title="labels.newChat">
+                    <i class="fa fa-plus"/>
+                </button>
                 <button class="o_ai_agent_chat__icon_btn"
                         t-att-class="{ 'is-muted': state.muted }"
                         t-on-click="toggleMute"
@@ -48,9 +66,31 @@
                 </button>
             </header>
 
+            <!-- Past chats. A drawer rather than a permanent column:
+                 the answer is the content here, and a list of old chats
+                 competing with it every session is the wrong default. -->
+            <div t-if="state.showHistory" class="o_ai_history">
+                <p t-if="!state.conversations.length" class="o_ai_history__empty"
+                   t-esc="labels.noHistory"/>
+                <button t-foreach="state.conversations" t-as="conv" t-key="conv.id"
+                        type="button" class="o_ai_history__item"
+                        t-att-class="{ 'is-active': conv.id === state.conversationId }"
+                        t-on-click="() => this.selectConversation(conv.id)">
+                    <i class="fa fa-comment-o" aria-hidden="true"/>
+                    <span class="o_ai_history__name text-truncate" t-esc="conv.name"/>
+                    <span class="o_ai_history__count" t-esc="conv.message_count"/>
+                </button>
+            </div>
+
             <!-- ── Body ───────────────────────────────────────────── -->
             <div class="o_ai_agent_chat__body">
-                <div class="o_ai_agent_chat__stream" t-ref="stream">
+                <!-- ai-chip-pick bubbles from <SuggestionChips/> deep
+                     inside an answer card, so it is caught here at the
+                     stream rather than per-message. Without this every
+                     clarification and write-confirmation chip in the
+                     console was inert. -->
+                <div class="o_ai_agent_chat__stream" t-ref="stream"
+                     t-on-ai-chip-pick="onChipPick">
                     <t t-foreach="state.messages" t-as="msg" t-key="msg.id">
 
                         <!-- Question: context for the answer below it,
@@ -191,6 +231,11 @@
             </div>
 
             <!-- ── Footer ─────────────────────────────────────────── -->
+            <!-- Attach / camera are NOT here on purpose. ab_ai_agent
+                 ships in saas-share and must stay free of scanner code;
+                 ab_ai_chatbot depends on both this and ab_scan_docs and
+                 patches them in (ai_agent_chat_attach_patch.js), which
+                 also gets torch and auto-capture for free. -->
             <footer class="o_ai_agent_chat__footer">
                 <form class="o_ai_agent_chat__form" t-on-submit.prevent="send">
                     <button t-if="props.enableVoice and state.speechAvailable"
@@ -227,6 +272,7 @@
                              initialMessage="params.initial_message"
                              recordModel="params.record_model"
                              recordId="params.record_id"
+                             conversationId="params.conversation_id"
                              enableVoice="!!params.enable_voice"/>
             </div>
         </div>

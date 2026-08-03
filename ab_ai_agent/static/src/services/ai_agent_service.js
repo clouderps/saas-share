@@ -107,6 +107,64 @@ export const aiAgentService = {
         }
 
         /**
+         * Conversation history, shared with the floating bubble and
+         * Discuss. All of these answer `available: false` when the
+         * chatbot module is not installed — ab_ai_agent ships in
+         * saas-share and has to work on a database with no chat history
+         * at all, where the console simply stays stateless as before.
+         */
+        async function openConversation({ conversationId, agentCode } = {}) {
+            try {
+                return await rpc("/ai_agent/conversation/open", {
+                    conversation_id: conversationId || 0,
+                    agent_code: agentCode,
+                });
+            } catch (e) {
+                return { success: false, available: false, messages: [] };
+            }
+        }
+
+        async function listConversations() {
+            try {
+                return await rpc("/ai_agent/conversation/list", {});
+            } catch (e) {
+                return { success: false, available: false, conversations: [] };
+            }
+        }
+
+        async function loadConversation(conversationId) {
+            try {
+                return await rpc("/ai_agent/conversation/messages", {
+                    conversation_id: conversationId,
+                });
+            } catch (e) {
+                return { success: false, messages: [] };
+            }
+        }
+
+        /**
+         * Replay a write the user just confirmed. Deliberately not a
+         * model round-trip: they agreed to a specific captured call, and
+         * re-asking could execute something other than what they saw.
+         */
+        async function confirmAction({ conversationId, action } = {}) {
+            return await rpc("/ai_agent/action/confirm", {
+                conversation_id: conversationId,
+                action,
+            });
+        }
+
+        async function newConversation(agentCode) {
+            try {
+                return await rpc("/ai_agent/conversation/new", {
+                    agent_code: agentCode,
+                });
+            } catch (e) {
+                return { success: false, conversation_id: 0 };
+            }
+        }
+
+        /**
          * Opening suggestions for the empty state, derived server-side
          * from the user's real menu access. Never throws — the panel is
          * fully usable with no chips, so a failure here must not stop it
@@ -174,6 +232,11 @@ export const aiAgentService = {
             rateRun,
             refreshMeter,
             lookupRecordConversation,
+            openConversation,
+            listConversations,
+            loadConversation,
+            newConversation,
+            confirmAction,
             fetchStarters,
         };
     },
