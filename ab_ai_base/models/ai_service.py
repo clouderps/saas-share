@@ -599,6 +599,10 @@ class AIProviderService(models.AbstractModel):
             details = api_usage.get('prompt_tokens_details') or {}
             if details.get('cached_tokens'):
                 usage['cache_read_tokens'] = details['cached_tokens']
+                # The runtime reads 'cached_tokens'; writing only
+                # 'cache_read_tokens' made the meter read 0 for
+                # every provider even when caching worked.
+                usage['cached_tokens'] = details['cached_tokens']
             raw_calls = choice.get('tool_calls') or []
             if raw_calls:
                 usage['tool_calls'] = _parse_openai_tool_calls(raw_calls)
@@ -651,6 +655,11 @@ class AIProviderService(models.AbstractModel):
                 'prompt_tokens': api_usage.get('promptTokenCount', 0),
                 'completion_tokens': api_usage.get('candidatesTokenCount', 0),
                 'total_tokens': api_usage.get('totalTokenCount', 0),
+                # Gemini 2.5 caches a stable prefix implicitly — no
+                # explicit cachedContent needed — but it only reports it
+                # here. Not reading it meant the meter showed 0% forever
+                # and there was no way to tell whether caching worked.
+                'cached_tokens': api_usage.get('cachedContentTokenCount', 0),
                 'model': model,
                 'provider': 'google',
             }
@@ -745,6 +754,7 @@ class AIProviderService(models.AbstractModel):
                 usage['cache_write_tokens'] = cache_write
             if cache_read:
                 usage['cache_read_tokens'] = cache_read
+                usage['cached_tokens'] = cache_read
             if tool_uses:
                 usage['tool_calls'] = _parse_anthropic_tool_uses(tool_uses)
             return text, usage
@@ -795,6 +805,10 @@ class AIProviderService(models.AbstractModel):
             details = api_usage.get('prompt_tokens_details') or {}
             if details.get('cached_tokens'):
                 usage['cache_read_tokens'] = details['cached_tokens']
+                # The runtime reads 'cached_tokens'; writing only
+                # 'cache_read_tokens' made the meter read 0 for
+                # every provider even when caching worked.
+                usage['cached_tokens'] = details['cached_tokens']
             return text, usage
         except requests.exceptions.RequestException as e:
             _logger.error("OpenAI Vision error: %s", e)
@@ -859,6 +873,7 @@ class AIProviderService(models.AbstractModel):
                 usage['cache_write_tokens'] = cache_write
             if cache_read:
                 usage['cache_read_tokens'] = cache_read
+                usage['cached_tokens'] = cache_read
             return text, usage
         except requests.exceptions.RequestException as e:
             _logger.error("Claude Vision error: %s", e)
@@ -904,6 +919,7 @@ class AIProviderService(models.AbstractModel):
                 'prompt_tokens': api_usage.get('promptTokenCount', 0),
                 'completion_tokens': api_usage.get('candidatesTokenCount', 0),
                 'total_tokens': api_usage.get('totalTokenCount', 0),
+                'cached_tokens': api_usage.get('cachedContentTokenCount', 0),
                 'model': model, 'provider': 'google',
             }
         except requests.exceptions.RequestException as e:
