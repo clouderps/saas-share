@@ -269,3 +269,43 @@ class TestActionMarkupAbsorbed(TransactionCase):
         clean, action = rt._absorb_action_markup(self.env, text)
         self.assertEqual(clean, text)
         self.assertIsNone(action)
+
+
+@tagged('post_install', '-at_install', 'ghaima_ai_agent')
+class TestStepLimitMessage(TransactionCase):
+    """Running out of steps is not a failure the user caused.
+
+    It used to surface as a red "AI request failed" card reading
+    MAX_HOPS over "the provider returned an error" — none of which is
+    true, and none of which tells the user what to do next.
+    """
+
+    def _envelope(self, locale='en', partial=''):
+        agent = self.env['ai.agent'].search([], limit=1)
+        return rt._maxhops_envelope(agent, locale, partial=partial)
+
+    def test_no_raw_error_code_reaches_the_user(self):
+        env = self._envelope()
+        self.assertNotIn('MAX_HOPS', str(env))
+        # No 'error' key: the generic renderer paints a red failure card
+        # off it, which misreports what happened.
+        self.assertNotIn('error', env)
+
+    def test_no_internal_step_count(self):
+        """"6 steps" is a number the user cannot act on."""
+        text = self._envelope()['response']
+        self.assertNotIn('step', text.lower())
+
+    def test_tone_is_a_warning_not_a_failure(self):
+        block = self._envelope()['render']['blocks'][0]
+        self.assertEqual(block['tone'], 'warn')
+
+    def test_arabic_user_is_answered_in_arabic(self):
+        """locale was accepted here and never used, so an Arabic user
+        got an English apology."""
+        text = self._envelope(locale='ar_001')['response']
+        self.assertRegex(text, r'[؀-ۿ]')
+
+    def test_partial_answer_is_kept(self):
+        text = self._envelope(partial='Sales were 1,240 SAR so far')['response']
+        self.assertIn('1,240', text)

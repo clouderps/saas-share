@@ -39,8 +39,27 @@ def _has_active_provider(env):
         return False
 
 
+def _configured_max_tokens(env, fallback=2000):
+    """Output ceiling from the active provider config.
+
+    The gateway path used to receive a hard-coded 2000 while the direct
+    path quietly used the config, so raising ai.provider.config.max_tokens
+    changed the answer length on a tenant talking to a provider directly
+    and did nothing at all on one routed through the central gateway.
+    Same setting, same screen, two different behaviours.
+    """
+    Config = env.get('ai.provider.config')
+    if Config is None:
+        return fallback
+    try:
+        cfg = Config.sudo().search([('max_tokens', '>', 0)], limit=1)
+        return int(cfg.max_tokens) if cfg else fallback
+    except Exception:
+        return fallback
+
+
 def call_llm(env, agent, *, system_prompt, user_prompt, tools=None,
-             temperature=None, max_tokens=2000, image_data=None,
+             temperature=None, max_tokens=None, image_data=None,
              image_mimetype=None, model_class_hint=None):
     """Resolve the LLM call path + execute.
 
@@ -53,6 +72,8 @@ def call_llm(env, agent, *, system_prompt, user_prompt, tools=None,
     list of dicts here; we adapt to the actual provider on the way out.
     """
     request_id = str(uuid.uuid4())
+    if max_tokens is None:
+        max_tokens = _configured_max_tokens(env)
     temperature = temperature if temperature is not None else (
         agent.temperature() if agent else 0.3)
     model_class_hint = model_class_hint or (agent.model_class if agent else 'fast')

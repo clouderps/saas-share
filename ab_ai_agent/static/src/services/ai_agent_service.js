@@ -62,7 +62,8 @@ export const aiAgentService = {
         }
 
         // ── Run ─────────────────────────────────────────────────
-        async function runAgent({ message, agent, skill, surface, record, locale, conversationId } = {}) {
+        async function runAgent({ message, agent, skill, surface, record, locale,
+                                 conversationId, stream } = {}) {
             agent = agent || state.activeAgent;
             const payload = {
                 message: message || "",
@@ -73,6 +74,7 @@ export const aiAgentService = {
                 record_model: record?.model,
                 record_id: record?.id,
                 conversation_id: conversationId || "",
+                stream: !!stream,
                 locale: locale || (user.lang || "en").slice(0, 2),
             };
             const res = await rpc("/ai_agent/run", payload);
@@ -154,6 +156,18 @@ export const aiAgentService = {
             });
         }
 
+        /** Mint or revoke the public link for a conversation. */
+        async function shareConversation({ conversationId, revoke } = {}) {
+            try {
+                return await rpc("/ai_agent/conversation/share", {
+                    conversation_id: conversationId,
+                    revoke: !!revoke,
+                });
+            } catch (e) {
+                return { success: false };
+            }
+        }
+
         async function newConversation(agentCode) {
             try {
                 return await rpc("/ai_agent/conversation/new", {
@@ -220,6 +234,30 @@ export const aiAgentService = {
             // bus_service might not be ready in all surfaces — non-fatal.
         }
 
+        // Live run progress. The server emits on each hop and each tool
+        // call, so the wait shows what is actually happening instead of
+        // a spinner that says nothing for eight seconds. Listeners are
+        // per-component; the service just fans out.
+        const streamListeners = new Set();
+        function onStream(cb) {
+            streamListeners.add(cb);
+            return () => streamListeners.delete(cb);
+        }
+        try {
+            bus_service.subscribe("ai.agent.stream", (payload) => {
+                for (const cb of streamListeners) {
+                    try {
+                        cb(payload);
+                    } catch (e) {
+                        // One bad listener must not stop the others.
+                    }
+                }
+            });
+        } catch (e) {
+            // No bus on this surface — the answer still arrives, just
+            // without the running commentary.
+        }
+
         // Initial bootstrap.
         refreshAgents();
         refreshMeter();
@@ -232,11 +270,13 @@ export const aiAgentService = {
             rateRun,
             refreshMeter,
             lookupRecordConversation,
+            onStream,
             openConversation,
             listConversations,
             loadConversation,
             newConversation,
             confirmAction,
+            shareConversation,
             fetchStarters,
         };
     },

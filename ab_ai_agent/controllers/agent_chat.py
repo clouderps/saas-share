@@ -19,7 +19,9 @@ import json
 import logging
 
 from odoo import http, _
+from odoo.api import Environment as Env
 from odoo.http import request
+from odoo.modules.registry import Registry as registry
 
 _logger = logging.getLogger(__name__)
 
@@ -294,6 +296,33 @@ class AIAgentController(http.Controller):
             'messages': _serialise_messages(conv),
         }
 
+    @http.route('/ai_agent/conversation/share', type='json', auth='user',
+                methods=['POST'])
+    def conversation_share(self, conversation_id=None, revoke=False, **_kw):
+        """Mint (or revoke) a public link to a conversation.
+
+        Sharing an answer with a colleague is how these get used in
+        practice — someone asks for the month's numbers and forwards
+        what came back. The link is a capability: anyone holding it can
+        read the chat, so revoking has to be as easy as creating.
+        """
+        Conv = request.env.get('ai.chat.conversation')
+        if Conv is None:
+            return {'success': False, 'error': 'sharing_unavailable'}
+        if not conversation_id:
+            return {'success': False, 'error': 'bad_request'}
+        conv = Conv.browse(int(conversation_id))
+        if not conv.exists():
+            return {'success': False, 'error': 'not_found'}
+        # write, not read: only the owner may publish a conversation.
+        conv.check_access('write')
+        if revoke:
+            conv.action_unshare()
+            return {'success': True, 'shared': False, 'share_url': ''}
+        result = conv.action_share() or {}
+        return {'success': True, 'shared': True,
+                'share_url': result.get('share_url', '')}
+
     @http.route('/ai_agent/action/confirm', type='json', auth='user',
                 methods=['POST'])
     def action_confirm(self, conversation_id=None, action=None, **_kw):
@@ -398,6 +427,11 @@ class AIAgentController(http.Controller):
         # turn lands as ai.chat.message rows (persistent history,
         # Cache lookup, Validator verdict). This is the path the
         # chatter Ask AI button takes.
+        # Live progress. Off unless the caller asked for it, so the
+        # public widget and server-to-server callers pay nothing.
+        on_event = _make_stream_emitter(request.env) \
+            if kwargs.get('stream') else None
+
         Conv = request.env.get('ai.chat.conversation')
         surface = kwargs.get('surface') or 'chat'
         conv = None
@@ -427,7 +461,8 @@ class AIAgentController(http.Controller):
                 conv.sudo().agent_id = agent.id
             # Run goes through ai.chat.conversation → which delegates
             # to ab_ai_agent.runtime when the flag is ON (it is).
-            result = conv.sudo().with_user(request.env.user).send_message(question)
+            result = conv.sudo().with_user(request.env.user).send_message(
+                question, on_event=on_event)
             env_dict = result.get('envelope') or {}
             env_dict.update({
                 'success': True,
@@ -447,6 +482,7 @@ class AIAgentController(http.Controller):
             record_ref=record_ref,
             skill=skill or None,
             locale=kwargs.get('locale') or 'en',
+            on_event=on_event,
         )
         envelope['success'] = True
         envelope['run_id'] = run.id
@@ -475,6 +511,49 @@ class AIAgentController(http.Controller):
             'period': period,
             'summary': request.env['ai.usage.local.log'].sudo().usage_summary(period),
         }
+
+
+#: Bus notification type the console subscribes to for live progress.
+STREAM_TYPE = 'ai.agent.stream'
+
+
+def _make_stream_emitter(env):
+    """Fan run progress onto the bus as it happens.
+
+    bus.bus._sendone queues into cr.precommit/postcommit, so events sent
+    from inside the request transaction only reach the browser when that
+    transaction commits — i.e. at the same moment as the finished answer.
+    That is what the previous implementation did, which meant the whole
+    "stream" arrived in one burst after the wait it was meant to fill.
+
+    Each event therefore gets its own short-lived cursor that commits
+    immediately. The side effect is deliberate: progress already shown to
+    the user should survive even if the run itself later fails and the
+    main transaction rolls back.
+    """
+    db = env.cr.dbname
+    uid = env.uid
+    partner_id = env.user.partner_id.id
+    if not partner_id:
+        return lambda *a, **k: None
+
+    def emit(kind, **kw):
+        payload = {'kind': kind}
+        # Only forward what the UI paints. Tool args can carry customer
+        # names and amounts, and this leaves the request transaction.
+        for key in ('hop', 'tool', 'ok', 'state', 'agent'):
+            if key in kw:
+                payload[key] = kw[key]
+        try:
+            with registry(db).cursor() as cr:
+                Env(cr, uid, {})['bus.bus']._sendone(
+                    Env(cr, uid, {})['res.partner'].browse(partner_id),
+                    STREAM_TYPE, payload)
+        except Exception:
+            # Progress is a nicety; never let it break the answer.
+            _logger.debug('stream emit failed', exc_info=True)
+
+    return emit
 
 
 def _serialise_messages(conv):

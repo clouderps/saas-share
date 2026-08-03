@@ -120,7 +120,10 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
                 user_prompt=prompt_for_llm,
                 tools=llm_tool_schemas,
                 temperature=agent.temperature(),
-                max_tokens=2000,
+                # None = take the ceiling from the provider config
+                # rather than pinning it here, where it silently
+                # overrode that setting on gateway-routed tenants.
+                max_tokens=None,
             )
         except llm_adapter.AiProviderError as e:
             # A configured provider/gateway failed — finalize as a real
@@ -338,7 +341,7 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
 
     if not final_text:
         # We hit max_hops without a terminal step.
-        envelope = _maxhops_envelope(agent, locale)
+        envelope = _maxhops_envelope(agent, locale, partial=final_text)
         agent_run.finalize(
             state='maxhops',
             response=envelope['response'],
@@ -1297,17 +1300,46 @@ def _provider_error_envelope(locale):
     }
 
 
-def _maxhops_envelope(agent, locale):
-    msg = (f'I reached the maximum of {agent.max_hops} steps without a clear '
-           'answer. Could you rephrase or narrow the question?')
+def _maxhops_envelope(agent, locale, partial=''):
+    """What to say when the agent ran out of steps.
+
+    This used to surface as a red failure card reading "MAX_HOPS" over
+    "the provider returned an error" — none of which is true or useful.
+    Nothing failed: the assistant worked through its step budget and did
+    not converge, which to the person asking is simply an answer that
+    did not arrive. So: no error code, no step counts (a number the user
+    cannot act on), warn tone rather than danger, and their own language
+    — `locale` was accepted here and never used, so Arabic users read an
+    English apology.
+
+    `partial` is usually empty — reaching the cap means the model was
+    still mid tool-chain, and tool actions carry no prose. It is honoured
+    anyway so that if a future path does arrive here holding text, that
+    text is shown rather than replaced by a generic apology.
+    """
+    arabic = str(locale or '').startswith('ar')
+    if arabic:
+        title = 'لم أصل إلى إجابة كاملة'
+        ask = ('لم أتمكّن من الوصول إلى إجابة نهائية لهذا السؤال. '
+               'جرّب تضييق السؤال أو اسأل عن جزء واحد منه.')
+    else:
+        title = "I couldn't finish this one"
+        ask = ('I could not get to a complete answer for this question. '
+               'Try narrowing it, or ask about one part at a time.')
+
+    partial = (partial or '').strip()
+    body = f'{partial}\n\n{ask}' if partial else ask
     return {
-        'response': msg,
-        'error': 'MAX_HOPS',
+        'response': body,
+        # Deliberately no 'error' key: the generic error renderer paints
+        # a red "AI request failed" card off it, and this is not a
+        # failure the user caused or can fix by retrying identically.
+        # The run record still records state='maxhops' for the audit.
         'render': {
             'layout': 'chat',
             'blocks': [
-                {'type': 'callout', 'title': 'Step limit reached', 'body': msg,
-                 'tone': 'warn', 'icon': 'fa-clock-o'},
+                {'type': 'callout', 'title': title, 'body': body,
+                 'tone': 'warn', 'icon': 'fa-lightbulb-o'},
             ],
         },
     }

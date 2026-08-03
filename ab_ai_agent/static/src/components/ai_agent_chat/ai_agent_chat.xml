@@ -53,6 +53,16 @@
                         t-att-title="labels.newChat">
                     <i class="fa fa-plus"/>
                 </button>
+                <!-- Share is a capability link, so revoking sits in the
+                     same place as creating rather than buried. -->
+                <button t-if="state.historyAvailable and state.conversationId"
+                        class="o_ai_agent_chat__icon_btn"
+                        t-att-class="{ 'is-muted': state.shareUrl }"
+                        type="button"
+                        t-on-click="() => state.shareUrl ? this.unshareConversation() : this.shareConversation()"
+                        t-att-title="state.shareUrl ? labels.unshare : labels.share">
+                    <i t-att-class="state.shareUrl ? 'fa fa-chain-broken' : 'fa fa-share-alt'"/>
+                </button>
                 <button class="o_ai_agent_chat__icon_btn"
                         t-att-class="{ 'is-muted': state.muted }"
                         t-on-click="toggleMute"
@@ -66,24 +76,29 @@
                 </button>
             </header>
 
-            <!-- Past chats. A drawer rather than a permanent column:
-                 the answer is the content here, and a list of old chats
-                 competing with it every session is the wrong default. -->
-            <div t-if="state.showHistory" class="o_ai_history">
-                <p t-if="!state.conversations.length" class="o_ai_history__empty"
-                   t-esc="labels.noHistory"/>
-                <button t-foreach="state.conversations" t-as="conv" t-key="conv.id"
-                        type="button" class="o_ai_history__item"
-                        t-att-class="{ 'is-active': conv.id === state.conversationId }"
-                        t-on-click="() => this.selectConversation(conv.id)">
-                    <i class="fa fa-comment-o" aria-hidden="true"/>
-                    <span class="o_ai_history__name text-truncate" t-esc="conv.name"/>
-                    <span class="o_ai_history__count" t-esc="conv.message_count"/>
-                </button>
-            </div>
-
             <!-- ── Body ───────────────────────────────────────────── -->
-            <div class="o_ai_agent_chat__body">
+            <div class="o_ai_agent_chat__body"
+                 t-att-class="{ 'has-history': state.showHistory }">
+                <!-- Past chats, as a column beside the conversation
+                     rather than a sheet dropped over it: an overlay hid
+                     the answer the user was reading in order to show
+                     them a list of other answers. Grid order puts it on
+                     the leading edge — left in LTR, right in RTL — with
+                     no mirrored rule. -->
+                <aside t-if="state.showHistory" class="o_ai_history">
+                    <p class="o_ai_history__title" t-esc="labels.history"/>
+                    <p t-if="!state.conversations.length" class="o_ai_history__empty"
+                       t-esc="labels.noHistory"/>
+                    <button t-foreach="state.conversations" t-as="conv" t-key="conv.id"
+                            type="button" class="o_ai_history__item"
+                            t-att-class="{ 'is-active': conv.id === state.conversationId }"
+                            t-on-click="() => this.selectConversation(conv.id)">
+                        <i class="fa fa-comment-o" aria-hidden="true"/>
+                        <span class="o_ai_history__name text-truncate" t-esc="conv.name"/>
+                        <span class="o_ai_history__count" t-esc="conv.message_count"/>
+                    </button>
+                </aside>
+
                 <!-- ai-chip-pick bubbles from <SuggestionChips/> deep
                      inside an answer card, so it is caught here at the
                      stream rather than per-message. Without this every
@@ -195,6 +210,16 @@
                             <h3 class="o_ai_answer__title" t-esc="state.thinkingLabel || labels.working"/>
                         </header>
                         <div class="o_ai_answer__body">
+                            <!-- Sources as they are consulted. Live from
+                                 the server, so a long wait shows work
+                                 rather than an unmoving spinner. -->
+                            <div t-if="state.streamSteps.length" class="o_ai_stream">
+                                <span t-foreach="state.streamSteps" t-as="step"
+                                      t-key="step" class="o_ai_stream__step">
+                                    <i class="fa fa-check" aria-hidden="true"/>
+                                    <t t-esc="toolLabel(step)"/>
+                                </span>
+                            </div>
                             <div class="o_ai_skeleton">
                                 <span class="o_ai_skeleton__kpi"/>
                                 <span class="o_ai_skeleton__kpi"/>

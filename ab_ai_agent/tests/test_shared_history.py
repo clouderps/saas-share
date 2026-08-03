@@ -149,3 +149,53 @@ class TestSharedHistory(HttpCase):
         # payload rather than the shape so either outcome passes for the
         # right reason.
         self.assertNotIn('SECRET-CONTENT-MARKER', raw)
+
+
+@tagged('post_install', '-at_install', 'ghaima_ai_agent')
+class TestShare(HttpCase):
+    """A shared link is a capability: revoking must be as easy as making."""
+
+    def setUp(self):
+        super().setUp()
+        if self.env.get('ai.chat.conversation') is None:
+            self.skipTest('ab_ai_chatbot not installed')
+        self.owner = self.env['res.users'].create({
+            'name': 'Share Owner', 'login': 'share-owner-test',
+            'password': 'share-owner-test-pw',
+            'groups_id': [(6, 0, [self.env.ref('base.group_user').id])],
+        })
+        self.env = self.env(user=self.owner)
+        self.authenticate('share-owner-test', 'share-owner-test-pw')
+        self.conv = self.env['ai.chat.conversation'].create({'name': 'To share'})
+
+    def _share(self, **params):
+        return self.url_open(
+            '/ai_agent/conversation/share',
+            data=json.dumps({'jsonrpc': '2.0', 'method': 'call',
+                             'params': params}),
+            headers={'Content-Type': 'application/json'},
+        ).json().get('result') or {}
+
+    def test_share_mints_a_link(self):
+        res = self._share(conversation_id=self.conv.id)
+        self.assertTrue(res.get('shared'))
+        self.assertIn('/ai_chat/shared/', res.get('share_url', ''))
+
+    def test_revoke_clears_the_token(self):
+        self._share(conversation_id=self.conv.id)
+        res = self._share(conversation_id=self.conv.id, revoke=True)
+        self.assertFalse(res.get('shared'))
+        self.assertFalse(self.conv.share_token)
+        self.assertFalse(self.conv.is_shared)
+
+    def test_cannot_publish_someone_elses_chat(self):
+        """Read access is not permission to publish."""
+        other = self.env['res.users'].sudo().create({
+            'name': 'Not The Owner', 'login': 'share-nonowner-test',
+            'groups_id': [(6, 0, [self.env.ref('base.group_user').id])],
+        })
+        theirs = self.env['ai.chat.conversation'].sudo().with_user(
+            other).create({'name': 'Theirs'})
+        res = self._share(conversation_id=theirs.id)
+        self.assertFalse(res.get('shared'))
+        self.assertFalse(theirs.sudo().is_shared)

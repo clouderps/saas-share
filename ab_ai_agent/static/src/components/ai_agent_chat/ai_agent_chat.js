@@ -1,6 +1,6 @@
 /** @odoo-module **/
 
-import { Component, useState, useRef, onMounted, onPatched, useEffect } from "@odoo/owl";
+import { Component, useState, useRef, onMounted, onPatched, onWillUnmount, useEffect } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
 import { _t } from "@web/core/l10n/translation";
 import { registry } from "@web/core/registry";
@@ -120,6 +120,11 @@ export class AiAgentChat extends Component {
             conversations: [],
             showHistory: false,
             historyAvailable: false,
+            shareUrl: "",
+            // Live progress from the server while a run is in flight —
+            // which step, which tool. A spinner that says nothing for
+            // eight seconds reads as a hang.
+            streamSteps: [],
             // Voice (manager-only, gated by props.enableVoice)
             recording: false,
             speechAvailable: typeof window !== "undefined"
@@ -142,8 +147,17 @@ export class AiAgentChat extends Component {
             () => [this.state.messages.length, this.state.isThinking],
         );
 
+        // Live progress while a run is in flight. Unsubscribed on
+        // unmount so a closed chatter dialog stops repainting.
+        this._stopStream = null;
+        onWillUnmount(() => this._stopStream?.());
+
         // Auto-pick the prop-specified agent on mount.
         onMounted(async () => {
+            if (this.aiAgent.onStream) {
+                this._stopStream = this.aiAgent.onStream(
+                    (p) => this._onStreamEvent(p));
+            }
             this._loadStarters();       // fire-and-forget; never blocks paint
             if (this.props.agentCode) {
                 const found = this.aiAgent.state.agents.find((a) => a.code === this.props.agentCode);
@@ -217,6 +231,40 @@ export class AiAgentChat extends Component {
      * every confirmation chip was inert — the button moved and nothing
      * happened.
      */
+    /**
+     * Repaint the wait from what the server is actually doing.
+     *
+     * Events arrive only while a run is in flight. Anything that lands
+     * when we are not thinking belongs to another tab on the same
+     * session, so it is dropped rather than shown against nothing.
+     */
+    _onStreamEvent(payload) {
+        if (!payload || !this.state.isThinking) {
+            return;
+        }
+        const { kind, tool, hop } = payload;
+        if (kind === "thinking") {
+            this.state.thinkingLabel = hop > 1
+                ? _t("Thinking… (step %s)", hop)
+                : this.labels.working;
+        } else if (kind === "tool_call" && tool) {
+            this.state.thinkingLabel = _t("Looking up %s…", this.toolLabel(tool));
+            // Keep the trail: which sources were consulted is the part
+            // users ask about afterwards, and it is gone once the run
+            // finishes unless it is recorded here.
+            if (!this.state.streamSteps.includes(tool)) {
+                this.state.streamSteps.push(tool);
+            }
+        } else if (kind === "done") {
+            this.state.thinkingLabel = this.labels.working;
+        }
+    }
+
+    /** Tool codes are snake_case internals; users read words. */
+    toolLabel(code) {
+        return String(code || "").replace(/_/g, " ");
+    }
+
     async onChipPick(ev) {
         const detail = ev?.detail || {};
         if (detail.action?.type) {
@@ -321,6 +369,50 @@ export class AiAgentChat extends Component {
         const res = await this.aiAgent.listConversations();
         this.state.conversations = res?.conversations || [];
         this.state.historyAvailable = !!res?.available;
+    }
+
+    /**
+     * Publish this chat to a link, and copy it.
+     *
+     * Copying is the whole point — a link the user then has to hunt for
+     * and select by hand is barely a share. Clipboard access can be
+     * refused (insecure origin, permission), so the URL is shown either
+     * way rather than assuming the copy worked.
+     */
+    async shareConversation() {
+        if (!this.state.conversationId) {
+            return;
+        }
+        const res = await this.aiAgent.shareConversation({
+            conversationId: this.state.conversationId,
+        });
+        if (!res?.success) {
+            this.notification.add(res?.error || this.labels.shareFailed,
+                                  { type: "danger" });
+            return;
+        }
+        this.state.shareUrl = res.share_url || "";
+        let copied = false;
+        try {
+            await navigator.clipboard.writeText(this.state.shareUrl);
+            copied = true;
+        } catch (e) {
+            copied = false;
+        }
+        this.notification.add(
+            copied ? this.labels.shareCopied : this.state.shareUrl,
+            { type: "success", sticky: !copied });
+    }
+
+    async unshareConversation() {
+        if (!this.state.conversationId) {
+            return;
+        }
+        await this.aiAgent.shareConversation({
+            conversationId: this.state.conversationId, revoke: true,
+        });
+        this.state.shareUrl = "";
+        this.notification.add(this.labels.shareRevoked, { type: "info" });
     }
 
     toggleHistory() {
@@ -611,6 +703,11 @@ export class AiAgentChat extends Component {
             history: _t("Past chats"),
             newChat: _t("New chat"),
             noHistory: _t("No earlier chats yet"),
+            share: _t("Share this chat"),
+            shareCopied: _t("Link copied — anyone with it can read this chat."),
+            shareRevoked: _t("Link revoked. The chat is private again."),
+            shareFailed: _t("The link could not be created."),
+            unshare: _t("Revoke the link"),
             confirmed: _t("Confirmed"),
             applying: _t("Applying…"),
             done: _t("Done."),
@@ -744,6 +841,7 @@ export class AiAgentChat extends Component {
         this.state.input = "";
         this.state.isThinking = true;
         this.state.thinkingLabel = this.labels.working;
+        this.state.streamSteps = [];        // trail belongs to this turn
 
         try {
             const envelope = await this.aiAgent.runAgent({
@@ -759,6 +857,7 @@ export class AiAgentChat extends Component {
                 // switched chats since.
                 conversationId: this.state.conversationId
                     || this.props.conversationId,
+                stream: true,
             });
             // First turn of a brand-new chat mints the row server-side.
             if (envelope.conversation_id) {
