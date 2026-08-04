@@ -820,11 +820,13 @@
     overflow: auto;
 
     .o_ai_agent_chat_page__inner {
-        max-width: 1080px;
-        margin: 0 auto;
+        // Full-bleed on purpose. The old 1080px cap was fine for a single
+        // column, but the history rail (240) and the skills rail (280)
+        // eat 520 of it — the conversation itself was left with ~530px
+        // while the screen beside it sat empty.
+        width: 100%;
         height: 100%;
         min-height: 600px;
-        max-height: 1100px;
         background: var(--ai-surface);
         border-radius: var(--ai-radius-lg);
         box-shadow: var(--ai-shadow-md);
@@ -842,7 +844,6 @@
     @media (max-width: 720px) {
         padding: 0;
         .o_ai_agent_chat_page__inner {
-            max-width: none;
             border-radius: 0;
             box-shadow: none;
             min-height: 100%;
@@ -857,6 +858,10 @@
     border: 1px solid var(--ai-ghaima-line);
     color: var(--ai-ghaima-muted);
     width: 34px; height: 34px;
+    // The header is a flex row with a growing title beside it. Without
+    // this the buttons shrink toward their icon and the row reads as one
+    // mute key with three smudges next to it.
+    flex: 0 0 34px;
     border-radius: var(--ai-radius-sm);
     display: inline-flex;
     align-items: center;
