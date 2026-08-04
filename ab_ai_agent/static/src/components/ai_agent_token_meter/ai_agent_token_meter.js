@@ -2,6 +2,7 @@
 
 import { Component } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
+import { user } from "@web/core/user";
 
 /**
  * <AiAgentTokenMeter/>
@@ -38,6 +39,12 @@ export class AiAgentTokenMeter extends Component {
         if (n < 1000) return String(n);
         if (n < 1_000_000) return (n / 1000).toFixed(n < 10_000 ? 1 : 0) + "K";
         return (n / 1_000_000).toFixed(1) + "M";
+    }
+
+    /** What a question cost is an operator's concern, not a cashier's.
+     *  Admins keep the number; everyone else sees tokens only. */
+    get showCost() {
+        return user.isAdmin;
     }
 
     get costFmt() {
