@@ -143,7 +143,11 @@ if $PULL_APPS; then
     # shows actual HEAD (otherwise "Current Commit" goes stale silently).
     echo ""
     echo "=== Refresh DBCLOUD addon-path commit metadata ==="
-    sudo -u clouderps /home/clouderps/venv/bin/python3 - << 'PYEOF'
+    # Already clouderps (the documented way to run this script)? Don't nest
+    # sudo — clouderps is not a sudoer and the step would fail.
+    AS_CLOUDERPS=""
+    [ "$(id -un)" != "clouderps" ] && AS_CLOUDERPS="sudo -u clouderps"
+    $AS_CLOUDERPS /home/clouderps/venv/bin/python3 - << 'PYEOF'
 import sys; sys.path.insert(0, '/home/clouderps/odoo')
 import odoo
 odoo.tools.config.parse_config(['-c', '/home/clouderps/clouderps-odoo.conf', '-d', 'DBCLOUD'])
