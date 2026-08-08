@@ -77,6 +77,12 @@ class AIProviderService(models.AbstractModel):
             config = self.env['ai.provider.config'].sudo().search(
                 [('active', '=', True)], limit=1)
             if not config:
+                gw = self._gateway_client()
+                if gw:
+                    return self._gateway_analyze(
+                        gw, prompt, system_prompt=system_prompt,
+                        image_data=image_data, image_mimetype=image_mimetype,
+                        model_override=model_override, tools=tools)
                 return self._simulate_call(reason='no_provider_configured')
 
         effective_system = system_prompt or config.system_prompt or None
@@ -122,6 +128,41 @@ class AIProviderService(models.AbstractModel):
         icp = self.env['ir.config_parameter'].sudo()
         return str(icp.get_param('ab_ai_gateway.simulation', 'False')).lower() \
                 in ('1', 'true', 'yes')
+
+    def _gateway_client(self):
+        """The tenant's active AI-gateway link, if ab_ai_client is installed.
+        Soft reference — ai.client.config lives on tenants, not on DBCLOUD — so
+        ab_ai_base stays usable on the central server (which has its own local
+        ai.provider.config). Lets a tenant with no local provider key still get
+        real LLM answers through the central gateway instead of simulation."""
+        if 'ai.client.config' not in self.env:
+            return None
+        return self.env['ai.client.config'].sudo().search(
+            [('active', '=', True), ('entity_token', '!=', False)], limit=1)
+
+    def _gateway_analyze(self, gw, prompt, system_prompt=None, image_data=None,
+                         image_mimetype=None, model_override=None, tools=None,
+                         feature='chat'):
+        """Route one AI call through the central gateway. Returns (text, usage)
+        — the same contract as call(). Gateway errors (quota, outage) propagate
+        as UserError rather than degrading to a misleading simulation.
+
+        Default feature 'chat' — the baseline "Ask AI" capability every AI plan
+        includes; the gateway plan-gates by feature, so a generic call must use
+        a feature the tenant's plan allows. Callers with a real feature context
+        (daily_report, scan_docs, …) should thread it through."""
+        kw = {}
+        if model_override:
+            kw['model_override'] = model_override
+        if tools:
+            kw['tools'] = tools
+        if image_data:
+            kw['image_data'] = image_data
+            kw['image_mimetype'] = image_mimetype or 'image/png'
+        text, usage = gw.call_ai(feature, system_prompt or '', prompt, **kw)
+        usage = dict(usage or {})
+        usage.setdefault('provider', 'gateway')
+        return text, usage
 
     def _provider_cache_enabled(self):
         """True when provider-native prompt caching should be engaged.
@@ -220,6 +261,19 @@ class AIProviderService(models.AbstractModel):
             config = self.env['ai.provider.config'].sudo().search(
                 [('active', '=', True)], limit=1)
             if not config:
+                gw = self._gateway_client()
+                if gw:
+                    # Gateway has no streaming endpoint — get the whole answer
+                    # and emit it as a single delta + terminating done dict
+                    # (the documented fall-through shape for non-streaming
+                    # providers).
+                    text, usage = self._gateway_analyze(
+                        gw, prompt, system_prompt=system_prompt, tools=tools)
+                    yield {'delta': text, 'done': False, 'usage': None,
+                           'tool_calls': None}
+                    yield {'delta': '', 'done': True, 'usage': usage,
+                           'tool_calls': usage.get('tool_calls')}
+                    return
                 yield from self._simulate_stream(reason='no_provider_configured')
                 return
 
@@ -402,6 +456,12 @@ class AIProviderService(models.AbstractModel):
             config = self.env['ai.provider.config'].sudo().search(
                 [('active', '=', True)], limit=1)
             if not config:
+                gw = self._gateway_client()
+                if gw:
+                    text, usage = self._gateway_analyze(
+                        gw, prompt, system_prompt=system_prompt, tools=tools,
+                        model_override=model_override)
+                    return text, usage, usage.get('tool_calls')
                 text, usage = self._simulate_call(reason='no_provider_configured')
                 return text, usage, None
 
@@ -951,6 +1011,18 @@ class AIProviderService(models.AbstractModel):
         config = config or self.env['ai.provider.config'].search(
             [('active', '=', True)], limit=1,
         )
+        # No local provider but a gateway link → embed through the gateway.
+        # Embedding is a side-quest (RAG retrieval), so a gateway failure
+        # degrades to the deterministic pseudo-vectors rather than raising.
+        if not self._is_simulation_mode() and not config:
+            gw = self._gateway_client()
+            if gw:
+                try:
+                    return gw.call_embedding(texts)
+                except Exception:
+                    _logger.warning(
+                        'ai.provider.service: gateway embedding failed; '
+                        'degrading to keyword vectors', exc_info=True)
         # Simulation answers even with no provider row — same contract as
         # call()/stream_call(), which fall back to simulation instead of
         # erroring when nothing is configured.
