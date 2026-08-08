@@ -308,13 +308,35 @@ class AIProviderConfig(models.Model):
         return config
     
     def increment_usage(self, tokens=0):
-        """Track AI usage"""
+        """Track AI usage on the single active provider row.
+
+        This is the request hot path (called on every gateway call). A
+        read-modify-write here — total_requests = self.total_requests + 1 —
+        serialization-fails under concurrency (Odoo runs REPEATABLE READ, the
+        DBCLOUD gateway runs 2 prefork workers): two requests read the same
+        counter, both write +1, the loser gets SQLSTATE 40001 which aborts the
+        WHOLE request transaction (it can't be caught with a savepoint). That
+        was 77 failed requests / 3 days at the 2026-08-08 review.
+
+        Do the increment in an autonomous cursor with an atomic in-place UPDATE:
+        its failure can never poison the caller's transaction, and the counters
+        are a soft metric (the authoritative per-request data is ai.usage.log).
+        ponytail: under extreme concurrency an autonomous increment may still
+        40001 and be dropped — acceptable for a soft counter; the swallow keeps
+        the request itself safe."""
         self.ensure_one()
-        self.write({
-            'total_requests': self.total_requests + 1,
-            'total_tokens': self.total_tokens + tokens,
-            'last_used': fields.Datetime.now(),
-        })
+        try:
+            with self.pool.cursor() as cr:
+                cr.execute(
+                    "UPDATE ai_provider_config SET "
+                    "total_requests = COALESCE(total_requests, 0) + 1, "
+                    "total_tokens = COALESCE(total_tokens, 0) + %s, "
+                    "last_used = now() WHERE id = %s",
+                    (tokens or 0, self.id))
+                cr.commit()
+        except Exception:
+            _logger.warning("ai.provider.config.increment_usage failed (id=%s)",
+                            self.id, exc_info=True)
     
     def action_test_connection(self):
         """Test AI connection"""
