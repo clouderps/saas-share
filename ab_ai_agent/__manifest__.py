@@ -27,7 +27,7 @@ website all share.
 No business-domain dependencies. Vertical modules (CRM agents, POS
 agents, accounting agents) layer on top via data XML + Python tools.
     ''',
-    'author': 'Sala Integrated Solutions / Ghaima Tech',
+    'author': 'Ghaima Team',
     'license': 'LGPL-3',
     'depends': [
         'ab_ai_base',

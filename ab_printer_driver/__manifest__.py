@@ -27,7 +27,7 @@ Pure hardware-driver layer:
 Consumers (POS, accounting, sales, stock) layer thin modules on top.
 No business-domain dependencies.
     """,
-    'author': 'Sala Integrated Solutions / Ghaima Tech',
+    'author': 'Ghaima Team',
     'website': 'https://ghaima.sa',
     'license': 'LGPL-3',
     'depends': ['base', 'web', 'bus', 'mail'],
