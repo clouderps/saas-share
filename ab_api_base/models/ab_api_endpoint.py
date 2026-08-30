@@ -26,7 +26,13 @@ class AbApiEndpoint(models.Model):
     summary = fields.Char()
     description = fields.Text()
 
-    @api.model
+    # NOT @api.model: this is a list-view header button, and
+    # /web/dataset/call_button always sends the selected ids as args[0].
+    # call_kw only strips that leading element for methods without an
+    # `_api` marker, so an @api.model view button raises
+    # "takes 1 positional argument but 2 were given". The post_init
+    # hook call in __init__.py still works — it runs on an empty
+    # recordset, which this method never reads.
     def action_refresh(self):
         """Rebuild the list from this server's live API surface, then open it."""
         from odoo.addons.ab_api_base.controllers.docs import collect_endpoints
