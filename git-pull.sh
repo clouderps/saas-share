@@ -36,6 +36,7 @@ REPOS=(
     "saas-dashboard"
     # "saas-enterprise"  # repo lives on GitHub, not pulled to this server (Enterprise-only, not in addons_path)
     "saas-hr"
+    "saas-mail"
     "saas-pos"
     "saas-server"
     "saas-share"
