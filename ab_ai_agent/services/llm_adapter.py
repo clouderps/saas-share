@@ -154,13 +154,10 @@ def call_llm(env, agent, *, system_prompt, user_prompt, tools=None,
 def _try_get_gateway(env):
     """Return an active ai.client.config or None — never raises.
 
-    Probes whether the gateway is *really* installed by checking for
-    its own tables. On tenants and dev workspaces where saas-ai is
-    on the addons_path but ab_ai_gateway isn't installed, the model
-    classes load but tables are absent — calling the gateway endpoint
-    in that case pollutes the log with "relation does not exist" lines
-    AND wastes 1-3 s per request before the runtime falls back to the
-    direct provider path. Probe result is cached on the registry per
+    Probes whether ab_ai_client is *really* installed by checking for
+    its table: when saas-ai is on the addons_path but ab_ai_client isn't
+    installed, the model class loads but the table is absent, and reading
+    it pollutes the log with "relation does not exist" lines. Probe result is cached on the registry per
     process so the SQL only fires once after a restart.
     """
     Cfg = env.get('ai.client.config')
@@ -185,24 +182,18 @@ def _try_get_gateway(env):
 
 
 def _probe_gateway_installed(env):
-    """True iff the gateway's own tables / columns exist on this DB.
+    """True iff the gateway *client* table exists on this DB.
 
-    Cheap one-shot SQL — runs once per process. Tenants where
-    ab_ai_gateway isn't installed get False and the runtime skips
-    the broken endpoint entirely."""
+    Cheap one-shot SQL — runs once per process. It must probe
+    ab_ai_client's own ``ai_client_config`` (the model read next), not
+    the gateway server's tables: ab_ai_gateway lives only on the
+    management DB while this agent runs on tenants, so probing
+    ``ai_tenant_budget`` failed on every tenant and sent all agent
+    answers to simulation ("no gateway, no provider") even with a
+    valid, active gateway config."""
     try:
-        env.cr.execute("""
-            SELECT 1 FROM information_schema.tables
-             WHERE table_name = 'ai_tenant_budget'
-        """)
-        if env.cr.fetchone() is None:
-            return False
-        env.cr.execute("""
-            SELECT 1 FROM information_schema.columns
-             WHERE table_name = 'ai_prompt_template'
-               AND column_name = 'model_class'
-        """)
-        return env.cr.fetchone() is not None
+        env.cr.execute("SELECT to_regclass('public.ai_client_config') IS NOT NULL")
+        return bool(env.cr.fetchone()[0])
     except Exception:
         return False
 
