@@ -2,6 +2,14 @@
 
 > Per-repo tracking log. Seeded 2026-05-31 from manifest inventory + last 90 days of `git log`. Append new entries on top as work lands.
 
+## 2026-09-28 — ab_error_help
+
+- New `ab_error_help` (18.0.1.0.0, depends `web`): `HelpUserError`,
+  `HelpValidationError`, `HelpAccessError`, `attach_help`, `get_help`. Help
+  (code/why/fix) travels in `exception.context` through Odoo's own
+  `serialize_exception`; web warning/error dialogs show "Why this happens" /
+  "How to fix it" and a provider-driven "Open guide" button.
+
 ## Modules
 
 | Module | Version | License | Summary |

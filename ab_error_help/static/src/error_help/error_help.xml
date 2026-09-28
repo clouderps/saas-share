@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="ab_error_help.ErrorHelpPanel">
+        <section class="o_error_help mt-3" role="region" t-att-aria-label="labels.fix">
+            <div t-if="props.help.why" class="o_error_help__block o_error_help__block--why">
+                <h2 class="o_error_help__title">
+                    <i class="fa fa-question-circle" aria-hidden="true"/>
+                    <span t-esc="labels.why"/>
+                </h2>
+                <p class="o_error_help__text text-prewrap" t-esc="props.help.why"/>
+            </div>
+            <div t-if="props.help.fix" class="o_error_help__block o_error_help__block--fix">
+                <h2 class="o_error_help__title">
+                    <i class="fa fa-wrench" aria-hidden="true"/>
+                    <span t-esc="labels.fix"/>
+                </h2>
+                <p class="o_error_help__text text-prewrap" t-esc="props.help.fix"/>
+            </div>
+            <div class="o_error_help__foot">
+                <button t-if="state.provider" type="button"
+                        class="btn btn-secondary o_error_help__open"
+                        t-att-disabled="state.opening"
+                        t-on-click="openGuide">
+                    <i class="fa fa-book me-1" aria-hidden="true"/>
+                    <span t-esc="labels.open"/>
+                </button>
+                <small class="o_error_help__code text-muted">
+                    <span t-esc="labels.code"/>: <code t-esc="props.help.code"/>
+                </small>
+            </div>
+        </section>
+    </t>
+
+    <t t-inherit="web.WarningDialog" t-inherit-mode="extension">
+        <xpath expr="//div[@role='alert']" position="after">
+            <ErrorHelpPanel t-if="errorHelp" help="errorHelp" close="props.close"/>
+        </xpath>
+    </t>
+
+    <t t-inherit="web.ErrorDialog" t-inherit-mode="extension">
+        <xpath expr="//div[@role='alert']" position="after">
+            <ErrorHelpPanel t-if="errorHelp" help="errorHelp" close="props.close"/>
+        </xpath>
+    </t>
+
+</templates>
