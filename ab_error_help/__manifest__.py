@@ -23,7 +23,7 @@ the article whose code matches.
 Pure infrastructure: depends on ``web`` only, adds no model, no menu and no
 data. Plain ``UserError`` / ``ValidationError`` behave exactly as before.
 """,
-    "version": "18.0.1.0.0",
+    "version": "18.0.1.1.0",
     "category": "Hidden/Tools",
     "author": "Ghaima Tech.",
     "website": "https://ghaima.sa",

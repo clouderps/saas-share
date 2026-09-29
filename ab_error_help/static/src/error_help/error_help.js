@@ -29,6 +29,7 @@ import {
     WarningDialog,
     odooExceptionTitleMap,
 } from "@web/core/errors/error_dialogs";
+import { FormErrorDialog } from "@web/views/form/form_error_dialog/form_error_dialog";
 
 export const errorHelpProviders = registry.category("error_help_providers");
 
@@ -93,8 +94,11 @@ export class ErrorHelpPanel extends Component {
 
 // One sub-component for every error dialog. RPCErrorDialog and the other
 // ErrorDialog subclasses read ErrorDialog.components through the class chain.
+// FormErrorDialog ("Stay here / Discard changes") is what a user sees when a
+// form SAVE fails -- the most common way a constraint error is met.
 WarningDialog.components = { ...WarningDialog.components, ErrorHelpPanel };
 ErrorDialog.components = { ...ErrorDialog.components, ErrorHelpPanel };
+FormErrorDialog.components = { ...FormErrorDialog.components, ErrorHelpPanel };
 
 // One patch object per class: `super` inside an object literal is bound to
 // that object's prototype, which patch() sets to the patched class -- sharing
@@ -108,6 +112,7 @@ const errorHelpPatch = () => ({
 });
 patch(WarningDialog.prototype, errorHelpPatch());
 patch(ErrorDialog.prototype, errorHelpPatch());
+patch(FormErrorDialog.prototype, errorHelpPatch());
 
 // The server-side class names map to the stock dialog and title. Without
 // this the dialog would still be the warning dialog (the payload names the

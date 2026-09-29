@@ -44,4 +44,10 @@
         </xpath>
     </t>
 
+    <t t-inherit="web.FormErrorDialog" t-inherit-mode="extension">
+        <xpath expr="//div[@role='alert']" position="after">
+            <ErrorHelpPanel t-if="errorHelp" help="errorHelp" close="props.close"/>
+        </xpath>
+    </t>
+
 </templates>
