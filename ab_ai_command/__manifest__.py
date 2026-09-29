@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Ghaima AI Commands',
-    'version': '18.0.1.0.0',
+    'version': '18.0.1.1.0',
     'category': 'Productivity',
     'summary': 'Slash commands for the AI assistant — /create quote, …',
     'description': """

@@ -105,3 +105,19 @@ class TestScreenInsight(TransactionCase):
         self.assertIn(info['proactive'], ('off', 'quiet', 'on'))
         self.env['ir.config_parameter'].set_param('ab_ai_agent.proactive_enabled', 'False')
         self.assertEqual(self.env.user._ai_assistant_info()['proactive'], 'off')
+
+    def test_insight_carries_the_screen_card(self):
+        SC = self.env['ai.screen.context'].with_context(lang='en_US')
+        res = SC.insight({'model': 'res.partner', 'view_type': 'list',
+                          'visible_ids': self.env['res.partner'].search([], limit=2).ids})
+        self.assertTrue(res['title'])
+        self.assertIn('Explain this screen', res['suggestions'])
+        self.assertIn('Open the first one', res['suggestions'])
+        partner = self.env['res.partner'].search([], limit=1)
+        res = SC.insight({'model': 'res.partner', 'view_type': 'form', 'res_id': partner.id})
+        self.assertEqual(res['title'], partner.display_name)
+        self.assertIn('Explain this record', res['suggestions'])
+
+    def test_tips_default_to_on(self):
+        user = new_test_user(self.env, login='ai_tip_default', groups='base.group_user')
+        self.assertEqual(user.ai_proactive_mode, 'on')

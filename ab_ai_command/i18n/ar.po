@@ -1,6 +1,3 @@
-# Translation of Odoo Server.
-# This file contains the translation of the following modules:
-# 	* ab_ai_command
 #
 msgid ""
 msgstr ""
@@ -10,7 +7,7 @@ msgstr ""
 "PO-Revision-Date: 2026-08-03 18:14+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
-"Language: ar_001\n"
+"Language: ar\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
@@ -34,25 +31,25 @@ msgid "/create quote partner: Acme; items: 2x latte"
 msgstr ""
 
 #. module: ab_ai_command
-#: model:ir.model,name:ab_ai_command.model_ai_agent_command:0
-#: model_terms:ir.ui.view,arch_db:ab_ai_command.view_ai_agent_command_form:0
+#: model:ir.model,name:ab_ai_command.model_ai_agent_command
+#: model_terms:ir.ui.view,arch_db:ab_ai_command.view_ai_agent_command_form
 msgid "AI Command"
 msgstr "أمر الذكاء الاصطناعي"
 
 #. module: ab_ai_command
-#: model:ir.model,name:ab_ai_command.model_ai_command_mixin:0
+#: model:ir.model,name:ab_ai_command.model_ai_command_mixin
 msgid "AI Command Target"
 msgstr "هدف أمر الذكاء الاصطناعي"
 
 #. module: ab_ai_command
-#: model:ir.actions.act_window,name:ab_ai_command.action_ai_agent_command:0
-#: model:ir.ui.menu,name:ab_ai_command.menu_ai_agent_command:0
-#: model_terms:ir.ui.view,arch_db:ab_ai_command.view_ai_agent_command_list:0
+#: model:ir.actions.act_window,name:ab_ai_command.action_ai_agent_command
+#: model:ir.ui.menu,name:ab_ai_command.menu_ai_agent_command
+#: model_terms:ir.ui.view,arch_db:ab_ai_command.view_ai_agent_command_list
 msgid "AI Commands"
 msgstr "أوامر الذكاء الاصطناعي"
 
 #. module: ab_ai_command
-#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__active:0
+#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__active
 msgid "Active"
 msgstr "نشط"
 
@@ -75,7 +72,7 @@ msgid "Cancelled. Nothing was created."
 msgstr "تم الإلغاء. لم يتم إنشاء أي شيء."
 
 #. module: ab_ai_command
-#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__code:0
+#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__code
 msgid "Code"
 msgstr "الرمز"
 
@@ -86,7 +83,7 @@ msgid "Command"
 msgstr "أمر"
 
 #. module: ab_ai_command
-#: model:ir.model.constraint,message:ab_ai_command.constraint_ai_agent_command_code_uniq:0
+#: model:ir.model.constraint,message:ab_ai_command.constraint_ai_agent_command_code_uniq
 msgid "Command code must be unique."
 msgstr "يجب أن يكون رمز الأمر فريداً."
 
@@ -149,12 +146,12 @@ msgstr ""
 #. module: ab_ai_command
 #: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__create_uid
 msgid "Created by"
-msgstr ""
+msgstr "أنشئ بواسطة"
 
 #. module: ab_ai_command
 #: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__create_date
 msgid "Created on"
-msgstr ""
+msgstr "أنشئ في"
 
 #. module: ab_ai_command
 #. odoo-javascript
@@ -163,17 +160,17 @@ msgid "Creating…"
 msgstr "جارٍ الإنشاء…"
 
 #. module: ab_ai_command
-#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__description:0
+#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__description
 msgid "Description"
 msgstr "الوصف"
 
 #. module: ab_ai_command
 #: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__display_name
 msgid "Display Name"
-msgstr ""
+msgstr "الاسم المعروض"
 
 #. module: ab_ai_command
-#: model:ai.agent.topic,name:ab_ai_command.topic_commands:0
+#: model:ai.agent.topic,name:ab_ai_command.topic_commands
 msgid "Document Commands"
 msgstr "أوامر المستندات"
 
@@ -196,7 +193,7 @@ msgid "Draft — nothing is confirmed"
 msgstr "مسودة — غير مؤكدة"
 
 #. module: ab_ai_command
-#: model_terms:ir.ui.view,arch_db:ab_ai_command.view_ai_agent_command_form:0
+#: model_terms:ir.ui.view,arch_db:ab_ai_command.view_ai_agent_command_form
 msgid ""
 "Empty = anyone who can create the target model. Create access on that model "
 "is always checked as well."
@@ -205,7 +202,7 @@ msgstr ""
 " الإنشاء على ذلك النموذج في كل الأحوال."
 
 #. module: ab_ai_command
-#: model:ir.model.fields,help:ab_ai_command.field_ai_agent_command__group_ids:0
+#: model:ir.model.fields,help:ab_ai_command.field_ai_agent_command__group_ids
 msgid ""
 "Empty = anyone who can create the target model. The model ACL is always "
 "checked on top of this."
@@ -214,7 +211,7 @@ msgstr ""
 "النموذج فوق ذلك دائماً."
 
 #. module: ab_ai_command
-#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__example:0
+#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__example
 msgid "Example"
 msgstr "مثال"
 
@@ -227,10 +224,10 @@ msgstr "أحتاج معلومة واحدة إضافية قبل إعداد الم
 #. module: ab_ai_command
 #: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__id
 msgid "ID"
-msgstr ""
+msgstr "المعرف"
 
 #. module: ab_ai_command
-#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__icon:0
+#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__icon
 msgid "Icon"
 msgstr "الأيقونة"
 
@@ -243,12 +240,12 @@ msgstr "الصنف"
 #. module: ab_ai_command
 #: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__write_uid
 msgid "Last Updated by"
-msgstr ""
+msgstr "آخر تحديث بواسطة"
 
 #. module: ab_ai_command
 #: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__write_date
 msgid "Last Updated on"
-msgstr ""
+msgstr "آخر تحديث في"
 
 #. module: ab_ai_command
 #: model:ai.agent.tool,description:ab_ai_command.tool_list_commands
@@ -271,17 +268,17 @@ msgid "Model \"%s\" must inherit ai.command.mixin to be used as a command target
 msgstr "يجب أن يرث النموذج \"%s\" الصنف ai.command.mixin لاستخدامه كهدف لأمر."
 
 #. module: ab_ai_command
-#: model:ir.model.fields,help:ab_ai_command.field_ai_agent_command__target_model:0
+#: model:ir.model.fields,help:ab_ai_command.field_ai_agent_command__target_model
 msgid "Model to create. Must inherit ai.command.mixin."
 msgstr "النموذج المراد إنشاؤه. يجب أن يرث ai.command.mixin."
 
 #. module: ab_ai_command
-#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__name:0
+#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__name
 msgid "Name"
 msgstr "الاسم"
 
 #. module: ab_ai_command
-#: model_terms:ir.actions.act_window,help:ab_ai_command.action_ai_agent_command:0
+#: model_terms:ir.actions.act_window,help:ab_ai_command.action_ai_agent_command
 msgid "No AI commands yet"
 msgstr "لا توجد أوامر ذكاء اصطناعي بعد"
 
@@ -298,7 +295,7 @@ msgid "No product matches \"%s\". Create it?"
 msgstr "لا يوجد منتج مطابق لـ \"%s\". هل ننشئه؟"
 
 #. module: ab_ai_command
-#: model:ir.model.fields,help:ab_ai_command.field_ai_agent_command__example:0
+#: model:ir.model.fields,help:ab_ai_command.field_ai_agent_command__example
 msgid "One realistic example, shown as placeholder text."
 msgstr "مثال واقعي واحد، يظهر كنص إرشادي."
 
@@ -315,7 +312,7 @@ msgid "Preparing the draft…"
 msgstr "جارٍ إعداد المسودة…"
 
 #. module: ab_ai_command
-#: model:ir.model.fields,help:ab_ai_command.field_ai_agent_command__context:0
+#: model:ir.model.fields,help:ab_ai_command.field_ai_agent_command__context
 msgid ""
 "Python dict merged into the target model's context, e.g. "
 "{'ai_command_move_type': 'out_invoice'}. Lets two commands share one model "
@@ -334,27 +331,27 @@ msgid "Qty"
 msgstr "الكمية"
 
 #. module: ab_ai_command
-#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__group_ids:0
+#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__group_ids
 msgid "Restricted to"
 msgstr "مقصور على"
 
 #. module: ab_ai_command
-#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__sequence:0
+#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__sequence
 msgid "Sequence"
 msgstr "التسلسل"
 
 #. module: ab_ai_command
-#: model:ir.model.fields,help:ab_ai_command.field_ai_agent_command__description:0
+#: model:ir.model.fields,help:ab_ai_command.field_ai_agent_command__description
 msgid "Shown in the palette under the verb."
 msgstr "يظهر في لوحة الأوامر أسفل الفعل."
 
 #. module: ab_ai_command
-#: model_terms:ir.ui.view,arch_db:ab_ai_command.view_ai_agent_command_form:0
+#: model_terms:ir.ui.view,arch_db:ab_ai_command.view_ai_agent_command_form
 msgid "Shown under the verb in the / palette."
 msgstr "يظهر أسفل الفعل في لوحة الأوامر \"/\"."
 
 #. module: ab_ai_command
-#: model:ir.model.fields,help:ab_ai_command.field_ai_agent_command__code:0
+#: model:ir.model.fields,help:ab_ai_command.field_ai_agent_command__code
 msgid "Stable identifier, e.g. create_quote."
 msgstr "معرّف ثابت، مثل create_quote."
 
@@ -365,12 +362,12 @@ msgid "Subtotal"
 msgstr "الإجمالي الفرعي"
 
 #. module: ab_ai_command
-#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__target_model:0
+#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__target_model
 msgid "Target Model"
 msgstr "النموذج الهدف"
 
 #. module: ab_ai_command
-#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__context:0
+#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__context
 msgid "Target context"
 msgstr "سياق الهدف"
 
@@ -393,17 +390,17 @@ msgid "Total"
 msgstr "الإجمالي"
 
 #. module: ab_ai_command
-#: model:ir.model.constraint,message:ab_ai_command.constraint_ai_agent_command_verb_uniq:0
+#: model:ir.model.constraint,message:ab_ai_command.constraint_ai_agent_command_verb_uniq
 msgid "Two commands cannot share a verb."
 msgstr "لا يمكن لأمرين استخدام نفس الفعل."
 
 #. module: ab_ai_command
-#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__verb:0
+#: model:ir.model.fields,field_description:ab_ai_command.field_ai_agent_command__verb
 msgid "Verb"
 msgstr "الفعل"
 
 #. module: ab_ai_command
-#: model:ir.model.fields,help:ab_ai_command.field_ai_agent_command__verb:0
+#: model:ir.model.fields,help:ab_ai_command.field_ai_agent_command__verb
 msgid ""
 "What the user types after the slash, e.g. \"create quote\". Matched longest-"
 "first, so a more specific verb always wins over a shorter one that prefixes "
@@ -419,7 +416,7 @@ msgid "Which partner?"
 msgstr "أي جهة؟"
 
 #. module: ab_ai_command
-#: model_terms:ir.ui.view,arch_db:ab_ai_command.view_ai_agent_command_form:0
+#: model_terms:ir.ui.view,arch_db:ab_ai_command.view_ai_agent_command_form
 msgid "Who can run it"
 msgstr "من يمكنه التنفيذ"
 
@@ -452,6 +449,6 @@ msgid "create quote"
 msgstr ""
 
 #. module: ab_ai_command
-#: model_terms:ir.ui.view,arch_db:ab_ai_command.view_ai_agent_command_form:0
+#: model_terms:ir.ui.view,arch_db:ab_ai_command.view_ai_agent_command_form
 msgid "e.g. Create Quotation"
 msgstr "مثال: إنشاء عرض سعر"

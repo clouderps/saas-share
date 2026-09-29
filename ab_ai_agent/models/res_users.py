@@ -12,7 +12,9 @@ class ResUsers(models.Model):
     _inherit = 'res.users'
 
     ai_proactive_mode = fields.Selection(
-        PROACTIVE_MODES, string='Ghaima AI tips', default='quiet', required=True,
+        PROACTIVE_MODES, string='Ghaima AI tips', default='on', required=True,
+        # 'on' by default (owner 2026-09-29): the hint for the current
+        # screen must appear without asking. Users can lower it.
         help='How much Ghaima AI tells you on its own when you open a screen. '
              'It never interrupts: tips are one or two lines from your own '
              'data and disappear by themselves.')

@@ -22,6 +22,18 @@ import { AiAgentChat } from "@ab_ai_agent/components/ai_agent_chat/ai_agent_chat
  *     the parser cannot fill still goes to the agent.
  */
 patch(AiAgentChat.prototype, {
+    /** "Commands" in the composer's circle: starts a slash command. */
+    get composerActions() {
+        return [
+            ...super.composerActions,
+            { id: "commands", icon: "fa-terminal", label: _t("Commands"),
+              run: () => {
+                  this.state.input = "/";
+                  this.textareaRef?.el?.focus();
+              } },
+        ];
+    },
+
     setup() {
         super.setup();
         this.state.commands = [];        // palette contents, loaded once

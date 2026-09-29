@@ -273,20 +273,73 @@
                  ab_ai_chatbot depends on both this and ab_scan_docs and
                  patches them in (ai_agent_chat_attach_patch.js), which
                  also gets torch and auto-capture for free. -->
+            <!-- Screen card: shown as soon as the assistant opens, for the
+                 page the user is on. No question needed; the chips ask the
+                 useful ones in one tap. -->
+            <section t-if="state.screenCard and !state.screenCardDismissed"
+                     class="o_ai_screen_card" aria-live="polite">
+                <div class="o_ai_screen_card__head">
+                    <i class="fa fa-map-marker" aria-hidden="true"/>
+                    <span class="o_ai_screen_card__eyebrow" t-esc="labels.nowOn"/>
+                    <strong class="o_ai_screen_card__title text-truncate" t-esc="state.screenCard.title"/>
+                    <button type="button" class="o_ai_screen_card__close"
+                            t-att-aria-label="labels.close" t-att-title="labels.close"
+                            t-on-click="() => state.screenCardDismissed = true">
+                        <i class="fa fa-times" aria-hidden="true"/>
+                    </button>
+                </div>
+                <p t-if="state.screenCard.about" class="o_ai_screen_card__about" t-esc="state.screenCard.about"/>
+                <p t-if="(state.screenCard.lines or []).length" class="o_ai_screen_card__facts">
+                    <t t-esc="state.screenCard.lines.join(' ')"/>
+                </p>
+                <div class="o_ai_screen_card__chips">
+                    <button t-foreach="state.screenCard.suggestions or []" t-as="q" t-key="q_index"
+                            type="button" class="o_ai_screen_card__chip"
+                            t-att-disabled="state.isThinking"
+                            t-on-click="() => this.askSuggestion(q)">
+                        <t t-esc="q"/>
+                    </button>
+                </div>
+            </section>
+
             <footer class="o_ai_agent_chat__footer">
                 <form class="o_ai_agent_chat__form" t-on-submit.prevent="send">
-                    <button t-if="state.speechAvailable"
-                            type="button"
-                            class="o_ai_agent_chat__mic"
-                            t-att-class="{ 'is-recording': state.recording }"
-                            t-att-disabled="state.transcribing or state.isThinking"
-                            t-on-click="toggleRecording"
-                            t-att-aria-pressed="state.recording ? 'true' : 'false'"
-                            t-att-aria-label="state.recording ? labels.stopRecording : labels.startRecording"
-                            t-att-title="state.recording ? labels.stopRecording : labels.startRecording">
-                        <i t-att-class="state.transcribing ? 'fa fa-spinner fa-spin' : state.recording ? 'fa fa-stop' : 'fa fa-microphone'"/>
-                        <span t-if="state.recording" class="o_ai_agent_chat__mic_pulse"/>
-                    </button>
+                    <!-- One button for everything besides typing: opens a
+                         circle of actions (voice, attach, scan, commands,
+                         explain this screen). While listening it is the
+                         stop button. Items come from composerActions. -->
+                    <t t-set="composerItems" t-value="composerActions"/>
+                    <div t-if="composerItems.length" class="o_ai_radial" t-ref="radial"
+                         t-att-class="{ 'is-open': state.radialOpen, 'is-recording': state.recording }"
+                         t-on-keydown="onRadialKeydown">
+                        <div class="o_ai_radial__menu" role="menu"
+                             t-att-aria-label="labels.whatDoYouNeed"
+                             t-att-aria-hidden="state.radialOpen ? 'false' : 'true'">
+                            <span class="o_ai_radial__center" t-esc="radialCenterLabel"/>
+                            <button t-foreach="composerItems" t-as="item" t-key="item.id"
+                                    type="button" role="menuitem" class="o_ai_radial__item"
+                                    t-att-style="radialStyle(item_index, composerItems.length)"
+                                    t-att-tabindex="state.radialOpen ? '0' : '-1'"
+                                    t-att-aria-label="item.label" t-att-title="item.label"
+                                    t-on-mouseenter="() => state.radialHover = item.label"
+                                    t-on-focus="() => state.radialHover = item.label"
+                                    t-on-mouseleave="() => state.radialHover = ''"
+                                    t-on-click="() => this.pickComposerAction(item)">
+                                <i t-attf-class="fa #{item.icon}" aria-hidden="true"/>
+                            </button>
+                        </div>
+                        <button type="button" class="o_ai_radial__toggle"
+                                t-att-disabled="state.transcribing or state.isThinking"
+                                aria-haspopup="menu"
+                                t-att-aria-expanded="state.radialOpen ? 'true' : 'false'"
+                                t-att-aria-label="state.recording ? labels.stopRecording : labels.moreActions"
+                                t-att-title="state.recording ? labels.stopRecording : labels.moreActions"
+                                t-on-click="toggleRadial">
+                            <i t-att-class="state.transcribing ? 'fa fa-spinner fa-spin' : state.recording ? 'fa fa-stop' : 'fa fa-plus'"
+                               aria-hidden="true"/>
+                            <span t-if="state.recording" class="o_ai_agent_chat__mic_pulse"/>
+                        </button>
+                    </div>
                     <textarea t-ref="textarea" class="o_ai_agent_chat__textarea"
                               t-model="state.input"
                               t-att-placeholder="state.transcribing ? labels.transcribing : state.recording ? labels.listening : placeholderText"

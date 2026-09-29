@@ -373,7 +373,35 @@ class AiScreenContext(models.AbstractModel):
             elif facts.get('by_state') and count:
                 top = facts['by_state'][0]
                 lines.append(_('Most are "%(label)s" (%(n)s).', label=top['label'], n=top['count']))
-        payload = {'lines': lines[:2], 'attention': facts.get('attention') or 0}
+        # What the panel shows the moment it opens, without being asked:
+        # which screen this is, what it is for, and the questions worth
+        # one tap here. Suggestions are sent as ordinary questions.
+        action = ctx.get('action') or {}
+        about = (self._ai_screen_guide(ctx) or '').strip()
+        if ctx.get('res_id'):
+            suggestions = [
+                _('Explain this record'),
+                _('What should I do next with it?'),
+            ]
+            if ctx.get('buttons'):
+                suggestions.append(_('What can I do on this screen?'))
+        else:
+            suggestions = [_('Explain this screen')]
+            if facts.get('attention'):
+                suggestions.append(_('Which records need attention?'))
+            if facts.get('count'):
+                suggestions.append(_('Summarise what is shown here'))
+            if ctx.get('visible_ids'):
+                suggestions.append(_('Open the first one'))
+        payload = {
+            'lines': lines[:2],
+            'attention': facts.get('attention') or 0,
+            'title': (facts.get('record') or {}).get('name') if ctx.get('res_id')
+                     else (action.get('name') or ctx.get('model_label') or ''),
+            'subtitle': ctx.get('model_label') if ctx.get('res_id') else (action.get('menu_path') or ''),
+            'about': about[:280],
+            'suggestions': suggestions[:4],
+        }
 
         ttl = int(self.env['ir.config_parameter'].sudo().get_param(
             'ab_ai_agent.insight_cache_seconds', 30) or 0)

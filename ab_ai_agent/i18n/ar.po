@@ -1051,6 +1051,16 @@ msgstr ""
 " \"الشاشة الحالية\" المباشرة."
 
 #. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_screen_context.py:0
+msgid "Explain this record"
+msgstr "اشرح هذا السجل"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_screen_context.py:0
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
 #: model:ai.agent.skill,name:ab_ai_agent.agent_ghaima_assistant_skill_explain
 msgid "Explain this screen"
 msgstr "اشرح هذه الشاشة"
@@ -1918,6 +1928,12 @@ msgstr ""
 " التنقل بالصوت أو المحادثة."
 
 #. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_screen_context.py:0
+msgid "Open the first one"
+msgstr "افتح أول سجل"
+
+#. module: ab_ai_agent
 #: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_price_book__provider__openai
 msgid "OpenAI"
 msgstr "OpenAI"
@@ -2569,6 +2585,12 @@ msgid "Summarise this thread"
 msgstr "لخّص هذه المحادثة"
 
 #. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_screen_context.py:0
+msgid "Summarise what is shown here"
+msgstr "لخّص ما يظهر هنا"
+
+#. module: ab_ai_agent
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_pending_action__summary
 msgid "Summary"
 msgstr "الملخص"
@@ -3100,6 +3122,12 @@ msgid "Voice needs a network connection. Please try again."
 msgstr "يحتاج الصوت إلى اتصال بالشبكة. يرجى المحاولة مرة أخرى."
 
 #. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
+msgid "Voice, files and more"
+msgstr "الصوت والملفات والمزيد"
+
+#. module: ab_ai_agent
 #: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_budget__state__warn
 msgid "Warn"
 msgstr "تحذير"
@@ -3118,6 +3146,24 @@ msgstr "عتبة التحذير ككسر (٠٫٨ = ٨٠٪)."
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__web_grounding_calls
 msgid "Web Grounding Calls"
 msgstr "استدعاءات الاستناد إلى الويب"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_screen_context.py:0
+msgid "What can I do on this screen?"
+msgstr "ماذا يمكنني أن أفعل في هذه الشاشة؟"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
+msgid "What do you need?"
+msgstr "ماذا تحتاج؟"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_screen_context.py:0
+msgid "What should I do next with it?"
+msgstr "ما الخطوة التالية التي يجب أن أقوم بها؟"
 
 #. module: ab_ai_agent
 #: model:ai.agent.skill,name:ab_ai_agent.agent_ghaima_assistant_skill_next_action
@@ -3235,6 +3281,12 @@ msgid ""
 msgstr "أين تظهر هذه المهارة. مهارات المحادثة تتطلب requires_record_context."
 
 #. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_screen_context.py:0
+msgid "Which records need attention?"
+msgstr "ما السجلات التي تحتاج إلى متابعة؟"
+
+#. module: ab_ai_agent
 #: model:ai.agent.topic,description:ab_ai_agent.topic_hr_roll_call
 msgid "Who's at work, who's on leave, who's still clocked in."
 msgstr "من في العمل، ومن في إجازة، ومن لا يزال مسجّلاً للحضور."
@@ -3271,6 +3323,12 @@ msgid ""
 "\n"
 "Always end with `__end_message`."
 msgstr ""
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
+msgid "You are on"
+msgstr "أنت الآن في"
 
 #. module: ab_ai_agent
 #: model:ir.model.fields,help:ab_ai_agent.field_ai_usage_local_log__central_audit_id_remote

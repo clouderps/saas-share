@@ -15,6 +15,7 @@
  */
 
 import { registry } from "@web/core/registry";
+import { rpc } from "@web/core/network/rpc";
 import { EventBus, toRaw } from "@odoo/owl";
 import { patch } from "@web/core/utils/patch";
 import { evaluateBooleanExpr } from "@web/core/py_js/py";
@@ -177,6 +178,28 @@ function snapshot() {
     return out;
 }
 
+// One insight request per screen, shared by every consumer (the button's
+// tip and the panel's screen card): same signature → same promise. A new
+// screen aborts the previous request.
+let insightCache = { sig: null, promise: null, req: null };
+
+function insight() {
+    const sig = signature();
+    if (insightCache.sig === sig && insightCache.promise) {
+        return insightCache.promise;
+    }
+    insightCache.req?.abort?.();
+    const snap = snapshot();
+    if (!snap.model) {
+        insightCache = { sig, promise: Promise.resolve(null), req: null };
+        return insightCache.promise;
+    }
+    const req = rpc("/ai_agent/screen/insight", { screen: snap }, { silent: true });
+    const promise = req.then((res) => res || null).catch(() => null);
+    insightCache = { sig, promise, req };
+    return promise;
+}
+
 export const aiScreenContextService = {
     dependencies: ["action"],
     start(env, { action }) {
@@ -186,6 +209,7 @@ export const aiScreenContextService = {
         return {
             bus,
             snapshot,
+            insight,
             signature: () => signature(),
         };
     },

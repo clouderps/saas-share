@@ -1,6 +1,6 @@
 /** @odoo-module **/
 
-import { Component, useState, useRef, onMounted, onPatched, onWillUnmount, useEffect } from "@odoo/owl";
+import { Component, useState, useRef, onMounted, onPatched, onWillUnmount, onWillUpdateProps, useEffect } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
 import { _t } from "@web/core/l10n/translation";
 import { registry } from "@web/core/registry";
@@ -81,6 +81,9 @@ export class AiAgentChat extends Component {
         screenAware: { type: Boolean, optional: true },
         // Floating panel: "open in the full console" button.
         onExpand: { type: Function, optional: true },
+        // Floating panel: false while hidden, so the screen card is only
+        // refreshed when someone can see it.
+        visible: { type: Boolean, optional: true },
         onClose: { type: Function, optional: true },
         title: { type: String, optional: true },
         // Manager-only: enables Web Speech API mic input + voice
@@ -97,6 +100,7 @@ export class AiAgentChat extends Component {
     setup() {
         this.aiAgent = useService("aiAgentService");
         this.screenContext = this.props.screenAware ? useService("aiScreenContext") : null;
+        this.radialRef = useRef("radial");
         this.notification = useService("notification");
         try {
             this.actionService = useService("action");
@@ -158,6 +162,32 @@ export class AiAgentChat extends Component {
             this.stt?.cancel();
             this.tts?.stop();
         });
+
+        // The screen card: what this page is, live numbers, and one-tap
+        // questions — shown the moment the assistant opens, no question
+        // needed. Same (cached) request as the button's tip.
+        this.state.screenCard = null;
+        this.state.screenCardDismissed = false;
+        this.state.radialOpen = false;
+        this.state.radialHover = "";
+        if (this.screenContext) {
+            const refresh = () => this._refreshScreenCard();
+            this.screenContext.bus.addEventListener("change", refresh);
+            onWillUnmount(() => this.screenContext.bus.removeEventListener("change", refresh));
+            onMounted(refresh);
+            onWillUpdateProps((next) => {
+                if (next.visible && !this.props.visible) {
+                    this._refreshScreenCard(next);
+                }
+            });
+        }
+        const closeRadial = (ev) => {
+            if (this.state.radialOpen && !this.radialRef.el?.contains(ev.target)) {
+                this.state.radialOpen = false;
+            }
+        };
+        document.addEventListener("pointerdown", closeRadial, true);
+        onWillUnmount(() => document.removeEventListener("pointerdown", closeRadial, true));
         this._lastSpoken = null;        // throttle re-speak of same text
 
         // Auto-scroll on new messages.
@@ -606,6 +636,84 @@ export class AiAgentChat extends Component {
         return this.locale.startsWith("ar") ? "ar-SA" : "en-US";
     }
 
+    // ── Screen card ──────────────────────────────────────────
+
+    async _refreshScreenCard(props = this.props) {
+        if (!this.screenContext || props.visible === false) {
+            return;
+        }
+        const res = await this.screenContext.insight();
+        this.state.screenCard = res && (res.title || (res.lines || []).length) ? res : null;
+        this.state.screenCardDismissed = false;
+    }
+
+    askSuggestion(question) {
+        this.state.radialOpen = false;
+        this._send(question);
+    }
+
+    // ── One button, a circle of actions ──────────────────────
+    //
+    // Everything the composer can do besides typing sits behind one
+    // button. Modules add items by patching composerActions (attach and
+    // camera scan: ab_ai_chatbot; slash commands: ab_ai_command).
+
+    get composerActions() {
+        const items = [];
+        if (this.state.speechAvailable) {
+            items.push({
+                id: "voice", icon: "fa-microphone", label: this.labels.startRecording,
+                run: () => this.toggleRecording(),
+            });
+        }
+        if (this.screenContext) {
+            items.push({
+                id: "explain", icon: "fa-lightbulb-o", label: this.labels.explainScreen,
+                run: () => this._send(this.labels.explainScreen),
+            });
+        }
+        return items;
+    }
+
+    toggleRadial() {
+        if (this.state.recording) {
+            // While listening the button IS the stop button.
+            this.toggleRecording();
+            return;
+        }
+        this.state.radialOpen = !this.state.radialOpen;
+        this.state.radialHover = "";
+    }
+
+    pickComposerAction(item) {
+        this.state.radialOpen = false;
+        item.run();
+    }
+
+    onRadialKeydown(ev) {
+        if (ev.key === "Escape" && this.state.radialOpen) {
+            ev.stopPropagation();
+            this.state.radialOpen = false;
+        }
+    }
+
+    /**
+     * Items evenly spaced on a ring (first one at the top, clockwise).
+     * Logical offsets (inset-inline-start), so RTL mirrors by itself.
+     */
+    radialStyle(index, count) {
+        const radius = 66;
+        const angle = (-90 + (360 / Math.max(count, 1)) * index) * (Math.PI / 180);
+        const x = Math.round(Math.cos(angle) * radius);
+        const y = Math.round(Math.sin(angle) * radius);
+        return `inset-inline-start: calc(50% + ${x}px - 22px); top: calc(50% + ${y}px - 22px);`
+            + ` transition-delay: ${index * 25}ms;`;
+    }
+
+    get radialCenterLabel() {
+        return this.state.radialHover || this.labels.whatDoYouNeed;
+    }
+
     /** Push-to-talk: first press starts, second press stops and sends. */
     async toggleRecording() {
         if (!this.stt || this.state.transcribing) {
@@ -751,6 +859,10 @@ export class AiAgentChat extends Component {
             confirmFailed: _t("That action could not be completed."),
             sendFailed: _t("The assistant could not answer right now. Please try again."),
             expand: _t("Open in full screen"),
+            explainScreen: _t("Explain this screen"),
+            moreActions: _t("Voice, files and more"),
+            nowOn: _t("You are on"),
+            whatDoYouNeed: _t("What do you need?"),
             confirmUnavailable: _t("This chat has no saved history, so there is nothing to confirm against. Ask again and confirm from the new answer."),
         };
     }

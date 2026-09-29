@@ -2,6 +2,17 @@
 
 > Per-repo tracking log. Seeded 2026-05-31 from manifest inventory + last 90 days of `git log`. Append new entries on top as work lands.
 
+## 2026-09-29 — Ghaima AI: one action button + screen card
+
+- `ab_ai_agent` 18.0.1.12.0: the composer's loose icons (mic, attach, camera…)
+  are now ONE "+" button that opens a circle of actions (`composerActions`,
+  extended by ab_ai_chatbot and ab_ai_command); while listening it is the stop
+  button. Opening the assistant shows a screen card for the current page
+  (what it is, live counts, one-tap questions) without asking; it follows
+  screen changes. One cached insight request per screen shared with the tip.
+  Tips default to "on" (migration moves the install-default "quiet").
+- `ab_ai_command`: "Commands" item in the circle.
+
 ## 2026-09-29 — Ghaima AI: screen-aware assistant, confirm-first actions, voice
 
 Plan/report: `docs/ghaima-ai/IMPLEMENTATION_PLAN.md`, `IMPLEMENTATION_REPORT.md`.
