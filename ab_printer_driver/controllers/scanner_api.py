@@ -65,15 +65,15 @@ def _scan_via_agent(agent, params):
                 return json.loads(sr.result_json or '{}')
             except Exception:
                 return {'success': False,
-                        'error': 'agent returned non-JSON result'}
+                        'error': request.env._('The agent returned an unreadable result.')}
         if last_state in ('failed', 'expired'):
             return {'success': False,
-                    'error': sr.error or 'agent reported failure'}
+                    'error': sr.error or request.env._('The agent reported a failure.')}
         time.sleep(SCAN_POLL_TICK_S)
     # Timed out — let the GC cron clean up.
     return {'success': False,
-            'error': f'Agent "{agent.name}" did not respond within '
-                     f'{SCAN_AGENT_TIMEOUT_S}s. Is it running?',
+            'error': request.env._('Agent "%(agent)s" did not respond within %(seconds)ss. Is it running?',
+                                   agent=agent.name, seconds=SCAN_AGENT_TIMEOUT_S),
             'agent_timeout': True}
 
 
@@ -115,7 +115,7 @@ class PrinterScannerController(http.Controller):
         """
         subnet = (kw.get('subnet') or '').strip().rstrip('.')
         if not subnet:
-            return {'success': False, 'error': 'subnet required'}
+            return {'success': False, 'error': request.env._('Subnet required')}
         # Accept full IP / CIDR / trailing 0 in the subnet field.
         forced_host = None
         m = re.match(r'^(\d{1,3}\.\d{1,3}\.\d{1,3})\.(\d{1,3})$', subnet)
@@ -157,21 +157,21 @@ class PrinterScannerController(http.Controller):
         if agent and not agent.online:
             return {
                 'success': False,
-                'error': f'Agent "{agent.name}" is offline. '
-                         'Start the bridge agent on the LAN PC, '
-                         'then retry the scan.',
+                'error': request.env._(
+                    'Agent "%s" is offline. Start the bridge agent on the LAN PC, '
+                    'then retry the scan.', agent.name),
                 'agent_offline': True, 'agent_id': agent.id,
             }
         if _is_private_subnet(subnet) and not Agent.search_count([]):
             return {
                 'success': False, 'needs_agent': True,
                 'subnet': subnet,
-                'error': (
-                    f'{subnet}.0/24 is a private LAN range. This Ghaima server '
+                'error': request.env._(
+                    '%s.0/24 is a private LAN range. This Ghaima server '
                     'cannot reach it directly. Register a Printer Bridge '
                     'Agent (Printers → Agents → New) and install it on a '
                     'PC inside that network. Once the agent is online, '
-                    'rerun the scan.'
+                    'rerun the scan.', subnet
                 ),
             }
 
@@ -304,6 +304,7 @@ class PrinterScannerController(http.Controller):
         scanner UI can show 'what's already connected' on first open —
         operators no longer have to re-scan to see what's there."""
         Driver = request.env['ab.printer.config'].sudo()
+        labels = request.env['ab.printer.config']._ui_labels()
         rows = []
         for d in Driver.search([], order='sequence, id'):
             rows.append({
@@ -311,7 +312,9 @@ class PrinterScannerController(http.Controller):
                 'ip': d.printer_ip or '', 'port': d.printer_port or 9100,
                 'vendor': d.vendor or '', 'mac': d.mac or '',
                 'state': d.state, 'verified': bool(d.verified),
+                'state_label': labels['state'].get(d.state, d.state or ''),
                 'use': d.printer_use or '',
+                'use_label': labels['use'].get(d.printer_use, ''),
                 'last_seen': d.last_seen and d.last_seen.isoformat() or '',
             })
         return {'success': True, 'registered': rows, 'count': len(rows)}
@@ -319,7 +322,7 @@ class PrinterScannerController(http.Controller):
     @http.route('/ab_printer/scan/probe', type='json', auth='user', methods=['POST'])
     def scan_probe(self, ip=None, port=9100, **kw):
         if not ip:
-            return {'success': False, 'error': 'ip required'}
+            return {'success': False, 'error': request.env._('IP address required')}
         result = verify.verify_printer(ip, int(port), timeout_s=1.5)
         if not result['reachable']:
             return {'success': True, 'reachable': False,
@@ -340,7 +343,7 @@ class PrinterScannerController(http.Controller):
     @http.route('/ab_printer/scan/test', type='json', auth='user', methods=['POST'])
     def scan_test(self, ip=None, port=9100, **kw):
         if not ip:
-            return {'success': False, 'error': 'ip required'}
+            return {'success': False, 'error': request.env._('IP address required')}
         payload = escpos_lib.build_test_slip(printer_name=f'{ip}:{port}')
         ok, err, duration = tcp.send_to_printer(ip, int(port), payload, timeout=5)
         return {'success': ok, 'error': err or '', 'duration': duration}
@@ -348,7 +351,7 @@ class PrinterScannerController(http.Controller):
     @http.route('/ab_printer/scan/add', type='json', auth='user', methods=['POST'])
     def scan_add(self, printers=None, **kw):
         if not printers:
-            return {'success': False, 'error': 'no printers selected'}
+            return {'success': False, 'error': request.env._('No printers selected')}
         ids = []
         Driver = request.env['ab.printer.config'].sudo()
         for p in printers:

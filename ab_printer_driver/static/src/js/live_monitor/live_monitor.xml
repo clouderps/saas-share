@@ -47,7 +47,7 @@
                   <strong t-esc="p.name"/>
                   <span class="o_pm_chip" t-if="p.vendor" t-esc="p.vendor"/>
                 </div>
-                <span class="o_pm_card__use" t-esc="p.use"/>
+                <span class="o_pm_card__use" t-esc="p.use_label or p.use"/>
               </div>
               <div class="o_pm_card__meta">
                 <div>
@@ -95,7 +95,7 @@
                   <i class="fa" t-att-class="state.traces[p.id].ok ? 'fa-check' : 'fa-times'"/>
                   <span>
                     <t t-if="state.traces[p.id].ok">All checks passed</t>
-                    <t t-else="">Chain stopped at: <t t-esc="state.traces[p.id].steps.find(s => s.status === 'fail')?.name or 'last step'"/></t>
+                    <t t-else="">Chain stopped at: <t t-esc="failedStepName(state.traces[p.id])"/></t>
                   </span>
                 </div>
                 <ol class="o_pm_steps">
@@ -107,7 +107,7 @@
                     </span>
                     <span class="o_pm_step__ms text-muted small"
                           t-if="s.duration_ms">
-                      <t t-esc="s.duration_ms"/>ms
+                      <t t-esc="fmtMs(s.duration_ms)"/>
                     </span>
                   </li>
                 </ol>
@@ -149,14 +149,14 @@
               <td><t t-esc="relTime(j.at)"/></td>
               <td><code t-esc="j.name"/></td>
               <td t-esc="j.printer"/>
-              <td t-esc="j.source"/>
-              <td t-esc="j.kind"/>
+              <td t-esc="j.source_label or j.source"/>
+              <td t-esc="j.kind_label or j.kind"/>
               <td t-esc="j.attempts"/>
-              <td t-if="j.duration_ms"><t t-esc="j.duration_ms"/>ms</td>
+              <td t-if="j.duration_ms"><t t-esc="fmtMs(j.duration_ms)"/></td>
               <td t-else="">—</td>
               <td>
                 <span class="o_pm_pill" t-att-class="'o_pm_pill--' + j.state"
-                      t-esc="j.state"/>
+                      t-esc="j.state_label or j.state"/>
               </td>
               <td class="text-danger small" t-esc="j.error"/>
             </tr>
@@ -189,12 +189,12 @@
             <tr t-foreach="state.logs" t-as="lg" t-key="lg.id">
               <td><t t-esc="relTime(lg.at)"/></td>
               <td t-esc="lg.printer"/>
-              <td t-esc="lg.source"/>
+              <td t-esc="lg.source_label or lg.source"/>
               <td>
                 <span class="o_pm_pill" t-att-class="'o_pm_pill--' + lg.status"
-                      t-esc="lg.status"/>
+                      t-esc="lg.status_label or lg.status"/>
               </td>
-              <td t-if="lg.duration"><t t-esc="(lg.duration * 1000).toFixed(0)"/>ms</td>
+              <td t-if="lg.duration"><t t-esc="fmtMs((lg.duration * 1000).toFixed(0))"/></td>
               <td t-else="">—</td>
               <td class="text-danger small" t-esc="lg.error"/>
             </tr>

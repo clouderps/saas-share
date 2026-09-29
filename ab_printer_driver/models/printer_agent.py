@@ -96,9 +96,9 @@ class PrinterAgent(models.Model):
             'type': 'ir.actions.client', 'tag': 'display_notification',
             'params': {
                 'type': 'warning', 'sticky': True,
-                'title': 'Token rotated',
-                'message': 'The running agent on the LAN will lose its session and '
-                           'must be reconfigured with the new token.',
+                'title': self.env._('Token rotated'),
+                'message': self.env._('The running agent on the LAN will lose its session and '
+                                      'must be reconfigured with the new token.'),
             },
         }
 

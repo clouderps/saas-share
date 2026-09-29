@@ -1,18 +1,362 @@
-# Arabic translation of ab_printer_driver
-# Generated 2026-06-11 — menu & window-action names (i18n pass).
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* ab_printer_driver
+#
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo 18.0 ab_printer_driver\n"
-"Language: ar\n"
+"Project-Id-Version: Odoo Server 18.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-29 07:01+0000\n"
+"PO-Revision-Date: 2026-09-29 07:01+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ar_001\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
-"Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 ? 4 : 5;\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_agent_form
+msgid ""
+"\" \\\n"
+"     bash -c 'cd /tmp &amp;&amp; curl -fsSL \"$AGENT_URL/ab_printer_driver/tools/install_agent.sh\" -o install_agent.sh &amp;&amp; bash install_agent.sh'"
+msgstr ""
+"\" \\\n"
+"     bash -c 'cd /tmp &amp;&amp; curl -fsSL \"$AGENT_URL/ab_printer_driver/tools/install_agent.sh\" -o install_agent.sh &amp;&amp; bash install_agent.sh'"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.js:0
+msgid ""
+"%(found)s printer(s) found · scanned %(scanned)s targets in %(seconds)ss"
+msgstr ""
+"تم العثور على %(found)s طابعة · تم مسح %(scanned)s هدفًا خلال %(seconds)s ث"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/diagnose.py:0
+msgid "%s bytes"
+msgstr "%s بايت"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/diagnose.py:0
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.js:0
+msgid "%s ms"
+msgstr "%s مللي ثانية"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/scanner_api.py:0
+msgid ""
+"%s.0/24 is a private LAN range. This Ghaima server cannot reach it directly."
+" Register a Printer Bridge Agent (Printers → Agents → New) and install it on"
+" a PC inside that network. Once the agent is online, rerun the scan."
+msgstr ""
+"النطاق %s.0/24 شبكة محلية خاصة لا يمكن لخادم غيمة الوصول إليها مباشرة. سجّل "
+"وكيل ربط للطابعات (الطابعات ← الوكلاء ← جديد) وثبّته على جهاز داخل تلك "
+"الشبكة. بعد أن يصبح الوكيل متصلًا، أعد تشغيل المسح."
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.js:0
+msgid "%sd ago"
+msgstr "منذ %s يوم"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.js:0
+msgid "%sh ago"
+msgstr "منذ %s ساعة"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.js:0
+msgid "%sm ago"
+msgstr "منذ %s دقيقة"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.js:0
+msgid "%ss ago"
+msgstr "منذ %s ثانية"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid ""
+",\n"
+"                        then rerun this scan."
+msgstr ""
+"،\n"
+"                        ثم أعد تشغيل هذا المسح."
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,help:ab_printer_driver.field_ab_printer_config__epos_port
+msgid ""
+"0 (default) = auto: 443 for HTTPS, 80 for HTTP. Some Epson firmwares use "
+"8043 / 8008 instead — set explicitly if your printer's web admin shows a "
+"non-default port."
+msgstr ""
+"0 (افتراضي) = تلقائي: 443 لـ HTTPS و80 لـ HTTP. تستخدم بعض إصدارات برامج "
+"Epson الثابتة المنفذ 8043 / 8008 بدلًا من ذلك — حدّده صراحةً إذا أظهرت لوحة "
+"إدارة الطابعة منفذًا غير افتراضي."
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/epos_printer/epos_printer.js:0
+msgid ""
+"1. Open %s in a new tab and accept the printer's self-signed certificate "
+"(one time per browser)."
+msgstr ""
+"1. افتح %s في تبويب جديد واقبل الشهادة الموقّعة ذاتيًا للطابعة (مرة واحدة "
+"لكل متصفح)."
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/epos_printer/epos_printer.js:0
+msgid ""
+"2. The Ghaima page is HTTPS but the printer is HTTP. Mixed content is "
+"blocked — set 'ePOS over HTTPS' on the printer record."
+msgstr ""
+"2. صفحة غيمة تعمل عبر HTTPS بينما الطابعة تعمل عبر HTTP، ويُحظر المحتوى "
+"المختلط — فعّل «ePOS عبر HTTPS» في سجل الطابعة."
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/epos_printer/epos_printer.js:0
+msgid ""
+"3. Chrome 117+ requires Private Network Access. The printer's firmware must "
+"respond to PNA preflight or the request fails silently. Update the printer "
+"firmware, or enable chrome://flags/#block-insecure-private-network-requests "
+"= Disabled."
+msgstr ""
+"3. يتطلب Chrome 117 وما بعده ميزة الوصول إلى الشبكة الخاصة (PNA). يجب أن "
+"تستجيب البرامج الثابتة للطابعة لطلب PNA التمهيدي وإلا يفشل الطلب دون أي "
+"رسالة. حدّث البرامج الثابتة للطابعة، أو اضبط chrome://flags/#block-insecure-"
+"private-network-requests على Disabled."
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/epos_printer/epos_printer.js:0
+msgid "4. Verify the printer is reachable: ping %s from the operator device."
+msgstr "4. تحقّق من إمكانية الوصول إلى الطابعة: نفّذ ping %s من جهاز المشغّل."
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__paper_width_mm__58
+msgid "58 mm"
+msgstr "58 مم"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__paper_width_mm__80
+msgid "80 mm"
+msgstr "80 مم"
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_detect_wizard_form
+msgid "<span class=\"mx-1\">to</span>"
+msgstr "<span class=\"mx-1\">إلى</span>"
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_agent_form
+msgid ""
+"<span>YOUR_TENANT_URL/ab_printer/agent/download</span> -o /tmp/ab_printer_agent.py &amp;&amp; \\\n"
+"sudo AGENT_URL=YOUR_TENANT_URL \\\n"
+"     AGENT_TOKEN="
+msgstr ""
+"<span>YOUR_TENANT_URL/ab_printer/agent/download</span> -o /tmp/ab_printer_agent.py &amp;&amp; \\\n"
+"sudo AGENT_URL=YOUR_TENANT_URL \\\n"
+"     AGENT_TOKEN="
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_agent_form
+msgid "<strong>One-liner installer</strong>"
+msgstr "<strong>أمر التثبيت بسطر واحد</strong>"
+
+#. module: ab_printer_driver
+#: model_terms:ir.actions.act_window,help:ab_printer_driver.action_printer_agent
+msgid ""
+"A Bridge Agent runs on a PC inside the customer's LAN and\n"
+"                proxies printing for cloud-hosted tenants. Create one row\n"
+"                here, then use the install command on the LAN PC."
+msgstr ""
+"يعمل وكيل الربط على جهاز حاسوب داخل الشبكة المحلية للعميل\n"
+"                ويتولى الطباعة نيابةً عن المنشآت المستضافة سحابيًا. أنشئ سجلًا واحدًا\n"
+"                هنا، ثم استخدم أمر التثبيت على جهاز الشبكة المحلية."
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__paper_width_mm__a4
+msgid "A4"
+msgstr "A4"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "Add"
+msgstr "إضافة"
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_detect_wizard_form
+msgid "Add Selected"
+msgstr "إضافة المحدد"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "Add by IP"
+msgstr "إضافة عبر IP"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.js:0
+msgid "Add failed: %s"
+msgstr "فشلت الإضافة: %s"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid ""
+"Adding registers selected printers as live drivers — the POS receipt flow\n"
+"                    and any module calling"
+msgstr ""
+"تُسجَّل الطابعات المحددة كمشغّلات فعّالة عند إضافتها — ويستخدمها مسار إيصالات نقطة البيع\n"
+"                    وأي وحدة تستدعي"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_scan_request__agent_id
+msgid "Agent"
+msgstr "الوكيل"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/scanner_api.py:0
+msgid "Agent \"%(agent)s\" did not respond within %(seconds)ss. Is it running?"
+msgstr "لم يستجب الوكيل \"%(agent)s\" خلال %(seconds)s ثانية. هل هو قيد التشغيل؟"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/scanner_api.py:0
+msgid ""
+"Agent \"%s\" is offline. Start the bridge agent on the LAN PC, then retry "
+"the scan."
+msgstr ""
+"الوكيل \"%s\" غير متصل. شغّل وكيل الربط على جهاز الشبكة المحلية، ثم أعد "
+"محاولة المسح."
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/models/printer_config.py:0
+msgid "Agent \"%s\" is offline. The print job will run when it reconnects."
+msgstr "الوكيل \"%s\" غير متصل. ستُنفَّذ مهمة الطباعة عند إعادة اتصاله."
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__agent_local_ip
+msgid "Agent LAN IP"
+msgstr "عنوان IP المحلي للوكيل"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__name
+msgid "Agent Name"
+msgstr "اسم الوكيل"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__agent_online
+msgid "Agent Online"
+msgstr "الوكيل متصل"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__version
+msgid "Agent Version"
+msgstr "إصدار الوكيل"
+
+#. module: ab_printer_driver
+#: model:ir.model.constraint,message:ab_printer_driver.constraint_ab_printer_agent_token_unique
+msgid "Agent token must be unique."
+msgstr "يجب أن يكون رمز الوكيل فريدًا."
 
 #. module: ab_printer_driver
 #: model:ir.ui.menu,name:ab_printer_driver.menu_printer_config
 msgid "All Printers"
 msgstr "جميع الطابعات"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.xml:0
+msgid "All checks passed"
+msgstr "اجتازت جميع الفحوصات"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__attempts
+msgid "Attempts"
+msgstr "المحاولات"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__token
+msgid "Auth Token"
+msgstr "رمز المصادقة"
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_agent_form
+msgid "Auth token"
+msgstr "رمز المصادقة"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "Auto"
+msgstr "تلقائي"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_mode__auto
+msgid "Auto Detect"
+msgstr "اكتشاف تلقائي"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid ""
+"Auto-identifies Epson · Star · Bixolon · HP · Brother · Zebra · Citizen."
+msgstr ""
+"يتعرّف تلقائيًا على Epson · Star · Bixolon · HP · Brother · Zebra · Citizen."
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.xml:0
+msgid "Auto-refresh"
+msgstr "تحديث تلقائي"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/models/printer_config.py:0
+msgid "Backend"
+msgstr "النظام الخلفي"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__banner_excerpt
+msgid "Banner"
+msgstr "العارضة "
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_mode__bluetooth
+msgid "Bluetooth"
+msgstr "بلوتوث"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__bluetooth_device_name
+msgid "Bluetooth Device Name"
+msgstr "اسم جهاز البلوتوث"
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_agent_form
+msgid "Bridge Agent"
+msgstr "وكيل الربط"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_mode__agent
+msgid "Bridge Agent (LAN proxy for cloud Ghaima)"
+msgstr "وكيل الربط (وسيط شبكة محلية لغيمة السحابي)"
 
 #. module: ab_printer_driver
 #: model:ir.actions.act_window,name:ab_printer_driver.action_printer_agent
@@ -21,53 +365,126 @@ msgid "Bridge Agents"
 msgstr "وكلاء الربط"
 
 #. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/diagnose.py:0
+msgid "Bytes transmitted"
+msgstr "إرسال البيانات"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_job_form
+msgid "Cancel"
+msgstr "إلغاء"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__state__cancelled
+msgid "Cancelled"
+msgstr "تم الإلغاء "
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/models/printer_config.py:0
+msgid "Cannot write the print spool file: %s"
+msgstr "تعذّرت كتابة ملف قائمة انتظار الطباعة: %s"
+
+#. module: ab_printer_driver
 #: model:ir.ui.menu,name:ab_printer_driver.menu_printer_category
 msgid "Categories"
 msgstr "الفئات"
 
 #. module: ab_printer_driver
-#: model:ir.actions.act_window,name:ab_printer_driver.action_printer_detect_wizard
-msgid "Detect Printers (legacy)"
-msgstr "اكتشاف الطابعات (قديم)"
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__category_id
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_config_search
+msgid "Category"
+msgstr "الفئة "
 
 #. module: ab_printer_driver
-#: model:ir.ui.menu,name:ab_printer_driver.menu_printer_live_monitor
-msgid "Live Monitor"
-msgstr "المراقبة المباشرة"
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_category__name
+msgid "Category Name"
+msgstr "اسم الفئة"
 
 #. module: ab_printer_driver
-#: model:ir.ui.menu,name:ab_printer_driver.menu_printer_scanner
-msgid "Network Scanner"
-msgstr "ماسح الشبكة"
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.xml:0
+msgid "Chain stopped at:"
+msgstr "توقفت السلسلة عند:"
 
 #. module: ab_printer_driver
-#: model:ir.actions.act_window,name:ab_printer_driver.action_printer_job
-msgid "Print Jobs"
-msgstr "مهام الطباعة"
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__claimed_at
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_scan_request__claimed_at
+msgid "Claimed At"
+msgstr "وقت الاستلام"
 
 #. module: ab_printer_driver
-#: model:ir.actions.act_window,name:ab_printer_driver.action_printer_log
-#: model:ir.ui.menu,name:ab_printer_driver.menu_printer_log
-msgid "Print Log"
-msgstr "سجل الطباعة"
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__state__claimed
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_scan_request__state__claimed
+msgid "Claimed by Agent"
+msgstr "استلمه الوكيل"
 
 #. module: ab_printer_driver
-#: model:ir.ui.menu,name:ab_printer_driver.menu_printer_jobs
-msgid "Print Queue"
-msgstr "قائمة انتظار الطباعة"
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_detect_wizard_form
+msgid "Close"
+msgstr "إغلاق"
 
 #. module: ab_printer_driver
-#: model:ir.actions.act_window,name:ab_printer_driver.action_printer_category
-msgid "Printer Categories"
-msgstr "فئات الطابعات"
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "Cloud server (direct)"
+msgstr "الخادم السحابي (مباشر)"
 
 #. module: ab_printer_driver
-#: model:ir.actions.act_window,name:ab_printer_driver.action_printer_config
-#: model:ir.ui.menu,name:ab_printer_driver.menu_printer_driver_root
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__printer_count
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_category__printer_ids
-msgid "Printers"
-msgstr "الطابعات"
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_category__color
+msgid "Color"
+msgstr "اللون"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_detect_wizard__port_mode__common
+msgid "Common (9100 + 631 + 515)"
+msgstr "شائع (9100 + 631 + 515)"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "Common · 9100 + 631 + 515"
+msgstr "الشائعة · 9100 + 631 + 515"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__state__connected
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_config_search
+msgid "Connected"
+msgstr "متصل "
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_config_form
+msgid "Connection"
+msgstr "الاتصال"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/diagnose.py:0
+msgid ""
+"Connection refused / timeout — check the IP, the port, and that the printer "
+"is powered on and on the same LAN"
+msgstr ""
+"رُفض الاتصال / انتهت المهلة — تحقّق من عنوان IP والمنفذ، ومن أن الطابعة "
+"مشغّلة وعلى الشبكة المحلية نفسها"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/models/printer_config.py:0
+msgid "Could not convert the image for printing: %s"
+msgstr "تعذّر تحويل الصورة للطباعة: %s"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/epos_printer/epos_printer.js:0
+msgid ""
+"Could not reach the printer at %s. Likely causes:\n"
+"%s"
+msgstr ""
+"تعذّر الوصول إلى الطابعة على %s. الأسباب المحتملة:\n"
+"%s"
 
 #. module: ab_printer_driver
 #: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__create_uid
@@ -94,6 +511,354 @@ msgid "Created on"
 msgstr "أنشئ في"
 
 #. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "Currently connected"
+msgstr "متصلة حاليًا"
+
+#. module: ab_printer_driver
+#: model:ir.actions.act_window,name:ab_printer_driver.action_printer_detect_wizard
+msgid "Detect Printers (legacy)"
+msgstr "اكتشاف الطابعات (قديم)"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,help:ab_printer_driver.field_ab_printer_agent__agent_subnet
+msgid ""
+"Detected /24 the agent lives on, e.g. '192.168.8'. The scanner pre-fills "
+"this on subnet entry."
+msgstr ""
+"الشبكة الفرعية /24 التي يعمل عليها الوكيل، مثل '192.168.8'. يعبّئها الماسح "
+"مسبقًا عند إدخال الشبكة الفرعية."
+
+#. module: ab_printer_driver
+#: model:ir.model,name:ab_printer_driver.model_ab_printer_detect_line
+msgid "Detected Printer Line"
+msgstr "طراز الطابعة المكتشف"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__detected_printer_ids
+msgid "Detected Printers"
+msgstr "الطابعات المكتشفة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,help:ab_printer_driver.field_ab_printer_config__vendor
+msgid "Detected by banner / MAC OUI."
+msgstr "تم الاكتشاف عبر الشعار / معرّف MAC للمصنّع."
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "Detected your local subnet via WebRTC:"
+msgstr "تم اكتشاف شبكتك الفرعية المحلية عبر WebRTC:"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.xml:0
+msgid "Diagnose"
+msgstr "تشخيص"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.xml:0
+msgid "Diagnosing…"
+msgstr "جارٍ التشخيص…"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/models/printer_config.py:0
+msgid "Diagnostics"
+msgstr "التشخيص"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__state__disconnected
+msgid "Disconnected"
+msgstr "غير متصل"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__display_name
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_category__display_name
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__display_name
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__display_name
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__display_name
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__display_name
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_log__display_name
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_scan_request__display_name
+msgid "Display Name"
+msgstr "اسم العرض "
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_use__document
+msgid "Document Printer (A4)"
+msgstr "طابعة المستندات (A4)"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__state__done
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_log__job_status__done
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_scan_request__state__done
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_job_search
+msgid "Done"
+msgstr "منتهي "
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_scan_request__done_at
+msgid "Done At"
+msgstr "وقت الإتمام"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/diagnose.py:0
+msgid "Driver record exists"
+msgstr "وجود سجل المشغّل"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.xml:0
+msgid "Duration"
+msgstr "المدة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_log__duration
+msgid "Duration (s)"
+msgstr "المدة (ث)"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__verified
+msgid "ESC/POS Verified"
+msgstr "تم التحقق من ESC/POS"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/diagnose.py:0
+msgid "ESC/POS status response"
+msgstr "استجابة حالة ESC/POS"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "Edit"
+msgstr "تعديل"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.xml:0
+msgid "Edit driver"
+msgstr "تعديل المشغّل"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__enable_fallback
+msgid "Enable Fallback"
+msgstr "تفعيل الخيار الاحتياطي"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.xml:0
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_scan_request__error
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__state__error
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_config_search
+msgid "Error"
+msgstr "خطأ"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_log__error_message
+msgid "Error Message"
+msgstr "رسالة الخطأ"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_scan_request__state__expired
+msgid "Expired"
+msgstr "منتهي الصلاحية"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__state__failed
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_log__job_status__failed
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_scan_request__state__failed
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_job_search
+msgid "Failed"
+msgstr "فشل"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid ""
+"Find every printer on your LAN and wire it into the\n"
+"                        POS & backend print pipelines as a live driver."
+msgstr ""
+"اعثر على كل طابعة في شبكتك المحلية واربطها\n"
+"                        بمسارات الطباعة في نقطة البيع والنظام كمشغّل فعّال."
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,help:ab_printer_driver.field_ab_printer_detect_wizard__subnet
+msgid "First three octets of the network to scan, e.g. 192.168.1"
+msgstr "أول ثلاث خانات من عنوان الشبكة المراد مسحها، مثل 192.168.1"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__found_count
+msgid "Found Count"
+msgstr "عدد النتائج"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_detect_wizard__port_mode__all
+msgid "Full sweep (incl. 80 web UI)"
+msgstr "مسح كامل (يشمل واجهة الويب 80)"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "Full sweep · + 80"
+msgstr "مسح شامل · + 80"
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_agent_search
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_config_search
+msgid "Group By"
+msgstr "تجميع حسب"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,help:ab_printer_driver.field_ab_printer_job__priority
+msgid "Higher prints first."
+msgstr "القيمة الأعلى تُطبع أولًا."
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,help:ab_printer_driver.field_ab_printer_config__epos_use_https
+msgid ""
+"Highly recommended. Required when the Ghaima page itself is HTTPS (mixed-"
+"content blocks HTTPS→HTTP). The browser will prompt to trust the printer's "
+"self-signed certificate on first use — accept it once per browser profile."
+msgstr ""
+"موصى به بشدة. مطلوب عندما تعمل صفحة غيمة نفسها عبر HTTPS (يمنع المحتوى "
+"المختلط الاتصال HTTPS→HTTP). سيطلب المتصفح الوثوق بالشهادة الموقّعة ذاتيًا "
+"للطابعة عند أول استخدام — اقبلها مرة واحدة لكل ملف تعريف متصفح."
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__hostname
+msgid "Hostname"
+msgstr "اسم المضيف"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__id
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_category__id
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__id
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__id
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__id
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__id
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_log__id
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_scan_request__id
+msgid "ID"
+msgstr "المُعرف"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__ip_address
+msgid "IP Address"
+msgstr "عنوان IP"
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_detect_wizard_form
+msgid "IP Range"
+msgstr "نطاق IP"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/scanner_api.py:0
+msgid "IP address required"
+msgstr "عنوان IP مطلوب"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__do_banner_grab
+msgid "Identify vendor"
+msgstr "تحديد المورد"
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_agent_form
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_config_form
+msgid "Identity"
+msgstr "الهوية"
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_agent_form
+msgid "Install command"
+msgstr "أمر التثبيت"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_mode__iot
+msgid "IoT Box"
+msgstr "جهاز IoT "
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__payload_kind__image
+msgid "JPEG/PNG image"
+msgstr "صورة JPEG/PNG"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.xml:0
+msgid "Job"
+msgstr "المهمة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_log__job_status
+msgid "Job Status"
+msgstr "حالة المهمة"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.xml:0
+msgid "Kind"
+msgstr "النوع"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_config_search
+msgid "Kitchen"
+msgstr "المطبخ"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_use__kitchen
+msgid "Kitchen / Order Printer"
+msgstr "طابعة المطبخ / الطلبات"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__agent_subnet
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_agent_search
+msgid "LAN Subnet"
+msgstr "الشبكة الفرعية المحلية"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_config_search
+msgid "Label"
+msgstr "التسمية"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_use__label
+msgid "Label Printer"
+msgstr "طابعة الملصقات"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__last_attempt_at
+msgid "Last Attempt"
+msgstr "آخر محاولة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__duration_ms
+msgid "Last Duration (ms)"
+msgstr "آخر مدة (مللي ثانية)"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__last_error
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_job_form
+msgid "Last Error"
+msgstr "آخر خطأ"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__last_seen
+msgid "Last Seen"
+msgstr "آخر ظهور"
+
+#. module: ab_printer_driver
 #: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__write_uid
 #: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_category__write_uid
 #: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__write_uid
@@ -118,19 +883,55 @@ msgid "Last Updated on"
 msgstr "آخر تحديث في"
 
 #. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__wizard_id
-msgid "Wizard"
-msgstr "المعالج"
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__last_seen
+msgid "Last Verified"
+msgstr "آخر تحقق"
 
 #. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__ip_address
-msgid "IP Address"
-msgstr "عنوان IP"
+#: model:ir.actions.client,name:ab_printer_driver.action_print_live_monitor
+#: model:ir.ui.menu,name:ab_printer_driver.menu_printer_live_monitor
+msgid "Live Monitor"
+msgstr "المراقبة المباشرة"
 
 #. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__port
-msgid "Port"
-msgstr "المنفذ"
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__location_hint
+msgid "Location / Branch"
+msgstr "الموقع / الفرع"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/diagnose.py:0
+msgid ""
+"Lock currently held — another job is mid-send. This is expected if a print "
+"is in flight."
+msgstr ""
+"القفل محجوز حاليًا — توجد مهمة أخرى قيد الإرسال. هذا متوقع إذا كانت هناك "
+"طباعة جارية."
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__mac
+msgid "MAC"
+msgstr "MAC"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__mac
+msgid "MAC Address"
+msgstr "عنوان MAC"
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_agent_form
+msgid "Main Branch — Front PC"
+msgstr "الفرع الرئيسي — جهاز الاستقبال"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__max_attempts
+msgid "Max Attempts"
+msgstr "الحد الأقصى للمحاولات"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__mode_hint
+msgid "Mode"
+msgstr "الوضع"
 
 #. module: ab_printer_driver
 #: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__name
@@ -138,9 +939,620 @@ msgid "Name"
 msgstr "الاسم"
 
 #. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__selected
-msgid "Selected"
-msgstr "محدد"
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_mode__network
+msgid "Network (TCP — server prints, on-prem only)"
+msgstr "شبكة (TCP — الخادم يطبع، محلي فقط)"
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_agent_form
+msgid "Network (reported by the agent)"
+msgstr "الشبكة (حسب تقرير الوكيل)"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "Network Printer Scanner"
+msgstr "ماسح طابعات الشبكة"
+
+#. module: ab_printer_driver
+#: model:ir.actions.client,name:ab_printer_driver.action_printer_scanner
+#: model:ir.ui.menu,name:ab_printer_driver.menu_printer_scanner
+msgid "Network Scanner"
+msgstr "ماسح الشبكة"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/diagnose.py:0
+msgid "No ab.printer.config row with id %s"
+msgstr "لا يوجد سجل ab.printer.config بالمعرّف %s"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.xml:0
+msgid "No jobs yet — submit a print to see activity here."
+msgstr "لا توجد مهام بعد — أرسل طباعة لعرض النشاط هنا."
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/models/printer_config.py:0
+msgid "No printer IP set on %s."
+msgstr "لم يتم تعيين عنوان IP للطابعة في %s."
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/dispatch.py:0
+msgid "No printer is configured for \"%s\"."
+msgstr "لا توجد طابعة مهيأة لاستخدام \"%s\"."
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.xml:0
+msgid "No printers registered yet."
+msgstr "لا توجد طابعات مسجّلة بعد."
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/scanner_api.py:0
+msgid "No printers selected"
+msgstr "لم يتم تحديد أي طابعة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__note
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_agent_form
+msgid "Notes"
+msgstr "الملاحظات"
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_agent_form
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_agent_search
+msgid "Offline"
+msgstr "غير متصلة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__online
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_agent_form
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_agent_search
+msgid "Online"
+msgstr "عبر الإنترنت "
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__open_ports
+msgid "Open Ports"
+msgstr "المنافذ المفتوحة"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.xml:0
+msgid "Open Print Queue"
+msgstr "فتح قائمة انتظار الطباعة"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.xml:0
+msgid "Open the Network Scanner to find printers on your LAN."
+msgstr "افتح ماسح الشبكة للعثور على الطابعات في شبكتك المحلية."
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__op_type
+msgid "Operation"
+msgstr "العملية"
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_agent_form
+msgid ""
+"Operator notes — power schedule, network notes, anything useful for support."
+msgstr ""
+"ملاحظات المشغّل — جدول التشغيل، ملاحظات الشبكة، أي معلومات تفيد الدعم الفني."
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,help:ab_printer_driver.field_ab_printer_agent__location_hint
+msgid "Operator-supplied free text — what office or branch this agent serves."
+msgstr "نص حر يُدخله المشغّل — المكتب أو الفرع الذي يخدمه هذا الوكيل."
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,help:ab_printer_driver.field_ab_printer_agent__name
+msgid "Operator-visible label, e.g. 'Main Branch — Front Office PC'."
+msgstr "تسمية يراها المشغّل، مثل 'الفرع الرئيسي — جهاز المكتب الأمامي'."
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/models/printer_config.py:0
+msgid "PDF rendering produced no page."
+msgstr "لم ينتج عن إنشاء ملف PDF أي صفحة."
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/models/printer_config.py:0
+msgid "POS"
+msgstr "نقطة البيع"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/models/printer_config.py:0
+msgid "POS kitchen"
+msgstr "مطبخ نقطة البيع"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/models/printer_config.py:0
+msgid "POS receipt"
+msgstr "إيصال نقطة البيع"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__paper_width_mm
+msgid "Paper Width"
+msgstr "عرض الورق"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__payload_b64
+msgid "Payload (base64)"
+msgstr "الحمولة (base64)"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__payload_kind
+msgid "Payload Kind"
+msgstr "نوع الحمولة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_log__job_status__pending
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_scan_request__state__pending
+msgid "Pending"
+msgstr "قيد الانتظار "
+
+#. module: ab_printer_driver
+#: model:ir.model,name:ab_printer_driver.model_ab_printer_scan_request
+msgid "Pending Printer Scan Request (agent-mediated)"
+msgstr "طلب مسح طابعات معلّق (عبر الوكيل)"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/diagnose.py:0
+msgid "Per-IP mutex available"
+msgstr "توفر قفل عنوان IP"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__port
+msgid "Port"
+msgstr "المنفذ"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__port_label
+msgid "Port Label"
+msgstr "تسمية المنفذ"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__port_mode
+msgid "Port Mode"
+msgstr "وضع المنفذ"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "Ports"
+msgstr "المنافذ"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__op_type__print
+msgid "Print"
+msgstr "طباعة"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.xml:0
+msgid "Print Diagnostics"
+msgstr "تشخيص الطباعة"
+
+#. module: ab_printer_driver
+#: model:ir.actions.act_window,name:ab_printer_driver.action_printer_job
+msgid "Print Jobs"
+msgstr "مهام الطباعة"
+
+#. module: ab_printer_driver
+#: model:ir.actions.act_window,name:ab_printer_driver.action_printer_log
+#: model:ir.ui.menu,name:ab_printer_driver.menu_printer_log
+msgid "Print Log"
+msgstr "سجل الطباعة"
+
+#. module: ab_printer_driver
+#: model:ir.ui.menu,name:ab_printer_driver.menu_printer_jobs
+msgid "Print Queue"
+msgstr "قائمة انتظار الطباعة"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/epos_printer/test_epos_action.js:0
+msgid "Print failed"
+msgstr "فشلت الطباعة"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/models/printer_config.py:0
+msgid "Print queue"
+msgstr "قائمة انتظار الطباعة"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/epos_printer/epos_printer.js:0
+msgid "Print request timed out after %sms."
+msgstr "انتهت مهلة طلب الطباعة بعد %s مللي ثانية."
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/epos_printer/epos_printer.js:0
+msgid "Print transport error: %s"
+msgstr "خطأ في نقل الطباعة: %s"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.xml:0
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__printer_config_id
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_log__printer_config_id
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_job_search
+msgid "Printer"
+msgstr "الطابعة"
+
+#. module: ab_printer_driver
+#: model:ir.model,name:ab_printer_driver.model_ab_printer_detect_wizard
+msgid "Printer Auto-Detection Wizard"
+msgstr "معالج الاكتشاف التلقائي للطابعات"
+
+#. module: ab_printer_driver
+#: model:ir.model,name:ab_printer_driver.model_ab_printer_agent
+msgid "Printer Bridge Agent"
+msgstr "وكيل ربط الطابعات"
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_agent_list
+msgid "Printer Bridge Agents"
+msgstr "وكلاء ربط الطابعات"
+
+#. module: ab_printer_driver
+#: model:ir.actions.act_window,name:ab_printer_driver.action_printer_category
+msgid "Printer Categories"
+msgstr "فئات الطابعات"
+
+#. module: ab_printer_driver
+#: model:ir.model,name:ab_printer_driver.model_ab_printer_category
+msgid "Printer Category"
+msgstr "فئة الطابعة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_category__printer_count
+msgid "Printer Count"
+msgstr "عدد الطابعات"
+
+#. module: ab_printer_driver
+#: model:ir.model,name:ab_printer_driver.model_ab_printer_config
+msgid "Printer Driver Configuration"
+msgstr "تهيئة مشغّل الطابعة"
+
+#. module: ab_printer_driver
+#: model:ir.actions.server,name:ab_printer_driver.ir_cron_printer_job_drain_ir_actions_server
+msgid "Printer Driver: drain job queue"
+msgstr "مشغّل الطابعات: تفريغ قائمة انتظار المهام"
+
+#. module: ab_printer_driver
+#: model:ir.actions.server,name:ab_printer_driver.ir_cron_printer_health_check_ir_actions_server
+msgid "Printer Driver: health check"
+msgstr "مشغّل الطابعات: فحص الجاهزية"
+
+#. module: ab_printer_driver
+#: model:ir.actions.server,name:ab_printer_driver.ir_cron_printer_job_reap_stale_ir_actions_server
+msgid "Printer Driver: reap stale agent claims"
+msgstr "مشغّل الطابعات: تحرير مطالبات الوكلاء المتوقفة"
+
+#. module: ab_printer_driver
+#: model:ir.actions.server,name:ab_printer_driver.ir_cron_printer_scan_request_gc_ir_actions_server
+msgid "Printer Driver: scan-request GC"
+msgstr "مشغّل الطابعات: تنظيف طلبات المسح"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__printer_ip
+msgid "Printer IP"
+msgstr "عنوان IP للطابعة"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "Printer IP (e.g. 192.168.1.42)"
+msgstr "عنوان IP للطابعة (مثل 192.168.1.42)"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/diagnose.py:0
+msgid "Printer IP configured"
+msgstr "تهيئة عنوان IP للطابعة"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/epos_printer/epos_printer.js:0
+msgid "Printer IP not set."
+msgstr "لم يتم تعيين عنوان IP للطابعة."
+
+#. module: ab_printer_driver
+#: model:ir.model,name:ab_printer_driver.model_ab_printer_job
+msgid "Printer Job"
+msgstr "مهمة الطابعة"
+
+#. module: ab_printer_driver
+#: model:ir.model,name:ab_printer_driver.model_ab_printer_log
+msgid "Printer Log"
+msgstr "سجل الطابعة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__printer_mode
+msgid "Printer Mode"
+msgstr "وضع الطابعة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__name
+msgid "Printer Name"
+msgstr "اسم الطابعة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__printer_port
+msgid "Printer Port"
+msgstr "منفذ الطابعة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_log__printer_type
+msgid "Printer Type"
+msgstr "نوع الطابعة "
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__printer_use
+msgid "Printer Use"
+msgstr "استخدام الطابعة"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/dispatch.py:0
+msgid "Printer driver %s not found."
+msgstr "لم يتم العثور على مشغّل الطابعة %s."
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/diagnose.py:0
+msgid "Printer mode is network"
+msgstr "وضع الطابعة: شبكة"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/epos_printer/epos_printer.js:0
+msgid "Printer rejected the job (code %s, status %s)."
+msgstr "رفضت الطابعة المهمة (الرمز %s، الحالة %s)."
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/epos_printer/epos_printer.js:0
+msgid "Printer responded HTTP %s"
+msgstr "استجابت الطابعة برمز HTTP %s"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/epos_printer/test_epos_action.js:0
+msgid "Printer unreachable"
+msgstr "تعذّر الوصول إلى الطابعة"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.js:0
+#: model:ir.actions.act_window,name:ab_printer_driver.action_printer_config
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__printer_count
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_category__printer_ids
+#: model:ir.ui.menu,name:ab_printer_driver.menu_printer_driver_root
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_agent_form
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_agent_list
+msgid "Printers"
+msgstr "الطابعات"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid ""
+"Printers already registered as drivers. Test or open\n"
+"                        any to edit its settings — these don't need rescanning."
+msgstr ""
+"طابعات مسجّلة بالفعل كمشغّلات. اختبر أيًّا منها أو افتحه\n"
+"                        لتعديل إعداداته — لا تحتاج إلى إعادة مسح."
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "Printers → Agents"
+msgstr "الطابعات ← الوكلاء"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__state__printing
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_log__job_status__printing
+msgid "Printing"
+msgstr "جارٍ الطباعة"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/models/printer_config.py:0
+msgid ""
+"Printing from the server does not support the %s mode; use ePOS, network or "
+"agent, or print from the POS."
+msgstr ""
+"الطباعة من الخادم لا تدعم الوضع %s؛ استخدم ePOS أو الشبكة أو الوكيل، أو اطبع"
+" من نقطة البيع."
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/wizard/printer_detect_wizard.py:0
+msgid "Printout sent to %s."
+msgstr "تم إرسال المطبوع إلى %s."
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__priority
+msgid "Priority"
+msgstr "الأولوية"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "Probe & add"
+msgstr "فحص وإضافة"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/epos_printer/test_epos_action.js:0
+msgid "Probing %s…"
+msgstr "جارٍ فحص %s…"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "Probing every host across the selected ports."
+msgstr "جارٍ فحص كل جهاز عبر المنافذ المحددة."
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__state__queued
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_job_search
+msgid "Queued"
+msgstr "في صف الانتظار "
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.xml:0
+msgid "Quiet — no recent print attempts."
+msgstr "هادئ — لا توجد محاولات طباعة حديثة."
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_detect_wizard__port_mode__raw
+msgid "RAW / ESC-POS only (9100)"
+msgstr "RAW / ESC-POS فقط (9100)"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "RAW · 9100"
+msgstr "RAW · 9100"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "Range"
+msgstr "النطاق"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__scan_range_end
+msgid "Range End"
+msgstr "نهاية النطاق"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__scan_range_start
+msgid "Range Start"
+msgstr "بداية النطاق"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__payload_kind__escpos
+msgid "Raw ESC/POS bytes"
+msgstr "بايتات ESC/POS خام"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid ""
+"Read-only — no packets sent to the printer beyond a TCP handshake + a 3-byte"
+" status query."
+msgstr ""
+"للقراءة فقط — لا تُرسل أي حزم إلى الطابعة سوى مصافحة TCP واستعلام حالة من 3 "
+"بايت."
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_detect_wizard__state__draft
+msgid "Ready"
+msgstr "جاهز"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "Ready to scan"
+msgstr "جاهز للمسح"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_config_search
+msgid "Receipt"
+msgstr "الإيصال"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_use__both
+msgid "Receipt & Kitchen"
+msgstr "الإيصال والمطبخ"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_use__receipt
+msgid "Receipt Printer"
+msgstr "طابعة الإيصالات "
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.xml:0
+msgid "Recent Jobs"
+msgstr "المهام الأخيرة"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.xml:0
+msgid "Recent Log"
+msgstr "السجل الأخير"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__name
+msgid "Reference"
+msgstr "المرجع "
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.xml:0
+msgid "Refresh"
+msgstr "تحديث"
+
+#. module: ab_printer_driver
+#: model_terms:ir.actions.act_window,help:ab_printer_driver.action_printer_agent
+msgid "Register a Printer Bridge Agent"
+msgstr "تسجيل وكيل ربط الطابعات"
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_config_form
+msgid "Reliability"
+msgstr "الموثوقية"
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_agent_form
+msgid ""
+"Replace <code>YOUR_TENANT_URL</code> with the tenant\n"
+"                                    URL the operator uses (e.g.\n"
+"                                    <code>https://fayia.ghaima.sa</code>)."
+msgstr ""
+"استبدل <code>YOUR_TENANT_URL</code> بعنوان المنشأة\n"
+"                                    الذي يستخدمه المشغّل (مثل\n"
+"                                    <code>https://fayia.ghaima.sa</code>)."
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#. odoo-python
+#: code:addons/ab_printer_driver/models/printer_config.py:0
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "Report"
+msgstr "التقرير"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/models/printer_config.py:0
+msgid "Report %s not found."
+msgstr "لم يتم العثور على التقرير %s."
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__do_reverse_dns
+msgid "Resolve hostnames"
+msgstr "حل أسماء المضيفين"
 
 #. module: ab_printer_driver
 #: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__response_time_ms
@@ -148,28 +1560,155 @@ msgid "Response (ms)"
 msgstr "الاستجابة (مللي ثانية)"
 
 #. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__id
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_category__id
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__id
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__id
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__id
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__id
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_log__id
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_scan_request__id
-msgid "ID"
-msgstr "المُعرف"
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_scan_request__result_json
+msgid "Result (JSON)"
+msgstr "النتيجة (JSON)"
 
 #. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__display_name
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_category__display_name
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__display_name
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__display_name
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__display_name
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__display_name
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_log__display_name
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_scan_request__display_name
-msgid "Display Name"
-msgstr "اسم العرض "
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_detect_wizard_form
+msgid "Results"
+msgstr "النتائج"
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_job_form
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_job_list
+msgid "Retry"
+msgstr "إعادة المحاولة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__retry_count
+msgid "Retry Count"
+msgstr "عدد إعادة المحاولات"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__state__retrying
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_job_search
+msgid "Retrying"
+msgstr "إعادة المحاولة"
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_agent_form
+msgid "Riyadh — Main Office"
+msgstr "الرياض — المكتب الرئيسي"
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_agent_form
+msgid "Rotate Token"
+msgstr "تدوير الرمز"
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_agent_form
+msgid "Rotating the token disconnects the running agent. Continue?"
+msgstr "يؤدي تدوير الرمز إلى فصل الوكيل الذي يعمل حاليًا. هل تريد المتابعة؟"
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_agent_form
+msgid ""
+"Run this <strong>one command</strong> on a Linux PC /\n"
+"                                Raspberry Pi / mini-PC inside the customer's LAN\n"
+"                                (the same network as the printers). The agent will\n"
+"                                register itself and start pulling jobs."
+msgstr ""
+"شغّل <strong>أمرًا واحدًا</strong> على جهاز Linux /\n"
+"                                Raspberry Pi / حاسوب صغير داخل الشبكة المحلية للعميل\n"
+"                                (الشبكة نفسها التي تتصل بها الطابعات). سيسجّل الوكيل\n"
+"                                نفسه ويبدأ في استلام المهام."
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_detect_wizard_form
+msgid "Scan"
+msgstr "مسح"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_detect_wizard__state__done
+msgid "Scan Complete"
+msgstr "اكتمل المسح"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__scan_duration_s
+msgid "Scan Duration S"
+msgstr "مدة المسح (ث)"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_scan_request__params_json
+msgid "Scan Params (JSON)"
+msgstr "معاملات المسح (JSON)"
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_detect_wizard_form
+msgid "Scan Settings"
+msgstr "إعدادات المسح"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.js:0
+msgid "Scan failed"
+msgstr "فشل المسح"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.js:0
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "Scan network"
+msgstr "مسح الشبكة"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "Scan via"
+msgstr "المسح عبر"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__scanned_count
+msgid "Scanned Count"
+msgstr "عدد الممسوح"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "Scanning"
+msgstr "جارٍ المسح"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.js:0
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_detect_wizard__state__scanning
+msgid "Scanning…"
+msgstr "جارٍ المسح…"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.js:0
+msgid "Select at least one printer."
+msgstr "حدّد طابعة واحدة على الأقل."
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__selected
+msgid "Selected"
+msgstr "محدد"
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_job_form
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_job_list
+msgid "Send Now"
+msgstr "إرسال الآن"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "Send a Ghaima POS test slip"
+msgstr "إرسال إيصال اختبار من نقطة بيع غيمة"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__state__sending
+msgid "Sending"
+msgstr "جاري الإرسال"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/models/printer_config.py:0
+msgid "Sent to %s."
+msgstr "تم الإرسال إلى %s."
 
 #. module: ab_printer_driver
 #: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__sequence
@@ -179,217 +1718,238 @@ msgid "Sequence"
 msgstr "تسلسل "
 
 #. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__paper_width_mm
-msgid "Paper Width"
-msgstr "عرض الورق"
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/epos_printer/test_epos_action.js:0
+msgid "Set the Printer IP first."
+msgstr "عيّن عنوان IP للطابعة أولًا."
 
 #. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__last_seen
-msgid "Last Verified"
-msgstr "آخر تحقق"
+#: model:ir.model.fields,help:ab_printer_driver.field_ab_printer_config__agent_id
+msgid ""
+"Set this when the printer is on a LAN unreachable from the Ghaima server "
+"(typical for SaaS deployments). The bridge agent running inside the LAN will"
+" pick up jobs and execute them locally. Leave empty for on-prem deploys "
+"where Ghaima can talk to the printer directly."
+msgstr ""
+"عيّن هذا الحقل عندما تكون الطابعة على شبكة محلية لا يمكن لخادم غيمة الوصول "
+"إليها (الحالة المعتادة في النشر السحابي). سيستلم وكيل الربط العامل داخل "
+"الشبكة المحلية المهام وينفّذها محليًا. اتركه فارغًا في النشر المحلي حيث يمكن"
+" لغيمة الاتصال بالطابعة مباشرة."
 
 #. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__verified
-msgid "ESC/POS Verified"
-msgstr "تم التحقق من ESC/POS"
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/diagnose.py:0
+msgid "Skipped (send_test=false)"
+msgstr "تم التخطي (send_test=false)"
 
 #. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__vendor
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__vendor
-msgid "Vendor"
-msgstr "المورّد "
+#. odoo-python
+#: code:addons/ab_printer_driver/models/printer_config.py:0
+msgid "Smoke test"
+msgstr "اختبار سريع"
 
 #. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__mac
-msgid "MAC Address"
-msgstr "عنوان MAC"
-
-#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.xml:0
 #: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__source
 #: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_log__source
 msgid "Source"
 msgstr "المصدر"
 
 #. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__name
-msgid "Reference"
-msgstr "المرجع "
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__printer_config_id
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_log__printer_config_id
-msgid "Printer"
-msgstr "الطابعة"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__payload_kind
-msgid "Payload Kind"
-msgstr "نوع الحمولة"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__payload_b64
-msgid "Payload (base64)"
-msgstr "الحمولة (base64)"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__state
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__state
-msgid "Status"
-msgstr "الحالة"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__priority
-msgid "Priority"
-msgstr "الأولوية"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__attempts
-msgid "Attempts"
-msgstr "المحاولات"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__max_attempts
-msgid "Max Attempts"
-msgstr "الحد الأقصى للمحاولات"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__last_error
-msgid "Last Error"
-msgstr "آخر خطأ"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__last_attempt_at
-msgid "Last Attempt"
-msgstr "آخر محاولة"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__duration_ms
-msgid "Last Duration (ms)"
-msgstr "آخر مدة (مللي ثانية)"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__name
-msgid "Agent Name"
-msgstr "اسم الوكيل"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__token
-msgid "Auth Token"
-msgstr "رمز المصادقة"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__location_hint
-msgid "Location / Branch"
-msgstr "الموقع / الفرع"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__version
-msgid "Agent Version"
-msgstr "إصدار الوكيل"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__agent_local_ip
-msgid "Agent LAN IP"
-msgstr "عنوان IP المحلي للوكيل"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__agent_subnet
-msgid "LAN Subnet"
-msgstr "الشبكة الفرعية المحلية"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__last_seen
-msgid "Last Seen"
-msgstr "آخر ظهور"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__online
-msgid "Online"
-msgstr "عبر الإنترنت "
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_agent__note
-msgid "Notes"
-msgstr "الملاحظات"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_scan_request__agent_id
-msgid "Agent"
-msgstr "الوكيل"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_scan_request__params_json
-msgid "Scan Params (JSON)"
-msgstr "معاملات المسح (JSON)"
-
-#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.xml:0
 #: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__state
 #: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_scan_request__state
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_job_search
 msgid "State"
 msgstr "الولاية "
 
 #. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_scan_request__result_json
-msgid "Result (JSON)"
-msgstr "النتيجة (JSON)"
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.xml:0
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__state
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__state
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_config_search
+msgid "Status"
+msgstr "الحالة"
 
 #. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_scan_request__error
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__state__error
-msgid "Error"
-msgstr "خطأ"
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_agent_form
+msgid ""
+"Status after install:\n"
+"                                <code>sudo systemctl status ghaima-printer-agent</code><br/>\n"
+"                                Live logs:\n"
+"                                <code>sudo journalctl -u ghaima-printer-agent -f</code>"
+msgstr ""
+"الحالة بعد التثبيت:\n"
+"                                <code>sudo systemctl status ghaima-printer-agent</code><br/>\n"
+"                                السجلات المباشرة:\n"
+"                                <code>sudo journalctl -u ghaima-printer-agent -f</code>"
 
 #. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__claimed_at
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_scan_request__claimed_at
-msgid "Claimed At"
-msgstr "وقت الاستلام"
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "Steps: open"
+msgstr "الخطوات: افتح"
 
 #. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_scan_request__done_at
-msgid "Done At"
-msgstr "وقت الإتمام"
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__payload_kind__summary
+msgid "Structured order summary"
+msgstr "ملخص الطلب المنظم"
 
 #. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__epos_dev_id
-msgid "ePOS Device ID"
-msgstr "معرف جهاز ePOS"
+#: model:ir.model.fields,help:ab_printer_driver.field_ab_printer_job__source
+msgid "Submitting subsystem."
+msgstr "النظام الفرعي المُرسِل."
 
 #. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__epos_use_https
-msgid "ePOS over HTTPS"
-msgstr "ePOS عبر HTTPS"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__epos_port
-msgid "ePOS Port"
-msgstr "منفذ ePOS"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__agent_id
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__agent_id
-msgid "Via Agent"
-msgstr "عبر الوكيل"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__agent_online
-msgid "Agent Online"
-msgstr "الوكيل متصل"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__op_type
-msgid "Operation"
-msgstr "العملية"
-
-#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
 #: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__subnet
 msgid "Subnet"
 msgstr "الشبكة الفرعية"
 
 #. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__port_mode
-msgid "Port Mode"
-msgstr "وضع المنفذ"
+#. odoo-javascript
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/scanner_api.py:0
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.js:0
+msgid "Subnet required"
+msgstr "الشبكة الفرعية مطلوبة"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/diagnose.py:0
+msgid ""
+"TCP open but no DLE EOT 1 reply — many compatible printers ignore the query "
+"and still print fine. Proceed to test print."
+msgstr ""
+"منفذ TCP مفتوح لكن لا يوجد رد على DLE EOT 1 — تتجاهل كثير من الطابعات "
+"المتوافقة هذا الاستعلام وتطبع بشكل سليم. تابع إلى الطباعة التجريبية."
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/diagnose.py:0
+msgid "TCP probe (port reachable)"
+msgstr "فحص TCP (إمكانية الوصول إلى المنفذ)"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "Tap"
+msgstr "انقر"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "Test"
+msgstr "اختبار"
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_config_form
+msgid "Test Print"
+msgstr "طباعة تجريبية"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__op_type__test
+msgid "Test Slip"
+msgstr "قسيمة اختبار"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/models/printer_config.py:0
+#: code:addons/ab_printer_driver/wizard/printer_detect_wizard.py:0
+msgid "Test failed"
+msgstr "فشل الاختبار"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/diagnose.py:0
+#: code:addons/ab_printer_driver/models/printer_config.py:0
+msgid "Test print"
+msgstr "طباعة تجريبية"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/models/printer_config.py:0
+#: code:addons/ab_printer_driver/wizard/printer_detect_wizard.py:0
+msgid "Test print sent"
+msgstr "تم إرسال الطباعة التجريبية"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/diagnose.py:0
+msgid "Test slip bytes built"
+msgstr "إنشاء بيانات إيصال الاختبار"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/epos_printer/test_epos_action.js:0
+msgid "Test slip sent to %s (attempts: %s)."
+msgstr "تم إرسال إيصال الاختبار إلى %s (المحاولات: %s)."
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,help:ab_printer_driver.field_ab_printer_config__epos_dev_id
+msgid ""
+"The 'devid' query parameter sent to the printer's ePOS service. 99% of "
+"installs use 'local_printer'. Change only if the printer's web admin assigns"
+" a custom id."
+msgstr ""
+"معامل 'devid' المرسل إلى خدمة ePOS في الطابعة. تستخدم 99% من التثبيتات "
+"القيمة 'local_printer'. غيّره فقط إذا خصّصت لوحة إدارة الطابعة معرّفًا "
+"مخصصًا."
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/scanner_api.py:0
+msgid "The agent reported a failure."
+msgstr "أبلغ الوكيل عن فشل."
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/scanner_api.py:0
+msgid "The agent returned an unreadable result."
+msgstr "أعاد الوكيل نتيجة غير قابلة للقراءة."
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_agent_form
+msgid ""
+"The agent sends this in the\n"
+"                                <code>X-Agent-Token</code> header on every request.\n"
+"                                Rotating it forces re-configuration on the LAN PC."
+msgstr ""
+"يرسل الوكيل هذا الرمز في الترويسة\n"
+"                                <code>X-Agent-Token</code> مع كل طلب.\n"
+"                                يؤدي تدويره إلى وجوب إعادة التهيئة على جهاز الشبكة المحلية."
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/diagnose.py:0
+msgid "The printer IP is empty — set it on the driver form"
+msgstr "عنوان IP للطابعة فارغ — عيّنه في نموذج المشغّل"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/models/printer_agent.py:0
+msgid ""
+"The running agent on the LAN will lose its session and must be reconfigured "
+"with the new token."
+msgstr ""
+"سيفقد الوكيل العامل على الشبكة المحلية جلسته ويجب إعادة تهيئته بالرمز "
+"الجديد."
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "This LAN needs a Bridge Agent."
+msgstr "تحتاج هذه الشبكة المحلية إلى وكيل ربط."
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "Timeout"
+msgstr "المهلة"
 
 #. module: ab_printer_driver
 #: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__timeout
@@ -398,321 +1958,37 @@ msgid "Timeout (ms)"
 msgstr "المهلة (مللي ثانية)"
 
 #. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__do_banner_grab
-msgid "Identify vendor"
-msgstr "تحديد المورد"
+#. odoo-python
+#: code:addons/ab_printer_driver/models/printer_agent.py:0
+msgid "Token rotated"
+msgstr "تم تدوير الرمز"
 
 #. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__do_reverse_dns
-msgid "Resolve hostnames"
-msgstr "حل أسماء المضيفين"
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.xml:0
+msgid "Tries"
+msgstr "المحاولات"
 
 #. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__scan_duration_s
-msgid "Scan Duration S"
-msgstr "مدة المسح (ث)"
+#: model:ir.model.fields,help:ab_printer_driver.field_ab_printer_agent__online
+#: model:ir.model.fields,help:ab_printer_driver.field_ab_printer_config__agent_online
+msgid "True when the agent reported within the last 60s."
+msgstr "صحيح عندما أرسل الوكيل تقريرًا خلال آخر 60 ثانية."
 
 #. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__scanned_count
-msgid "Scanned Count"
-msgstr "عدد الممسوح"
+#: model:ir.model.fields,help:ab_printer_driver.field_ab_printer_config__verified
+msgid ""
+"True when the printer answered our DLE EOT 1 status query — distinguishes a "
+"real ESC/POS device from a generic TCP port."
+msgstr ""
+"صحيح عندما تستجيب الطابعة لاستعلام الحالة DLE EOT 1 — ويميّز ذلك جهاز "
+"ESC/POS حقيقيًا عن منفذ TCP عام."
 
 #. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__found_count
-msgid "Found Count"
-msgstr "عدد النتائج"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__port_label
-msgid "Port Label"
-msgstr "تسمية المنفذ"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__open_ports
-msgid "Open Ports"
-msgstr "المنافذ المفتوحة"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__mode_hint
-msgid "Mode"
-msgstr "الوضع"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__mac
-msgid "MAC"
-msgstr "MAC"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__hostname
-msgid "Hostname"
-msgstr "اسم المضيف"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__banner_excerpt
-msgid "Banner"
-msgstr "العارضة "
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_category__name
-msgid "Category Name"
-msgstr "اسم الفئة"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_category__color
-msgid "Color"
-msgstr "اللون"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_category__printer_count
-msgid "Printer Count"
-msgstr "عدد الطابعات"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__name
-msgid "Printer Name"
-msgstr "اسم الطابعة"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__category_id
-msgid "Category"
-msgstr "الفئة "
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__printer_mode
-msgid "Printer Mode"
-msgstr "وضع الطابعة"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__printer_use
-msgid "Printer Use"
-msgstr "استخدام الطابعة"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__printer_ip
-msgid "Printer IP"
-msgstr "عنوان IP للطابعة"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__printer_port
-msgid "Printer Port"
-msgstr "منفذ الطابعة"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__usb_vendor_id
-msgid "USB Vendor ID"
-msgstr "معرف مورد USB"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__usb_product_id
-msgid "USB Product ID"
-msgstr "معرف منتج USB"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__bluetooth_device_name
-msgid "Bluetooth Device Name"
-msgstr "اسم جهاز البلوتوث"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__enable_fallback
-msgid "Enable Fallback"
-msgstr "تفعيل الخيار الاحتياطي"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__retry_count
-msgid "Retry Count"
-msgstr "عدد إعادة المحاولات"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_log__printer_type
-msgid "Printer Type"
-msgstr "نوع الطابعة "
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_log__job_status
-msgid "Job Status"
-msgstr "حالة المهمة"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_log__error_message
-msgid "Error Message"
-msgstr "رسالة الخطأ"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_log__duration
-msgid "Duration (s)"
-msgstr "المدة (ث)"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__scan_range_start
-msgid "Range Start"
-msgstr "بداية النطاق"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__scan_range_end
-msgid "Range End"
-msgstr "نهاية النطاق"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_wizard__detected_printer_ids
-msgid "Detected Printers"
-msgstr "الطابعات المكتشفة"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_use__receipt
-msgid "Receipt Printer"
-msgstr "طابعة الإيصالات "
-
-#. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__state__connected
-msgid "Connected"
-msgstr "متصل "
-
-#. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__state__disconnected
-msgid "Disconnected"
-msgstr "غير متصل"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__state__printing
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_log__job_status__printing
-msgid "Printing"
-msgstr "جارٍ الطباعة"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_log__job_status__pending
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_scan_request__state__pending
-msgid "Pending"
-msgstr "قيد الانتظار "
-
-#. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__state__done
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_log__job_status__done
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_scan_request__state__done
-msgid "Done"
-msgstr "منتهي "
-
-#. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__state__failed
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_log__job_status__failed
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_scan_request__state__failed
-msgid "Failed"
-msgstr "فشل"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_detect_wizard__state__draft
-msgid "Ready"
-msgstr "جاهز"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_detect_wizard__state__done
-msgid "Scan Complete"
-msgstr "اكتمل المسح"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_detect_wizard__port_mode__common
-msgid "Common (9100 + 631 + 515)"
-msgstr "شائع (9100 + 631 + 515)"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_detect_wizard__port_mode__all
-msgid "Full sweep (incl. 80 web UI)"
-msgstr "مسح كامل (يشمل واجهة الويب 80)"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_detect_wizard__port_mode__raw
-msgid "RAW / ESC-POS only (9100)"
-msgstr "RAW / ESC-POS فقط (9100)"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_detect_wizard__state__scanning
-msgid "Scanning…"
-msgstr "جارٍ المسح…"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_use__kitchen
-msgid "Kitchen / Order Printer"
-msgstr "طابعة المطبخ / الطلبات"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_use__document
-msgid "Document Printer (A4)"
-msgstr "طابعة المستندات (A4)"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_use__label
-msgid "Label Printer"
-msgstr "طابعة الملصقات"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_use__both
-msgid "Receipt & Kitchen"
-msgstr "الإيصال والمطبخ"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__paper_width_mm__58
-msgid "58 mm"
-msgstr "58 مم"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__paper_width_mm__80
-msgid "80 mm"
-msgstr "80 مم"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__paper_width_mm__a4
-msgid "A4"
-msgstr "A4"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__payload_kind__escpos
-msgid "Raw ESC/POS bytes"
-msgstr "بايتات ESC/POS خام"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__payload_kind__image
-msgid "JPEG/PNG image"
-msgstr "صورة JPEG/PNG"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__payload_kind__summary
-msgid "Structured order summary"
-msgstr "ملخص الطلب المنظم"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__state__queued
-msgid "Queued"
-msgstr "في صف الانتظار "
-
-#. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__state__claimed
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_scan_request__state__claimed
-msgid "Claimed by Agent"
-msgstr "استلمه الوكيل"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_scan_request__state__expired
-msgid "Expired"
-msgstr "منتهي الصلاحية"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_mode__epos
-msgid "ePOS-Print (Browser ↔ Printer, recommended)"
-msgstr "ePOS-Print (المتصفح ↔ الطابعة، موصى به)"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_mode__network
-msgid "Network (TCP — server prints, on-prem only)"
-msgstr "شبكة (TCP — الخادم يطبع، محلي فقط)"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_mode__agent
-msgid "Bridge Agent (LAN proxy for cloud Ghaima)"
-msgstr "وكيل الربط (وسيط شبكة محلية لغيمة السحابي)"
-
-#. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_mode__iot
-msgid "IoT Box"
-msgstr "جهاز IoT "
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "Typical /24 scan completes in 5-7 seconds."
+msgstr "يكتمل مسح الشبكة /24 عادةً خلال 5-7 ثوانٍ."
 
 #. module: ab_printer_driver
 #: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_mode__usb
@@ -720,24 +1996,53 @@ msgid "USB / WebUSB"
 msgstr "USB / WebUSB"
 
 #. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_mode__bluetooth
-msgid "Bluetooth"
-msgstr "بلوتوث"
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__usb_product_id
+msgid "USB Product ID"
+msgstr "معرف منتج USB"
 
 #. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_mode__auto
-msgid "Auto Detect"
-msgstr "اكتشاف تلقائي"
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__usb_vendor_id
+msgid "USB Vendor ID"
+msgstr "معرف مورد USB"
 
 #. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__op_type__print
-msgid "Print"
-msgstr "طباعة"
+#: model:ir.model.fields,help:ab_printer_driver.field_ab_printer_agent__token
+msgid "UUID4 hex sent by the agent in the X-Agent-Token header."
+msgstr "قيمة UUID4 سداسية عشرية يرسلها الوكيل في الترويسة X-Agent-Token."
 
 #. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__op_type__test
-msgid "Test Slip"
-msgstr "قسيمة اختبار"
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/epos_printer/epos_printer.js:0
+msgid "Unknown transport error"
+msgstr "خطأ نقل غير معروف"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.xml:0
+msgid "Updated"
+msgstr "آخر تحديث"
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_config_search
+msgid "Use"
+msgstr "استخدام"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "Use this subnet"
+msgstr "استخدام هذه الشبكة الفرعية"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__vendor
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__vendor
+msgid "Vendor"
+msgstr "المورّد "
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_config_search
+msgid "Verified ESC/POS"
+msgstr "ESC/POS مُتحقَّق منه"
 
 #. module: ab_printer_driver
 #: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__op_type__verify
@@ -745,16 +2050,267 @@ msgid "Verify"
 msgstr "تأكيد "
 
 #. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__state__sending
-msgid "Sending"
-msgstr "جاري الإرسال"
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_config_form
+msgid "Verify Connection"
+msgstr "التحقق من الاتصال"
 
 #. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__state__retrying
-msgid "Retrying"
-msgstr "إعادة المحاولة"
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__agent_id
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_job__agent_id
+msgid "Via Agent"
+msgstr "عبر الوكيل"
 
 #. module: ab_printer_driver
-#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_job__state__cancelled
-msgid "Cancelled"
-msgstr "تم الإلغاء "
+#: model:ir.model.fields,help:ab_printer_driver.field_ab_printer_job__op_type
+msgid "What the worker should do with this job."
+msgstr "ما يجب على العامل تنفيذه بهذه المهمة."
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.xml:0
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_log_list
+msgid "When"
+msgstr "الوقت"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,help:ab_printer_driver.field_ab_printer_job__agent_id
+msgid ""
+"When set, this job is dispatched by the named LAN bridge agent, not the "
+"Ghaima server."
+msgstr ""
+"عند تعيينه، يتولى وكيل الربط المحدد في الشبكة المحلية إرسال هذه المهمة بدلًا"
+" من خادم غيمة."
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_detect_line__wizard_id
+msgid "Wizard"
+msgstr "المعالج"
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_agent_form
+msgid ""
+"\\\n"
+"     AGENT_NAME=\""
+msgstr ""
+"\\\n"
+"     AGENT_NAME=\""
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "as drivers"
+msgstr "كمشغّلات"
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_agent_form
+msgid "curl -fsSL"
+msgstr "curl -fsSL"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/diagnose.py:0
+msgid "driver_id required"
+msgstr "معرّف المشغّل (driver_id) مطلوب"
+
+#. module: ab_printer_driver
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_config_form
+msgid "e.g. Kitchen — Bar"
+msgstr "مثل: المطبخ — البار"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__epos_dev_id
+msgid "ePOS Device ID"
+msgstr "معرف جهاز ePOS"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__epos_port
+msgid "ePOS Port"
+msgstr "منفذ ePOS"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,field_description:ab_printer_driver.field_ab_printer_config__epos_use_https
+msgid "ePOS over HTTPS"
+msgstr "ePOS عبر HTTPS"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/models/printer_config.py:0
+msgid ""
+"ePOS prints must be dispatched from the operator's browser. The cloud Ghaima"
+" server cannot reach printers on private LANs directly. Use the POS receipt "
+"button, or 'Test ePOS' on the printer form."
+msgstr ""
+"يجب إرسال طباعة ePOS من متصفح المشغّل، إذ لا يمكن لخادم غيمة السحابي الوصول "
+"مباشرة إلى الطابعات في الشبكات المحلية الخاصة. استخدم زر الإيصال في نقطة "
+"البيع، أو 'اختبار ePOS' في نموذج الطابعة."
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/epos_printer/test_epos_action.js:0
+msgid "ePOS probe failed"
+msgstr "فشل فحص ePOS"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/epos_printer/test_epos_action.js:0
+msgid "ePOS test failed"
+msgstr "فشل اختبار ePOS"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields.selection,name:ab_printer_driver.selection__ab_printer_config__printer_mode__epos
+msgid "ePOS-Print (Browser ↔ Printer, recommended)"
+msgstr "ePOS-Print (المتصفح ↔ الطابعة، موصى به)"
+
+#. module: ab_printer_driver
+#: model:ir.model.fields,help:ab_printer_driver.field_ab_printer_config__printer_mode
+msgid ""
+"ePOS-Print: the browser POSTs the print job directly to the printer's own HTTPS server. Works for any Epson/Star/Bixolon receipt printer with ePOS-Print enabled. No agent or LAN reachability needed from the cloud server.\n"
+"Network: classic raw ESC/POS over TCP 9100 from the Ghaima process. Only works when Ghaima is on the same LAN as the printer (on-prem deploys).\n"
+"Bridge Agent: a small daemon on a LAN PC executes the print on behalf of the cloud server."
+msgstr ""
+"ePOS-Print: يرسل المتصفح مهمة الطباعة مباشرة إلى خادم HTTPS الخاص بالطابعة. يعمل مع أي طابعة إيصالات Epson/Star/Bixolon مفعّل عليها ePOS-Print. لا يحتاج إلى وكيل أو إلى وصول الخادم السحابي إلى الشبكة المحلية.\n"
+"الشبكة: طباعة ESC/POS خام تقليدية عبر TCP 9100 من عملية غيمة. تعمل فقط عندما تكون غيمة على الشبكة المحلية نفسها التي تتصل بها الطابعة (النشر المحلي).\n"
+"وكيل الربط: خدمة صغيرة على جهاز في الشبكة المحلية تنفّذ الطباعة نيابةً عن الخادم السحابي."
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "env['ab.printer.config'].get_default()"
+msgstr "env['ab.printer.config'].get_default()"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.xml:0
+msgid "failed 24h"
+msgstr "فشلت خلال 24 ساعة"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/diagnose.py:0
+msgid "free — no concurrent send"
+msgstr "متاح — لا يوجد إرسال متزامن"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.xml:0
+msgid "last seen"
+msgstr "آخر ظهور"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.js:0
+msgid "last step"
+msgstr "الخطوة الأخيرة"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/diagnose.py:0
+msgid "mode=%s — only \"network\" mode is dispatched through this stack"
+msgstr "الوضع=%s — يُرسَل وضع \"الشبكة\" فقط عبر هذا المسار"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+#: model_terms:ir.ui.view,arch_db:ab_printer_driver.view_printer_detect_wizard_form
+msgid "ms"
+msgstr "مللي ثانية"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "of"
+msgstr "من"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/models/printer_config.py:0
+msgid ""
+"pdf2image / poppler is not installed — it is required to print reports on "
+"thermal printers."
+msgstr ""
+"المكتبة pdf2image / poppler غير مثبتة — وهي مطلوبة لطباعة التقارير على "
+"الطابعات الحرارية."
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.xml:0
+msgid "printer(s)"
+msgstr "طابعة/طابعات"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/live_monitor/live_monitor.xml:0
+msgid "queued"
+msgstr "في الانتظار"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "selected"
+msgstr "محدد"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/diagnose.py:0
+msgid "send failed — %s"
+msgstr "فشل الإرسال — %s"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/diagnose.py:0
+msgid "sent in %s ms"
+msgstr "أُرسل خلال %s مللي ثانية"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/diagnose.py:0
+msgid "status byte %s — real ESC/POS device"
+msgstr "بايت الحالة %s — جهاز ESC/POS حقيقي"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid ""
+"subnet across\n"
+"                        the standard printing ports."
+msgstr ""
+"عبر\n"
+"                        منافذ الطباعة القياسية."
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid ""
+"to discover every printer\n"
+"                        on the"
+msgstr ""
+"لاكتشاف كل طابعة\n"
+"                        على الشبكة الفرعية"
+
+#. module: ab_printer_driver
+#. odoo-python
+#: code:addons/ab_printer_driver/controllers/diagnose.py:0
+msgid "unreachable"
+msgstr "لا يمكن الوصول إليها"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "verified"
+msgstr "مُتحقَّق منها"
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid "will use them."
+msgstr "تلقائيًا."
+
+#. module: ab_printer_driver
+#. odoo-javascript
+#: code:addons/ab_printer_driver/static/src/js/printer_scanner/printer_scanner.xml:0
+msgid ""
+"→ New, copy\n"
+"                        the generated install command, run it on a PC inside"
+msgstr ""
+"← جديد، وانسخ\n"
+"                        أمر التثبيت الناتج، ثم شغّله على جهاز داخل"

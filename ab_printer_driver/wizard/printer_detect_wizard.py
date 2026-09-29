@@ -192,8 +192,8 @@ class PrinterDetectWizard(models.TransientModel):
             'tag': 'display_notification',
             'params': {
                 'type': 'success' if ok else 'danger',
-                'title': 'Test print sent' if ok else 'Test failed',
-                'message': err or f'Printout sent to {line.ip_address}.',
+                'title': self.env._('Test print sent') if ok else self.env._('Test failed'),
+                'message': err or self.env._('Printout sent to %s.', line.ip_address),
                 'sticky': False,
             },
         }

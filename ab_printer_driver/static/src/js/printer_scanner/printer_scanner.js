@@ -4,6 +4,10 @@ import { Component, useState, onMounted } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { rpc } from "@web/core/network/rpc";
 import { useService } from "@web/core/utils/hooks";
+import { _t } from "@web/core/l10n/translation";
+import { formatDateTime } from "@web/core/l10n/dates";
+
+const { DateTime } = luxon;
 
 /**
  * <PrinterScannerApp/>
@@ -190,7 +194,7 @@ export class PrinterScannerApp extends Component {
 
     async scan() {
         if (!this.state.subnet) {
-            this.notification.add("Subnet required", { type: "warning" });
+            this.notification.add(_t("Subnet required"), { type: "warning" });
             return;
         }
         // Forgive a full IPv4 entered in the Subnet field: split into
@@ -242,7 +246,7 @@ export class PrinterScannerApp extends Component {
         try {
             const res = await rpc("/ab_printer/scan/run", params);
             if (!res.success) {
-                this.state.error = res.error || "Scan failed";
+                this.state.error = res.error || _t("Scan failed");
                 if (res.needs_agent) {
                     this.state.needsAgent = true;
                     this.state.agentErrorSubnet = res.subnet || this.state.subnet;
@@ -304,7 +308,7 @@ export class PrinterScannerApp extends Component {
     async addDrivers() {
         const selected = this.state.results.filter((r) => r.selected);
         if (!selected.length) {
-            this.notification.add("Select at least one printer.", { type: "warning" });
+            this.notification.add(_t("Select at least one printer."), { type: "warning" });
             return;
         }
         try {
@@ -327,14 +331,14 @@ export class PrinterScannerApp extends Component {
                 // Land the user on the printer list to verify.
                 this.action.doAction({
                     type: "ir.actions.act_window",
-                    name: "Printers",
+                    name: _t("Printers"),
                     res_model: "ab.printer.config",
                     view_mode: "list,form",
                     views: [[false, "list"], [false, "form"]],
                     target: "current",
                 });
             } else {
-                this.notification.add(`Add failed: ${res.error || "unknown"}`,
+                this.notification.add(_t("Add failed: %s", res.error || _t("unknown error")),
                                       { type: "danger" });
             }
         } catch (e) {
@@ -387,12 +391,26 @@ export class PrinterScannerApp extends Component {
     // ── Derived ───────────────────────────────────────────────
 
     get scanLabel() {
-        return this.state.phase === "scanning" ? "Scanning…" : "Scan network";
+        return this.state.phase === "scanning" ? _t("Scanning…") : _t("Scan network");
+    }
+
+    /** Server datetimes are naive UTC; show them in the user's zone and
+     *  language (Arabic numerals/month names, no hard-coded AM/PM). */
+    formatLastSeen(iso) {
+        const dt = DateTime.fromISO(iso.replace(" ", "T"), { zone: "utc" });
+        return dt.isValid ? formatDateTime(dt.setZone("default")) : "";
     }
 
     get summaryLine() {
         if (this.state.phase !== "done") return "";
-        return `${this.state.foundCount} printer(s) found · scanned ${this.state.scannedCount} targets in ${this.state.durationS}s`;
+        return _t(
+            "%(found)s printer(s) found · scanned %(scanned)s targets in %(seconds)ss",
+            {
+                found: this.state.foundCount,
+                scanned: this.state.scannedCount,
+                seconds: this.state.durationS,
+            }
+        );
     }
 
     speedClass(row) {

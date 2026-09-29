@@ -46,6 +46,7 @@ class PrintDiagnosticsController(http.Controller):
         Driver = env['ab.printer.config'].sudo()
         Job = env['ab.printer.job'].sudo()
         Log = env['ab.printer.log'].sudo()
+        labels = env['ab.printer.config']._ui_labels()
 
         printers = []
         for d in Driver.search([], order='sequence, id'):
@@ -68,8 +69,10 @@ class PrintDiagnosticsController(http.Controller):
                 'ip': d.printer_ip or '',
                 'port': d.printer_port or 9100,
                 'use': d.printer_use or '',
+                'use_label': labels['use'].get(d.printer_use, ''),
                 'vendor': d.vendor or '',
                 'state': d.state or 'disconnected',
+                'state_label': labels['state'].get(d.state or 'disconnected', ''),
                 'verified': bool(d.verified),
                 'last_seen': d.last_seen and d.last_seen.isoformat() or '',
                 'queued': queued,
@@ -86,8 +89,11 @@ class PrintDiagnosticsController(http.Controller):
                 'id': j.id, 'name': j.name,
                 'printer': j.printer_config_id.name,
                 'kind': j.payload_kind,
+                'kind_label': labels['job_kind'].get(j.payload_kind, j.payload_kind),
                 'source': j.source or '',
+                'source_label': labels['source'].get(j.source, j.source or ''),
                 'state': j.state,
+                'state_label': labels['job_state'].get(j.state, j.state),
                 'attempts': j.attempts,
                 'duration_ms': j.duration_ms,
                 'error': j.last_error or '',
@@ -100,7 +106,9 @@ class PrintDiagnosticsController(http.Controller):
                 'id': lg.id,
                 'printer': lg.printer_config_id.name or '—',
                 'source': lg.source or '',
+                'source_label': labels['source'].get(lg.source, lg.source or ''),
                 'status': lg.job_status,
+                'status_label': labels['log_status'].get(lg.job_status, lg.job_status),
                 'duration': lg.duration,
                 'error': lg.error_message or '',
                 'at': lg.create_date and lg.create_date.isoformat() or '',
@@ -116,8 +124,9 @@ class PrintDiagnosticsController(http.Controller):
     @http.route('/ab_printer/diagnose', type='json', auth='user', methods=['POST'])
     def diagnose(self, driver_id=None, send_test=True, **kw):
         """Walk the print chain for one printer and report what broke."""
+        _ = request.env._  # step names/details are shown in the monitor UI
         if not driver_id:
-            return {'success': False, 'error': 'driver_id required'}
+            return {'success': False, 'error': _('driver_id required')}
         env = request.env
         d = env['ab.printer.config'].sudo().browse(int(driver_id))
 
@@ -125,35 +134,35 @@ class PrintDiagnosticsController(http.Controller):
 
         # 1. Driver exists
         if not d.exists():
-            steps.append(_step('Driver record exists', 'fail',
-                               f'No ab.printer.config row with id {driver_id}'))
+            steps.append(_step(_('Driver record exists'), 'fail',
+                               _('No ab.printer.config row with id %s', driver_id)))
             return {'success': False, 'steps': steps}
-        steps.append(_step('Driver record exists', 'ok',
+        steps.append(_step(_('Driver record exists'), 'ok',
                            f'{d.name} (id={d.id})'))
 
         # 2. IP configured
         if not d.printer_ip:
-            steps.append(_step('Printer IP configured', 'fail',
-                               'printer_ip is empty — set it on the driver form'))
+            steps.append(_step(_('Printer IP configured'), 'fail',
+                               _('The printer IP is empty — set it on the driver form')))
             return {'success': False, 'steps': steps}
-        steps.append(_step('Printer IP configured', 'ok',
+        steps.append(_step(_('Printer IP configured'), 'ok',
                            f'{d.printer_ip}:{d.printer_port or 9100}'))
 
         if d.printer_mode != 'network':
-            steps.append(_step('Printer mode is network', 'warn',
-                               f'mode={d.printer_mode} — only "network" mode '
-                               f'is dispatched through this stack'))
+            steps.append(_step(_('Printer mode is network'), 'warn',
+                               _('mode=%s — only "network" mode is dispatched '
+                                 'through this stack', d.printer_mode)))
             return {'success': False, 'steps': steps}
-        steps.append(_step('Printer mode is network', 'ok'))
+        steps.append(_step(_('Printer mode is network'), 'ok'))
 
         # 3. TCP probe
         t0 = time.time()
         ok, ms = tcp.probe(d.printer_ip, int(d.printer_port or 9100), 1.5)
-        steps.append(_step('TCP probe (port reachable)',
+        steps.append(_step(_('TCP probe (port reachable)'),
                            'ok' if ok else 'fail',
-                           f'{ms:.1f} ms' if ok else
-                           'Connection refused / timeout — check IP, port, '
-                           'and that the printer is powered + on the same LAN',
+                           _('%s ms', f'{ms:.1f}') if ok else
+                           _('Connection refused / timeout — check the IP, the port, '
+                             'and that the printer is powered on and on the same LAN'),
                            int(ms)))
         if not ok:
             return {'success': False, 'steps': steps}
@@ -162,52 +171,52 @@ class PrintDiagnosticsController(http.Controller):
         vr = verify.verify_printer(d.printer_ip, int(d.printer_port or 9100),
                                    timeout_s=1.5)
         if vr['verified']:
-            steps.append(_step('ESC/POS status response', 'ok',
-                               f'status byte 0x{vr["status_byte"]:02x} — '
-                               f'real ESC/POS device', int(vr['response_ms'])))
+            steps.append(_step(_('ESC/POS status response'), 'ok',
+                               _('status byte %s — real ESC/POS device',
+                                 f'0x{vr["status_byte"]:02x}'), int(vr['response_ms'])))
         elif vr['reachable']:
-            steps.append(_step('ESC/POS status response', 'warn',
-                               'TCP open but no DLE EOT 1 reply — many '
-                               'compatible printers ignore the query and '
-                               'still print fine. Proceed to test print.',
+            steps.append(_step(_('ESC/POS status response'), 'warn',
+                               _('TCP open but no DLE EOT 1 reply — many '
+                                 'compatible printers ignore the query and '
+                                 'still print fine. Proceed to test print.'),
                                int(vr['response_ms'])))
         else:
-            steps.append(_step('ESC/POS status response', 'fail',
-                               vr.get('error') or 'unreachable'))
+            steps.append(_step(_('ESC/POS status response'), 'fail',
+                               vr.get('error') or _('unreachable')))
             return {'success': False, 'steps': steps}
 
         # 5. Mutex
         lock = tcp.lock_for(d.printer_ip, int(d.printer_port or 9100))
         held = not lock.acquire(timeout=0.1)
         if held:
-            steps.append(_step('Per-IP mutex available', 'warn',
-                               'Lock currently held — another job is mid-send. '
-                               'This is expected if a print is in flight.'))
+            steps.append(_step(_('Per-IP mutex available'), 'warn',
+                               _('Lock currently held — another job is mid-send. '
+                                 'This is expected if a print is in flight.')))
         else:
             lock.release()
-            steps.append(_step('Per-IP mutex available', 'ok',
-                               'free — no concurrent send'))
+            steps.append(_step(_('Per-IP mutex available'), 'ok',
+                               _('free — no concurrent send')))
 
         # 6 + 7. Test slip (optional — skip when send_test=False so the
         # operator can diagnose without making the printer fire).
         if not send_test:
-            steps.append(_step('Test print', 'skip',
-                               'Skipped (send_test=false)'))
+            steps.append(_step(_('Test print'), 'skip',
+                               _('Skipped (send_test=false)')))
             return {'success': True, 'steps': steps}
 
         payload = escpos_lib.build_test_slip(
             printer_name=d.name,
             extra='Print Diagnostics',
         )
-        steps.append(_step('Test slip bytes built', 'ok',
-                           f'{len(payload)} bytes'))
+        steps.append(_step(_('Test slip bytes built'), 'ok',
+                           _('%s bytes', len(payload))))
 
         res = d.print_bytes(payload, source='diagnose')
-        steps.append(_step('Bytes transmitted',
+        steps.append(_step(_('Bytes transmitted'),
                            'ok' if res['success'] else 'fail',
-                           f'sent in {int((res.get("duration") or 0) * 1000)} ms'
+                           _('sent in %s ms', int((res.get("duration") or 0) * 1000))
                            if res['success']
-                           else f'send failed — {res.get("error")}',
+                           else _('send failed — %s', res.get("error")),
                            int((res.get('duration') or 0) * 1000)))
         return {'success': bool(res['success']), 'steps': steps}
 

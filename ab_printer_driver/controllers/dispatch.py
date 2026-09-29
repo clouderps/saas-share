@@ -42,12 +42,12 @@ class PrinterDispatchController(http.Controller):
         if driver_id:
             driver = Driver.browse(int(driver_id))
             if not driver.exists():
-                return {'success': False, 'error': f'driver {driver_id} not found'}
+                return {'success': False, 'error': request.env._('Printer driver %s not found.', driver_id)}
         else:
             driver = Driver.get_default(use=use)
         if not driver:
             return {'success': False,
-                    'error': f'No printer configured for use={use}'}
+                    'error': request.env._('No printer is configured for "%s".', use)}
 
         # 'report' kind — render an ir.actions.report and rasterise.
         # Bypasses the job queue because it's a synchronous backend

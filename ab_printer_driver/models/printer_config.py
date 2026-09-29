@@ -172,7 +172,7 @@ class PrinterConfig(models.Model):
                 'success': False, 'browser_dispatch': True,
                 'mode': 'epos',
                 'epos_config': self._get_browser_dispatch_config(),
-                'error': (
+                'error': self.env._(
                     "ePOS prints must be dispatched from the operator's "
                     "browser. The cloud Ghaima server cannot reach printers on "
                     "private LANs directly. Use the POS receipt button, "
@@ -181,10 +181,12 @@ class PrinterConfig(models.Model):
             }
         if self.printer_mode not in ('network', 'agent'):
             return {'success': False,
-                    'error': f'print_bytes does not support {self.printer_mode}; '
-                             f'use epos/network/agent or the POS frontend'}
+                    'error': self.env._(
+                        'Printing from the server does not support the %s mode; '
+                        'use ePOS, network or agent, or print from the POS.',
+                        self.printer_mode)}
         if not self.printer_ip:
-            return {'success': False, 'error': f'No printer_ip on {self.name}'}
+            return {'success': False, 'error': self.env._('No printer IP set on %s.', self.name)}
 
         if isinstance(data, list):
             data = bytes(data)
@@ -196,8 +198,9 @@ class PrinterConfig(models.Model):
             import base64 as _b64
             if not self.agent_id.online:
                 return {'success': False,
-                        'error': f'Agent "{self.agent_id.name}" is offline. '
-                                 'The print job will run when it reconnects.',
+                        'error': self.env._(
+                            'Agent "%s" is offline. The print job will run when it reconnects.',
+                            self.agent_id.name),
                         'agent_offline': True, 'queued': True,
                         'job_id': self.env['ab.printer.job'].sudo().create({
                             'printer_config_id': self.id,
@@ -251,7 +254,7 @@ class PrinterConfig(models.Model):
         try:
             escpos_bytes = image.image_to_escpos_raster(image_bytes, max_width=max_w)
         except Exception as e:
-            return {'success': False, 'error': f'rasterise failed: {e}'}
+            return {'success': False, 'error': self.env._('Could not convert the image for printing: %s', e)}
         return self.print_bytes(escpos_bytes, source=source)
 
     def print_report(self, report_ref, records, *, render_kind='raster'):
@@ -262,7 +265,7 @@ class PrinterConfig(models.Model):
         if isinstance(report_ref, str):
             report = self.env.ref(report_ref, raise_if_not_found=False)
             if not report:
-                return {'success': False, 'error': f'Report {report_ref} not found'}
+                return {'success': False, 'error': self.env._('Report %s not found.', report_ref)}
         else:
             report = report_ref
 
@@ -281,7 +284,7 @@ class PrinterConfig(models.Model):
                     fh.write(pdf_bytes)
                 return {'success': True, 'spool_path': path}
             except (PermissionError, OSError) as e:
-                return {'success': False, 'error': f'Cannot write spool: {e}'}
+                return {'success': False, 'error': self.env._('Cannot write the print spool file: %s', e)}
 
         # Raster: render page 1 to PNG, rasterise, send.
         try:
@@ -289,13 +292,13 @@ class PrinterConfig(models.Model):
             from io import BytesIO
             images = convert_from_bytes(pdf_bytes, dpi=203, first_page=1, last_page=1)
             if not images:
-                return {'success': False, 'error': 'PDF rendering produced no page'}
+                return {'success': False, 'error': self.env._('PDF rendering produced no page.')}
             buf = BytesIO()
             images[0].save(buf, format='PNG')
             return self.print_image(buf.getvalue(), source='report')
         except ImportError:
             return {'success': False,
-                    'error': 'pdf2image / poppler not available — install for raster reports'}
+                    'error': self.env._('pdf2image / poppler is not installed — it is required to print reports on thermal printers.')}
         except Exception as e:
             return {'success': False, 'error': str(e)}
 
@@ -355,9 +358,36 @@ class PrinterConfig(models.Model):
             'tag': 'display_notification',
             'params': {
                 'type': 'success' if res['success'] else 'danger',
-                'title': 'Test print sent' if res['success'] else 'Test failed',
-                'message': res.get('error') or f'Sent to {self.printer_ip}.',
+                'title': self.env._('Test print sent') if res['success'] else self.env._('Test failed'),
+                'message': res.get('error') or self.env._('Sent to %s.', self.printer_ip),
                 'sticky': False,
+            },
+        }
+
+    @api.model
+    def _ui_labels(self):
+        """Translated display labels for the codes the scanner and live
+        monitor receive as JSON (selection keys + job/log source codes), so
+        the OWL screens never render raw values such as 'disconnected'."""
+        env = self.env
+        def selection(model, field):
+            return dict(env[model]._fields[field]._description_selection(env))
+        return {
+            'use': selection('ab.printer.config', 'printer_use'),
+            'state': selection('ab.printer.config', 'state'),
+            'job_state': selection('ab.printer.job', 'state'),
+            'job_kind': selection('ab.printer.job', 'payload_kind'),
+            'log_status': selection('ab.printer.log', 'job_status'),
+            'source': {
+                'backend': env._('Backend'),
+                'diagnose': env._('Diagnostics'),
+                'pos_frontend': env._('POS'),
+                'pos_kitchen': env._('POS kitchen'),
+                'pos_image': env._('POS receipt'),
+                'report': env._('Report'),
+                'queue': env._('Print queue'),
+                'smoke': env._('Smoke test'),
+                'test': env._('Test print'),
             },
         }
 

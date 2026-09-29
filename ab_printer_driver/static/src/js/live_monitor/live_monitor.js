@@ -4,6 +4,7 @@ import { Component, useState, onWillStart, onMounted, onWillUnmount } from "@odo
 import { registry } from "@web/core/registry";
 import { rpc } from "@web/core/network/rpc";
 import { useService } from "@web/core/utils/hooks";
+import { _t } from "@web/core/l10n/translation";
 
 /**
  * Print Diagnostics — answers "why didn't this print just now?"
@@ -123,12 +124,25 @@ export class PrintLiveMonitor extends Component {
 
     relTime(iso) {
         if (!iso) return "—";
-        const d = new Date(iso.replace(" ", "T") + "Z");
-        const s = (Date.now() - d.getTime()) / 1000;
-        if (s < 60)    return `${Math.round(s)}s ago`;
-        if (s < 3600)  return `${Math.round(s / 60)}m ago`;
-        if (s < 86400) return `${Math.round(s / 3600)}h ago`;
-        return `${Math.round(s / 86400)}d ago`;
+        // Server sends naive UTC ("2026-08-11T09:35:14" or with a space);
+        // the header passes a real ISO string that already ends in "Z".
+        const norm = iso.replace(" ", "T");
+        const d = new Date(/(Z|[+-]\d\d:?\d\d)$/.test(norm) ? norm : norm + "Z");
+        if (Number.isNaN(d.getTime())) return "—";
+        const s = Math.max(0, (Date.now() - d.getTime()) / 1000);
+        if (s < 60)    return _t("%ss ago", Math.round(s));
+        if (s < 3600)  return _t("%sm ago", Math.round(s / 60));
+        if (s < 86400) return _t("%sh ago", Math.round(s / 3600));
+        return _t("%sd ago", Math.round(s / 86400));
+    }
+
+    fmtMs(value) {
+        return _t("%s ms", value);
+    }
+
+    failedStepName(trace) {
+        const failed = trace.steps.find((s) => s.status === "fail");
+        return failed ? failed.name : _t("last step");
     }
 }
 

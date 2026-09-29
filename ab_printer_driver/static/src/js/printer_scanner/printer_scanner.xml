@@ -160,7 +160,7 @@
                             <span class="o_ab_printer_chip"
                                   t-if="r.vendor" t-esc="r.vendor"/>
                             <span class="o_ab_printer_chip o_ab_printer_chip--use"
-                                  t-if="r.use" t-esc="r.use"/>
+                                  t-if="r.use" t-esc="r.use_label or r.use"/>
                             <span class="o_ab_printer_chip o_ab_printer_chip--verified"
                                   t-if="r.verified">verified</span>
                         </div>
@@ -168,11 +168,11 @@
                             <span><i class="fa fa-network-wired"/> <t t-esc="r.ip + ':' + r.port"/></span>
                             <span t-if="r.last_seen" class="text-muted">
                                 <i class="fa fa-clock-o"/>
-                                <t t-esc="new Date(r.last_seen.replace(' ', 'T') + 'Z').toLocaleString()"/>
+                                <t t-esc="formatLastSeen(r.last_seen)"/>
                             </span>
                             <span class="o_ab_printer_state_dot"
                                   t-att-class="'o_ab_printer_state_dot--' + r.state"
-                                  t-esc="r.state"/>
+                                  t-esc="r.state_label or r.state"/>
                         </div>
                         <div class="o_ab_printer_registered__actions">
                             <button class="o_ab_printer_btn o_ab_printer_btn--ghost"
