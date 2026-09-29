@@ -16,3 +16,5 @@ access_ai_usage_price_book_user,ai.usage.price.book.user,model_ai_usage_price_bo
 access_ai_usage_price_book_manager,ai.usage.price.book.manager,model_ai_usage_price_book,group_ai_agent_manager,1,1,1,1
 access_ai_usage_local_budget_user,ai.usage.local.budget.user,model_ai_usage_local_budget,group_ai_agent_user,1,0,0,0
 access_ai_usage_local_budget_manager,ai.usage.local.budget.manager,model_ai_usage_local_budget,group_ai_agent_manager,1,1,1,1
+access_ai_agent_pending_action_user,ai.agent.pending.action.user,model_ai_agent_pending_action,group_ai_agent_user,1,0,1,0
+access_ai_agent_pending_action_manager,ai.agent.pending.action.manager,model_ai_agent_pending_action,group_ai_agent_manager,1,0,0,0

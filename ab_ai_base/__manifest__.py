@@ -1,6 +1,6 @@
 {
     'name': 'AI Provider Base',
-    'version': '18.0.1.3.0',
+    'version': '18.0.1.4.0',
     'category': 'Tools',
     'summary': 'Base AI provider configuration for OpenAI, Claude, Gemini, and local LLMs',
     'description': '''

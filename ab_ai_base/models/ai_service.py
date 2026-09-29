@@ -9,6 +9,20 @@ import requests
 
 _logger = logging.getLogger(__name__)
 
+# Callers (ab_ai_agent's prompt composer) put this token between the part
+# of the system prompt that is identical across turns and the part that
+# changes per user/question. Anthropic gets two system blocks with the
+# cache marker on the first, so the stable prefix is cached ACROSS turns
+# (a single block ending in cache_control only ever matched itself).
+# Every other provider caches by prefix on its own; for them, and for
+# every concatenating path, the token is simply removed.
+CACHE_BREAK = '<<<ai-cache-break>>>'
+
+
+def strip_cache_break(text):
+    return text.replace(CACHE_BREAK, '') if isinstance(text, str) else text
+
+
 
 class AIProviderService(models.AbstractModel):
     _name = 'ai.provider.service'
@@ -86,6 +100,8 @@ class AIProviderService(models.AbstractModel):
                 return self._simulate_call(reason='no_provider_configured')
 
         effective_system = system_prompt or config.system_prompt or None
+        if config.ai_provider != 'anthropic' or image_data:
+            effective_system = strip_cache_break(effective_system)
 
         if self._provider_cache_enabled():
             # Cache-friendly path: keep system separate so providers can
@@ -96,6 +112,7 @@ class AIProviderService(models.AbstractModel):
             # Legacy path: merge into user prompt (byte-for-byte identical
             # to pre-T.1 behavior).
             if effective_system:
+                effective_system = strip_cache_break(effective_system)
                 user_prompt = f"{effective_system}\n\n{prompt}"
             else:
                 user_prompt = prompt
@@ -279,7 +296,7 @@ class AIProviderService(models.AbstractModel):
 
         full_prompt = prompt
         if system_prompt:
-            full_prompt = f"{system_prompt}\n\n{prompt}"
+            full_prompt = f"{strip_cache_break(system_prompt)}\n\n{prompt}"
         elif config.system_prompt:
             full_prompt = f"{config.system_prompt}\n\n{prompt}"
 
@@ -467,7 +484,7 @@ class AIProviderService(models.AbstractModel):
 
         full_prompt = prompt
         if system_prompt:
-            full_prompt = f"{system_prompt}\n\n{prompt}"
+            full_prompt = f"{strip_cache_break(system_prompt)}\n\n{prompt}"
         elif config.system_prompt:
             full_prompt = f"{config.system_prompt}\n\n{prompt}"
 
@@ -761,17 +778,24 @@ class AIProviderService(models.AbstractModel):
                 "messages": [{"role": "user", "content": prompt}],
             }
             if system_prompt:
-                if len(system_prompt) >= min_chars and self._provider_cache_enabled():
-                    # Cache-friendly path — system is an array of content
-                    # blocks; the last block carries the cache_control
-                    # marker. Anthropic caches the longest cacheable
-                    # prefix that matches a prior request.
+                stable, _sep, volatile = system_prompt.partition(CACHE_BREAK)
+                if not _sep:
+                    stable, volatile = system_prompt, ''
+                if len(stable) >= min_chars and self._provider_cache_enabled():
+                    # Cache-friendly path — the cache_control marker sits
+                    # on the STABLE block only, so the next turn (other
+                    # question, same agent) still matches it; the
+                    # per-turn block follows uncached.
                     payload["system"] = [{
                         "type": "text",
-                        "text": system_prompt,
+                        "text": stable,
                         "cache_control": {"type": "ephemeral"},
                     }]
+                    if volatile.strip():
+                        payload["system"].append(
+                            {"type": "text", "text": volatile.strip()})
                 else:
+                    system_prompt = strip_cache_break(system_prompt)
                     # Below cache threshold (or flag off): use the plain
                     # string form — still gets the proper system role,
                     # just no caching.
@@ -1045,6 +1069,130 @@ class AIProviderService(models.AbstractModel):
             "Embedding not implemented for provider '%s'. "
             "Switch to Google (gemini text-embedding-004) or add a wrapper."
         ) % config.ai_provider)
+
+    # ── Voice: speech-to-text / text-to-speech ─────────────────
+    # Same resolution as call(): a local provider key wins, else the
+    # tenant's gateway link, else simulation. Audio is passed through and
+    # never stored here (docs/ghaima-ai/IMPLEMENTATION_PLAN.md §3.6).
+
+    AUDIO_MAX_B64 = 3_000_000          # ~2.2 MB of audio, ~70 s of 16 kHz WAV
+    AUDIO_MIMETYPES = ('audio/wav', 'audio/x-wav', 'audio/webm', 'audio/ogg',
+                       'audio/mpeg', 'audio/mp4', 'audio/flac')
+
+    def call_transcription(self, audio_b64, mimetype='audio/wav', lang=None, config=None):
+        """Speech to text. Returns (text, usage)."""
+        mimetype = (mimetype or '').split(';')[0].strip().lower()
+        if not audio_b64 or len(audio_b64) > self.AUDIO_MAX_B64:
+            raise UserError(_('The recording is empty or too long.'))
+        if mimetype not in self.AUDIO_MIMETYPES:
+            raise UserError(_('Unsupported audio format.'))
+        lang = (lang or '')[:2].lower() or None
+        if self._is_simulation_mode():
+            return '', {'provider': 'simulation', 'model': 'sim-stt'}
+        config = config or self.env['ai.provider.config'].search(
+            [('active', '=', True)], limit=1)
+        if not config:
+            gw = self._gateway_client()
+            if gw and hasattr(gw, 'call_transcription'):
+                return gw.call_transcription(audio_b64, mimetype, lang)
+            return '', {'provider': 'simulation', 'model': 'sim-stt'}
+        if config.ai_provider == 'openai':
+            return self._call_openai_transcription(audio_b64, mimetype, lang, config)
+        if config.ai_provider == 'google':
+            return self._call_gemini_transcription(audio_b64, mimetype, lang, config)
+        raise UserError(_('Speech recognition is not available for this AI provider.'))
+
+    def call_speech(self, text, lang=None, config=None):
+        """Text to speech. Returns (audio_b64, mimetype, usage)."""
+        text = (text or '').strip()[:2000]
+        if not text:
+            raise UserError(_('Nothing to read.'))
+        if self._is_simulation_mode():
+            raise UserError(_('Voice output is not available in simulation mode.'))
+        config = config or self.env['ai.provider.config'].search(
+            [('active', '=', True)], limit=1)
+        if not config:
+            gw = self._gateway_client()
+            if gw and hasattr(gw, 'call_speech'):
+                return gw.call_speech(text, lang)
+            raise UserError(_('Voice output is not configured.'))
+        if config.ai_provider == 'openai':
+            return self._call_openai_speech(text, config)
+        raise UserError(_('Voice output is not available for this AI provider.'))
+
+    def _call_openai_transcription(self, audio_b64, mimetype, lang, config):
+        import base64
+        ext = {'audio/wav': 'wav', 'audio/x-wav': 'wav', 'audio/webm': 'webm',
+               'audio/ogg': 'ogg', 'audio/mpeg': 'mp3', 'audio/mp4': 'm4a',
+               'audio/flac': 'flac'}[mimetype]
+        data = {'model': 'gpt-4o-mini-transcribe', 'response_format': 'json'}
+        if lang:
+            data['language'] = lang
+        try:
+            resp = requests.post(
+                'https://api.openai.com/v1/audio/transcriptions',
+                headers={'Authorization': f"Bearer {config._get_decrypted_key('openai_api_key')}"},
+                files={'file': (f'speech.{ext}', base64.b64decode(audio_b64), mimetype)},
+                data=data, timeout=config.timeout or 30)
+            resp.raise_for_status()
+            text = (resp.json() or {}).get('text') or ''
+        except requests.exceptions.RequestException as e:
+            _logger.warning('OpenAI transcription failed: %s', type(e).__name__)
+            raise UserError(_('Speech recognition failed. Please try again.'))
+        return text.strip(), {'provider': 'openai', 'model': data['model']}
+
+    def _call_gemini_transcription(self, audio_b64, mimetype, lang, config):
+        if mimetype not in ('audio/wav', 'audio/x-wav', 'audio/mpeg', 'audio/ogg', 'audio/flac'):
+            raise UserError(_('Unsupported audio format.'))
+        model = config.gemini_model or 'gemini-2.5-flash'
+        hint = {'ar': 'The speaker most likely uses Arabic (Saudi dialect possible).',
+                'en': 'The speaker most likely uses English.'}.get(lang or '', '')
+        payload = {
+            'contents': [{'role': 'user', 'parts': [
+                {'inline_data': {'mime_type': 'audio/wav' if 'wav' in mimetype else mimetype,
+                                 'data': audio_b64}},
+                {'text': ('Transcribe this recording verbatim, in the language '
+                          'spoken. Output only the transcript, nothing else. '
+                          'If there is no intelligible speech, output nothing. ' + hint)},
+            ]}],
+            'generationConfig': {'temperature': 0},
+        }
+        try:
+            resp = requests.post(
+                'https://generativelanguage.googleapis.com/v1beta/models/'
+                f"{model}:generateContent",
+                headers={'x-goog-api-key': config._get_decrypted_key('gemini_api_key'),
+                         'Content-Type': 'application/json'},
+                json=payload, timeout=config.timeout or 30)
+            resp.raise_for_status()
+            body = resp.json() or {}
+        except requests.exceptions.RequestException as e:
+            # Never log the URL/response: the key could be echoed back.
+            _logger.warning('Gemini transcription failed: %s', type(e).__name__)
+            raise UserError(_('Speech recognition failed. Please try again.'))
+        parts = (((body.get('candidates') or [{}])[0].get('content') or {}).get('parts') or [])
+        text = ''.join(p.get('text', '') for p in parts).strip()
+        meta = body.get('usageMetadata') or {}
+        return text, {'provider': 'google', 'model': model,
+                      'prompt_tokens': meta.get('promptTokenCount', 0),
+                      'completion_tokens': meta.get('candidatesTokenCount', 0)}
+
+    def _call_openai_speech(self, text, config):
+        import base64
+        try:
+            resp = requests.post(
+                'https://api.openai.com/v1/audio/speech',
+                headers={'Authorization': f"Bearer {config._get_decrypted_key('openai_api_key')}",
+                         'Content-Type': 'application/json'},
+                json={'model': 'gpt-4o-mini-tts', 'voice': 'alloy', 'input': text,
+                      'response_format': 'mp3'},
+                timeout=config.timeout or 30)
+            resp.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            _logger.warning('OpenAI speech failed: %s', type(e).__name__)
+            raise UserError(_('Voice output failed. Please try again.'))
+        return (base64.b64encode(resp.content).decode(), 'audio/mpeg',
+                {'provider': 'openai', 'model': 'gpt-4o-mini-tts'})
 
     def _call_gemini_embed(self, texts, config):
         """Call Gemini's embedContent endpoint, looping per-text.

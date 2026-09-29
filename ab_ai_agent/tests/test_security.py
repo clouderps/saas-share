@@ -45,7 +45,13 @@ class TestRecordActionSafety(TransactionCase):
         so = self._so('EXACTREF98765')
         res = td._builtin_record_action(self.env, reference='EXACTREF98765')
         self.assertEqual(res.get('action', {}).get('res_id'), so.id)
-        self.assertEqual(so.state, 'sale')     # exact match → confirmed
+        # Exact match → PROPOSED, not confirmed: only the user's click runs it.
+        self.assertTrue(res.get('requires_confirmation'))
+        self.assertEqual(so.state, 'draft')
+        out = self.env['ai.agent.pending.action'].resolve(
+            res['confirmation']['key'], True)
+        self.assertTrue(out['ok'], out)
+        self.assertEqual(so.state, 'sale')
 
     def test_no_write_access_user_cannot_finalize(self):
         so = self._so('ACLREF55555')

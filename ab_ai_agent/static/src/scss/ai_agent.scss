@@ -1458,3 +1458,32 @@
         border-color: var(--ai-ghaima-line, #2A2E3C);
     }
 }
+
+
+// ─── Compact shell (floating assistant panel, ~420px) ───────────────
+// The body grid reserves a 280px skills column and only collapses it on
+// a narrow VIEWPORT; inside a narrow panel on a wide screen that left
+// ~100px for answers. Compact is decided by the component instead.
+.o_ai_agent_chat.is-compact {
+    .o_ai_agent_chat__body,
+    .o_ai_agent_chat__body.has-history {
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--ai-step-3);
+        padding: var(--ai-step-3) var(--ai-step-4);
+    }
+    .o_ai_history { max-block-size: 40%; overflow: auto; }
+
+    .o_ai_agent_chat__header {
+        padding: var(--ai-step-2) var(--ai-step-3);
+        gap: var(--ai-step-2);
+    }
+    .o_ai_agent_chat__subtitle,
+    .o_ai_agent_token_meter { display: none; }
+    .o_ai_agent_chat__title {
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .o_ai_agent_chat__icon_btn { inline-size: 30px; block-size: 30px; }
+}

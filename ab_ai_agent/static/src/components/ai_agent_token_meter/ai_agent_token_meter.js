@@ -28,6 +28,7 @@ export class AiAgentTokenMeter extends Component {
 
     setup() {
         this.aiAgent = useService("aiAgentService");
+        this.aiAgent.ensureLoaded?.();
     }
 
     get meter() {

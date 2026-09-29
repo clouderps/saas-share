@@ -4,6 +4,9 @@ import { Component, useState, useRef, onMounted, onPatched, onWillUnmount, useEf
 import { useService } from "@web/core/utils/hooks";
 import { _t } from "@web/core/l10n/translation";
 import { registry } from "@web/core/registry";
+import { user } from "@web/core/user";
+import { session } from "@web/session";
+import { pickStt, pickTts, speakableText, voiceErrorMessage } from "../../voice/voice";
 import { AiAgentChip } from "../ai_agent_chip/ai_agent_chip";
 import { AiAgentSkillCard } from "../ai_agent_skill_card/ai_agent_skill_card";
 import { AiAgentTokenMeter } from "../ai_agent_token_meter/ai_agent_token_meter";
@@ -72,6 +75,12 @@ export class AiAgentChat extends Component {
         hideSidebar: { type: Boolean, optional: true },
         // Locale override (default = user.lang)
         locale: { type: String, optional: true },
+        // Send what the user is looking at with every question. On for
+        // the floating assistant; off for the full-page console, whose
+        // "current screen" is the chat itself.
+        screenAware: { type: Boolean, optional: true },
+        // Floating panel: "open in the full console" button.
+        onExpand: { type: Function, optional: true },
         onClose: { type: Function, optional: true },
         title: { type: String, optional: true },
         // Manager-only: enables Web Speech API mic input + voice
@@ -87,6 +96,7 @@ export class AiAgentChat extends Component {
 
     setup() {
         this.aiAgent = useService("aiAgentService");
+        this.screenContext = this.props.screenAware ? useService("aiScreenContext") : null;
         this.notification = useService("notification");
         try {
             this.actionService = useService("action");
@@ -127,14 +137,27 @@ export class AiAgentChat extends Component {
             streamSteps: [],
             // Voice (manager-only, gated by props.enableVoice)
             recording: false,
-            speechAvailable: typeof window !== "undefined"
-                && (window.SpeechRecognition || window.webkitSpeechRecognition),
+            speechAvailable: false,          // set below from the adapters
+            transcribing: false,             // server STT round-trip
+            speakingId: null,                // message being read aloud
         });
 
         this.streamRef = useRef("stream");
         this.textareaRef = useRef("textarea");
         this._audioCtx = null;
-        this._recognition = null;       // SpeechRecognition instance, lazy
+        // Voice is an interface to this same chat: the adapters turn
+        // speech into the text that _send() already handles, and an
+        // answer's text into audio. Company setting + user preference
+        // come from session_info (no RPC).
+        this.voiceConfig = session.ai_assistant || {};
+        this.voiceOn = !!(this.props.enableVoice || this.voiceConfig.voice);
+        this.stt = this.voiceOn ? pickStt(this.voiceConfig.stt) : null;
+        this.tts = this.voiceOn ? pickTts(this.voiceConfig.tts) : null;
+        this.state.speechAvailable = !!this.stt;
+        onWillUnmount(() => {
+            this.stt?.cancel();
+            this.tts?.stop();
+        });
         this._lastSpoken = null;        // throttle re-speak of same text
 
         // Auto-scroll on new messages.
@@ -159,6 +182,8 @@ export class AiAgentChat extends Component {
                     (p) => this._onStreamEvent(p));
             }
             this._loadStarters();       // fire-and-forget; never blocks paint
+            // The agent list loads on first use, not at page boot.
+            await this.aiAgent.ensureLoaded?.();
             if (this.props.agentCode) {
                 const found = this.aiAgent.state.agents.find((a) => a.code === this.props.agentCode);
                 if (found) {
@@ -280,7 +305,8 @@ export class AiAgentChat extends Component {
         if (this.state.isThinking) {
             return;
         }
-        if (!this.state.conversationId) {
+        const native = ["confirm_pending", "cancel_pending"].includes(action?.type);
+        if (!native && !this.state.conversationId) {
             // Nothing to replay against — the capture lives on the
             // conversation. Say so rather than failing silently.
             this._pushPlain(this.labels.confirmUnavailable);
@@ -302,6 +328,10 @@ export class AiAgentChat extends Component {
             this._pushPlain(res?.success
                 ? (res.result?.content || this.labels.done)
                 : (res?.error || this.labels.confirmFailed));
+            if (res?.success && res.result?.action) {
+                // Land on the record that just changed, as the Open chip would.
+                this.state.messages[this.state.messages.length - 1].pendingAction = res.result.action;
+            }
         } catch (e) {
             this._pushPlain(this.labels.confirmFailed);
         } finally {
@@ -556,94 +586,98 @@ export class AiAgentChat extends Component {
         catch (e) {}
         // If we just muted while a response is being read aloud, cut it.
         if (this.state.muted) {
-            try { window.speechSynthesis?.cancel(); } catch (e) {}
+            this.tts?.stop();
+            this.state.speakingId = null;
         }
     }
 
     // ── Voice in (SpeechRecognition) ──────────────────────────
 
+    /**
+     * The conversation language. Falls back to the user's own language:
+     * the console never passed a locale, so an Arabic user's mic
+     * listened for English and their answers came back in English.
+     */
+    get locale() {
+        return this.props.locale || user.lang || document.documentElement.lang || "en";
+    }
+
     get speechLang() {
-        return (this.props.locale || "en").startsWith("ar") ? "ar-SA" : "en-US";
+        return this.locale.startsWith("ar") ? "ar-SA" : "en-US";
     }
 
-    toggleRecording() {
-        if (!this.props.enableVoice) return;
-        if (this.state.recording) {
-            this._stopRecording();
-        } else {
-            this._startRecording();
-        }
-    }
-
-    _startRecording() {
-        const Recog = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!Recog) {
-            this.notification.add("Voice input not supported in this browser.",
-                                  { type: "warning" });
+    /** Push-to-talk: first press starts, second press stops and sends. */
+    async toggleRecording() {
+        if (!this.stt || this.state.transcribing) {
             return;
         }
+        if (this.state.recording) {
+            await this._finishRecording();
+            return;
+        }
+        this.tts?.stop();
         try {
-            const r = new Recog();
-            r.lang = this.speechLang;
-            r.continuous = false;
-            r.interimResults = true;
-            r.onresult = (ev) => {
-                let transcript = "";
-                for (let i = 0; i < ev.results.length; i++) {
-                    transcript += ev.results[i][0].transcript;
-                }
-                this.state.input = transcript;
-            };
-            r.onend = () => {
-                this.state.recording = false;
-                this._recognition = null;
-                // Auto-send when the user paused (non-empty result).
-                const text = (this.state.input || "").trim();
-                if (text) this._send(text);
-            };
-            r.onerror = (ev) => {
-                this.state.recording = false;
-                this._recognition = null;
-                if (ev.error !== "no-speech" && ev.error !== "aborted") {
-                    this.notification.add(`Voice error: ${ev.error}`,
-                                          { type: "warning" });
-                }
-            };
-            r.start();
-            this._recognition = r;
-            this.state.recording = true;
-            this.state.input = "";
+            await this.stt.start({
+                lang: this.speechLang,
+                onPartial: (t) => (this.state.input = t),
+            });
         } catch (e) {
-            this.notification.add(e.message || "Voice start failed",
-                                  { type: "warning" });
+            this._voiceError(e);
+            return;
+        }
+        this.state.input = "";
+        this.state.recording = true;
+        // Browser recognition ends by itself when the user pauses; send
+        // then, as a second press would.
+        this.stt.ended?.().then(() => this.state.recording && this._finishRecording());
+    }
+
+    async _finishRecording() {
+        this.state.recording = false;
+        this.state.transcribing = true;
+        try {
+            const { text } = await this.stt.stop();
+            this.state.input = text;
+            await this._send(text);
+        } catch (e) {
+            this._voiceError(e);
+        } finally {
+            this.state.transcribing = false;
         }
     }
 
-    _stopRecording() {
-        try { this._recognition?.stop(); }
-        catch (e) {}
+    _voiceError(e) {
+        if (e?.code === "aborted") {
+            return;
+        }
+        this.notification.add(voiceErrorMessage(e?.code), { type: "warning" });
     }
 
     // ── Voice out (SpeechSynthesis) ───────────────────────────
 
-    _speakResponse(text) {
-        if (!this.props.enableVoice || this.state.muted || !text) return;
-        if (!window.speechSynthesis) return;
-        // Throttle re-speak of identical text (welcomes, errors).
-        if (text === this._lastSpoken) return;
-        this._lastSpoken = text;
-        // Cap length so we don't bombard the user with a 5-minute readout.
-        const safe = text.slice(0, 600);
+    /** Read answers aloud automatically only when the user opted in. */
+    _speakResponse(text, msgId) {
+        if (!this.tts || this.state.muted || !this.voiceConfig.autoplay || !text) return;
+        this.listen({ id: msgId, text });
+    }
+
+    /** "Listen" on an answer: the text stays; audio is an extra. */
+    async listen(msg) {
+        if (!this.tts) return;
+        if (this.state.speakingId === msg.id) {
+            this.tts.stop();
+            this.state.speakingId = null;
+            return;
+        }
+        const text = speakableText(msg.text || msg.envelope?.response || "");
+        if (!text) return;
+        this.state.speakingId = msg.id;
         try {
-            const utter = new SpeechSynthesisUtterance(safe);
-            utter.lang = this.speechLang;
-            utter.rate = 1.05;
-            utter.pitch = 1.0;
-            utter.volume = 0.95;
-            window.speechSynthesis.cancel();    // stop any prior utterance
-            window.speechSynthesis.speak(utter);
-        } catch (e) {
-            // Voice synth can fail mid-load; silent.
+            await this.tts.speak(text, this.speechLang);
+        } finally {
+            if (this.state.speakingId === msg.id) {
+                this.state.speakingId = null;
+            }
         }
     }
 
@@ -655,7 +689,7 @@ export class AiAgentChat extends Component {
      * the only signal that is always right.
      */
     get isRtl() {
-        const loc = this.props.locale || document.documentElement.lang || "";
+        const loc = this.locale;
         if (loc.startsWith("ar")) {
             return true;
         }
@@ -697,7 +731,10 @@ export class AiAgentChat extends Component {
             ask: _t("Ask"),
             listening: _t("Listening\u2026"),
             startRecording: _t("Tap to speak"),
-            stopRecording: _t("Stop recording"),
+            stopRecording: _t("Stop and send"),
+            listen: _t("Listen"),
+            stopListening: _t("Stop reading"),
+            transcribing: _t("Transcribing…"),
             answer: _t("Answer"),
             welcome: _t("Start here"),
             history: _t("Past chats"),
@@ -712,6 +749,8 @@ export class AiAgentChat extends Component {
             applying: _t("Applying…"),
             done: _t("Done."),
             confirmFailed: _t("That action could not be completed."),
+            sendFailed: _t("The assistant could not answer right now. Please try again."),
+            expand: _t("Open in full screen"),
             confirmUnavailable: _t("This chat has no saved history, so there is nothing to confirm against. Ask again and confirm from the new answer."),
         };
     }
@@ -851,7 +890,8 @@ export class AiAgentChat extends Component {
                 record: this.props.recordModel ? {
                     model: this.props.recordModel, id: this.props.recordId,
                 } : null,
-                locale: this.props.locale,
+                locale: this.locale.slice(0, 2),
+                screen: this.screenContext?.snapshot(),
                 // The live conversation wins over the prop: the prop is
                 // only the id we were opened with, and the user may have
                 // switched chats since.
@@ -891,7 +931,8 @@ export class AiAgentChat extends Component {
             // rendered text (or report summary) aloud through the
             // browser's SpeechSynthesis. No-op when enableVoice=false
             // or the user has muted.
-            this._speakResponse(envelope.response || "");
+            this._speakResponse(envelope.response || "",
+                                this.state.messages[this.state.messages.length - 1].id);
             // If the envelope carries a navigation action (open_menu,
             // doAction descriptor), surface it as a chip on the bubble.
             if (envelope.action) {
@@ -903,7 +944,8 @@ export class AiAgentChat extends Component {
             this.state.messages.push({
                 role: "assistant",
                 id: `err-${Date.now()}`,
-                text: `Something went wrong: ${e.message || e}`,
+                // Never paint a raw RPC error (it can carry server internals).
+                text: this.labels.sendFailed,
                 agentName: this.activeAgent?.name || "Ghaima Assistant",
                 agentAccent: "rose",
                 isError: true,

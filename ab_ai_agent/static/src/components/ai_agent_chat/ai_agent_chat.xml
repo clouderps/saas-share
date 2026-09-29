@@ -24,6 +24,7 @@
     -->
     <t t-name="ab_ai_agent.AiAgentChat">
         <section class="o_ai_agent_chat" role="region"
+                 t-att-class="{ 'is-compact': props.hideSidebar and props.surface !== 'chatter' }"
                  t-att-aria-label="headerTitle"
                  t-att-dir="isRtl ? 'rtl' : 'auto'">
 
@@ -69,6 +70,11 @@
                         type="button"
                         t-att-title="state.muted ? muteLabels.off : muteLabels.on">
                     <i t-att-class="state.muted ? 'fa fa-volume-off' : 'fa fa-volume-up'"/>
+                </button>
+                <button t-if="props.onExpand" class="o_ai_agent_chat__icon_btn"
+                        type="button" t-on-click="() => props.onExpand()"
+                        t-att-title="labels.expand" t-att-aria-label="labels.expand">
+                    <i class="fa fa-expand"/>
                 </button>
                 <button t-if="props.onClose" class="o_ai_agent_chat__close" type="button"
                         t-on-click="close" t-att-aria-label="labels.close">
@@ -165,6 +171,12 @@
                                         t-on-click="() => this.refine(msg)">
                                     <i class="fa fa-repeat" aria-hidden="true"/>
                                     <span t-esc="labels.refine"/>
+                                </button>
+                                <button t-if="tts" class="o_ai_answer__act" type="button"
+                                        t-on-click="() => this.listen(msg)"
+                                        t-att-aria-pressed="state.speakingId === msg.id ? 'true' : 'false'">
+                                    <i t-att-class="state.speakingId === msg.id ? 'fa fa-stop' : 'fa fa-volume-up'" aria-hidden="true"/>
+                                    <span t-esc="state.speakingId === msg.id ? labels.stopListening : labels.listen"/>
                                 </button>
                                 <span class="flex-grow-1"/>
                                 <div t-if="msg.runId" class="o_ai_answer__rate">
@@ -263,18 +275,21 @@
                  also gets torch and auto-capture for free. -->
             <footer class="o_ai_agent_chat__footer">
                 <form class="o_ai_agent_chat__form" t-on-submit.prevent="send">
-                    <button t-if="props.enableVoice and state.speechAvailable"
+                    <button t-if="state.speechAvailable"
                             type="button"
                             class="o_ai_agent_chat__mic"
                             t-att-class="{ 'is-recording': state.recording }"
+                            t-att-disabled="state.transcribing or state.isThinking"
                             t-on-click="toggleRecording"
+                            t-att-aria-pressed="state.recording ? 'true' : 'false'"
+                            t-att-aria-label="state.recording ? labels.stopRecording : labels.startRecording"
                             t-att-title="state.recording ? labels.stopRecording : labels.startRecording">
-                        <i t-att-class="state.recording ? 'fa fa-stop' : 'fa fa-microphone'"/>
+                        <i t-att-class="state.transcribing ? 'fa fa-spinner fa-spin' : state.recording ? 'fa fa-stop' : 'fa fa-microphone'"/>
                         <span t-if="state.recording" class="o_ai_agent_chat__mic_pulse"/>
                     </button>
                     <textarea t-ref="textarea" class="o_ai_agent_chat__textarea"
                               t-model="state.input"
-                              t-att-placeholder="state.recording ? labels.listening : placeholderText"
+                              t-att-placeholder="state.transcribing ? labels.transcribing : state.recording ? labels.listening : placeholderText"
                               t-on-keydown="onInputKeydown"
                               rows="1"/>
                     <button class="o_ai_agent_chat__send" type="submit"

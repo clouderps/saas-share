@@ -86,6 +86,21 @@
             <field name="allow_end_message" eval="True"/>
         </record>
 
+        <record id="tool_screen_button" model="ai.agent.tool">
+            <field name="name">Press a button on the open record (after confirmation)</field>
+            <field name="code">screen_button</field>
+            <field name="category">write</field>
+            <field name="description">Propose pressing one of the header buttons the user sees on the record that is open on their screen (e.g. Confirm, Validate, Post, Cancel). Use the record id and a button name from "Buttons visible on screen" / the form header. This only PROPOSES: the user gets Confirm / Cancel buttons and nothing changes until they click Confirm. Never claim it is done.</field>
+            <field name="schema">{"type": "object", "properties": {"model": {"type": "string", "description": "Technical model of the open record, from the Current screen block"}, "record_id": {"type": "integer"}, "button": {"type": "string", "description": "The button's technical name (method), e.g. action_confirm"}}, "required": ["model", "record_id", "button"]}</field>
+            <field name="dispatch_kind">python</field>
+            <!-- Not a write at dispatch time: it only records a proposal.
+                 The change runs from the user's Confirm click
+                 (ai.agent.pending.action.resolve), so every agent may
+                 offer it without allow_write_actions. -->
+            <field name="is_write_action" eval="False"/>
+            <field name="allow_end_message" eval="True"/>
+        </record>
+
         <!-- ── HR domain tools (gated by hr / hr.attendance presence) ── -->
 
         <record id="tool_hr_attendance_missing_today" model="ai.agent.tool">

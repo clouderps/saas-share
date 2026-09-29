@@ -76,6 +76,12 @@ def dispatch(env, tool_record, arguments, *, agent=None, agent_run=None):
     # ── Strip the __end_message helper from arguments ──────────
     arguments = dict(arguments or {})
     end_message = arguments.pop('__end_message', None)
+    # `_ai_*` kwargs are server-side flags (e.g. `_ai_confirmed`, set
+    # only by ai.agent.pending.action.resolve after the user's click).
+    # A model — or text injected into a record it read — must never be
+    # able to pass them and skip the confirmation step.
+    arguments = {k: v for k, v in arguments.items()
+                 if not str(k).startswith('_ai_')}
 
     # ── Dispatch ───────────────────────────────────────────────
     try:
@@ -336,9 +342,23 @@ def _builtin_open_action(env, agent=None, xmlid=None, **_kw):
         action = env.ref(xmlid, raise_if_not_found=False)
         if not action:
             return {'error': f'action {xmlid} not found'}
-        if not hasattr(action, 'read'):
+        if not action._name.startswith('ir.actions.'):
             return {'error': f'{xmlid} is not an action'}
-        action_dict = action.sudo().read()[0]
+        # An action restricted to groups the user lacks is exactly the
+        # screen the menu hides from them — the assistant must not be a
+        # side door to it. Read as the user (actions are readable by
+        # internal users; no sudo), and honour the target model's ACL.
+        groups = action.sudo().groups_id if 'groups_id' in action._fields else False
+        if groups and not (groups & env.user.groups_id):
+            return {'error': 'not available for this user',
+                    'note': 'Tell the user this screen is not available to them.'}
+        res_model = getattr(action, 'res_model', False)
+        if res_model and (env.get(res_model) is None
+                          or not env[res_model].has_access('read')):
+            return {'error': 'not available for this user',
+                    'note': 'Tell the user this screen is not available to them.'}
+        action_dict = action._get_action_dict() if hasattr(action, '_get_action_dict') \
+            else action.read()[0]
         # Strip sentinel keys that aren't part of the act_window contract.
         for k in ('create_uid', 'write_uid', 'create_date', 'write_date'):
             action_dict.pop(k, None)
@@ -346,8 +366,9 @@ def _builtin_open_action(env, agent=None, xmlid=None, **_kw):
             'message': f'Opening {action.name}',
             'action': action_dict,
         }
-    except Exception as e:
-        return {'error': str(e)}
+    except Exception:
+        _logger.info('open_action %s failed', xmlid, exc_info=True)
+        return {'error': f'could not open {xmlid}'}
 
 
 # ─── System guidance ─────────────────────────────────────────────────
@@ -615,6 +636,30 @@ def _builtin_explain_screen(env, agent=None, model=None, screen=None, **_kw):
 
 # ─── HR domain tools ─────────────────────────────────────────────────
 # Defensive: skipped when hr / hr.attendance modules aren't installed.
+#
+# These read OTHER employees' attendance and leave, so they need the
+# same role the native screens need (attendance officer / time-off
+# officer) and run as the user — no sudo — so record rules (company,
+# department managers) still scope the answer. They used to sudo()
+# behind the agent's `allow_pii` flag alone, which let any user of a
+# PII-enabled agent read company-wide attendance.
+
+_HR_ROLE = {
+    'attendance': ('hr_attendance.group_hr_attendance_officer',
+                   'hr.group_hr_user'),
+    'leave': ('hr_holidays.group_hr_holidays_responsible',
+              'hr_holidays.group_hr_holidays_user', 'hr.group_hr_user'),
+}
+
+
+def _hr_denied(env, role):
+    user = env.user
+    for xmlid in _HR_ROLE[role]:
+        if env.ref(xmlid, raise_if_not_found=False) and user.has_group(xmlid):
+            return None
+    return {'error': 'not permitted',
+            'note': ('This user does not have the HR role needed to see other '
+                     'employees\' records. Say so plainly; do not guess numbers.')}
 
 def _builtin_hr_attendance_missing_today(env, agent=None, limit=50, **_kw):
     """Employees with no check-in for today. The "morning roll call"."""
@@ -622,20 +667,24 @@ def _builtin_hr_attendance_missing_today(env, agent=None, limit=50, **_kw):
     Att = env.get('hr.attendance')
     if Emp is None or Att is None:
         return {'error': 'hr.attendance not installed on this instance'}
+    denied = _hr_denied(env, 'attendance')
+    if denied:
+        return denied
     from odoo import fields as _fields
     today = _fields.Date.context_today(env['res.users'])
     today_start = f'{today} 00:00:00'
     try:
         with env.cr.savepoint(flush=False):
-            attended_ids = Att.sudo().search([
+            attended_ids = Att.search([
                 ('check_in', '>=', today_start),
             ]).mapped('employee_id').ids
-            missing = Emp.sudo().search([
+            missing = Emp.search([
                 ('active', '=', True),
                 ('id', 'not in', attended_ids),
             ], limit=int(limit))
-    except Exception as e:
-        return {'error': str(e)}
+    except Exception:
+        _logger.info('hr_attendance_missing_today failed', exc_info=True)
+        return {'error': 'could not read attendance'}
     rows = [{
         'id': e.id,
         'name': e.name,
@@ -654,9 +703,12 @@ def _builtin_hr_leave_pending(env, agent=None, limit=50, **_kw):
     Leave = env.get('hr.leave')
     if Leave is None:
         return {'error': 'hr.leave not installed'}
+    denied = _hr_denied(env, 'leave')
+    if denied:
+        return denied
     try:
         with env.cr.savepoint(flush=False):
-            rows = Leave.sudo().search([('state', '=', 'confirm')],
+            rows = Leave.search([('state', '=', 'confirm')],
                                        limit=int(limit), order='date_from')
     except Exception as e:
         return {'error': str(e)}
@@ -678,9 +730,12 @@ def _builtin_hr_attendance_open_shifts(env, agent=None, **_kw):
     Att = env.get('hr.attendance')
     if Att is None:
         return {'error': 'hr.attendance not installed'}
+    denied = _hr_denied(env, 'attendance')
+    if denied:
+        return denied
     try:
         with env.cr.savepoint(flush=False):
-            rows = Att.sudo().search([('check_out', '=', False)],
+            rows = Att.search([('check_out', '=', False)],
                                      order='check_in desc', limit=100)
     except Exception as e:
         return {'error': str(e)}
@@ -972,10 +1027,19 @@ _RECORD_ACTION_SPECS = (
 )
 
 
-def _builtin_record_action(env, agent=None, reference=None, action=None, **_kw):
+def _builtin_record_action(env, agent=None, reference=None, action=None,
+                           _ai_confirmed=False, **_kw):
     """Find a record by its number and finalize it (confirm SO/PO,
     post invoice/bill/payment, validate picking). Returns an `action`
-    so the chat shows an Open chip."""
+    so the chat shows an Open chip.
+
+    Two-phase: called by the model it only PROPOSES (resolves the
+    record, checks rights, records an ai.agent.pending.action and
+    returns a Confirm/Cancel chip). The finalize method runs only when
+    the user clicks Confirm, which re-enters here with
+    ``_ai_confirmed=True`` (the dispatcher strips that flag from model
+    arguments, so the model cannot set it).
+    """
     ref = (reference or '').strip()
     if not ref:
         return {'error': 'reference required, e.g. "INV/2026/00001" or "SO00047"'}
@@ -1011,10 +1075,32 @@ def _builtin_record_action(env, agent=None, reference=None, action=None, **_kw):
         except Exception as e:
             return {'error': f'{label}: not permitted ({type(e).__name__}).',
                     'action': descriptor}
+        verb_key = {'action_confirm': 'confirm', 'button_confirm': 'confirm',
+                    'action_post': 'post', 'button_validate': 'validate'}[method]
+        if not _ai_confirmed:
+            summary = {
+                'confirm': env._('Confirm %s?', label),
+                'post': env._('Post %s?', label),
+                'validate': env._('Validate %s?', label),
+            }[verb_key]
+            proposal = env['ai.agent.pending.action'].propose(
+                'record_action', {'reference': ref, 'action': action},
+                target=rec, summary=str(summary))
+            proposal.update({
+                'message': (f'{label} is ready to {verb_key}. Nothing has '
+                            f'changed yet: the user must press Confirm.'),
+                'action': descriptor,
+            })
+            return proposal
         try:
             getattr(rec, method)()
-        except Exception as e:
-            return {'error': f'{label}: {type(e).__name__}: {e}',
+        except UserError as e:
+            # Business rule messages (missing tax, locked period…) are
+            # written for users; anything else is not.
+            return {'error': f'{label}: {e}', 'action': descriptor}
+        except Exception:
+            _logger.exception('record_action %s on %s failed', method, label)
+            return {'error': f'{label} could not be completed.',
                     'action': descriptor}
         verb = {'action_confirm': 'confirmed', 'button_confirm': 'confirmed',
                 'action_post': 'posted', 'button_validate': 'validated'}[method]
@@ -1022,6 +1108,88 @@ def _builtin_record_action(env, agent=None, reference=None, action=None, **_kw):
                 'action': descriptor}
     return {'error': f'No sale order, purchase order, invoice/bill, '
                      f'picking or payment matches "{ref}".'}
+
+
+# ─── Screen button: press a button the user can see — after Confirm ──
+# "confirm this order", "اعتمد الطلب", "validate it" on an open record.
+# Only a `type="object"` button that the user's OWN form view shows in its
+# header qualifies (get_views applies their groups), so the assistant can
+# never reach a method the UI would not offer them. Like record_action it
+# is two-phase: the model only proposes; the click on Confirm runs it, as
+# the user, with Odoo's own business checks inside the method.
+
+def _header_object_buttons(Model):
+    from lxml import etree
+    arch = Model.get_views([(False, 'form')])['views']['form']['arch']
+    doc = etree.fromstring(arch.encode() if isinstance(arch, str) else arch)
+    out = {}
+    for btn in doc.xpath('//header//button[@type="object"][@name]'):
+        out[btn.get('name')] = btn.get('string') or btn.findtext('span') or btn.get('name')
+    return out
+
+
+def _builtin_screen_button(env, agent=None, model=None, record_id=None,
+                           button=None, _ai_confirmed=False, **_kw):
+    from odoo.models import check_method_name
+    record_id = record_id or _kw.get('res_id') or _kw.get('id')
+    button = button or _kw.get('button_name') or _kw.get('name')
+    Model = env.get(model) if isinstance(model, str) else None
+    if Model is None or not record_id or not button:
+        return {'error': 'model, record_id and button are required',
+                'note': 'Take model and the open record id from "Current screen", '
+                        'and the button from "Buttons visible on screen".'}
+    button = str(button).strip()
+    rec = Model.browse(int(record_id)).exists()
+    if not rec:
+        return {'error': 'record not found'}
+    try:
+        rec.check_access('read')
+        buttons = _header_object_buttons(Model)
+    except AccessError:
+        return {'error': 'not permitted',
+                'note': 'Tell the user this record is not available to them.'}
+    if button not in buttons:
+        # Users (and the model) name a button by what it SAYS: accept the
+        # label when it identifies exactly one method.
+        by_label = {n for n, lbl in buttons.items()
+                    if (lbl or '').strip().lower() == button.lower()}
+        if len(by_label) == 1:
+            button = by_label.pop()
+        else:
+            return {'error': 'that button is not available on this screen for this user',
+                    'available': sorted(set(buttons.values()))[:15]}
+    try:
+        check_method_name(button)
+    except Exception:
+        return {'error': 'that button is not available'}
+    label = buttons[button]
+    descriptor = {'type': 'ir.actions.act_window', 'res_model': model,
+                  'res_id': rec.id, 'views': [[False, 'form']],
+                  'view_mode': 'form', 'target': 'current'}
+    if not _ai_confirmed:
+        proposal = env['ai.agent.pending.action'].propose(
+            'screen_button', {'model': model, 'record_id': rec.id, 'button': button},
+            target=rec, summary=f'{label}: {rec.display_name}?')
+        proposal.update({
+            'message': (f'Ready to press "{label}" on {rec.display_name}. '
+                        f'Nothing has changed yet: the user must press Confirm.'),
+            'action': descriptor,
+        })
+        return proposal
+    try:
+        result = getattr(rec, button)()
+    except UserError as e:
+        return {'error': f'{label}: {e}', 'action': descriptor}
+    except AccessError:
+        return {'error': f'{label}: not permitted', 'action': descriptor}
+    except Exception:
+        _logger.exception('screen_button %s on %s failed', button, rec)
+        return {'error': f'{label} could not be completed.', 'action': descriptor}
+    # A button may answer with its own action (a wizard, a report): the
+    # user lands there, exactly as clicking it in the form would do.
+    if isinstance(result, dict) and str(result.get('type', '')).startswith('ir.actions'):
+        return {'message': f'{label}: done.', 'done': True, 'action': result}
+    return {'message': f'{label}: done.', 'done': True, 'action': descriptor}
 
 
 # ─── T.2a — semantic search (pgvector keystone) ──────────────────────
@@ -1062,6 +1230,27 @@ def _builtin_semantic_search(env, agent=None, model=None, query=None,
     Index = env.get('ai.semantic.index')
     if Index is None:
         return {'error': 'ai.semantic.index service not installed'}
+    Model = env.get(model)
+    if Model is None:
+        return {'error': f'model {model} is not installed'}
+    try:
+        Model.check_access('read')
+    except AccessError:
+        return {'error': 'not permitted',
+                'note': 'Tell the user they cannot see these records.'}
+    # Every argument here is model-chosen (and a record's text can steer
+    # the model), while the index builds raw SQL from the column names.
+    # Only real, readable, stored fields and the two known vector
+    # columns get through.
+    if vector_col not in ('ai_embedding', 'embedding'):
+        return {'error': 'unsupported vector column'}
+    readable = Model.fields_get(attributes=['type'])      # group-filtered
+    hint_fields = [f for f in (hint_fields or [])
+                   if isinstance(f, str) and f in readable
+                   and Model._fields[f].store
+                   and Model._fields[f].type not in ('one2many', 'many2many', 'binary')]
+    if name_field != 'display_name' and name_field not in readable:
+        name_field = 'display_name'
     try:
         rows = Index.sudo().search(
             model, query,
@@ -1070,8 +1259,14 @@ def _builtin_semantic_search(env, agent=None, model=None, query=None,
             hint_fields=hint_fields or [],
             min_similarity=float(min_similarity),
         )
-    except Exception as e:
-        return {'error': f'semantic_search failed: {type(e).__name__}: {e}'}
+    except Exception:
+        _logger.info('semantic_search failed on %s', model, exc_info=True)
+        return {'error': 'search is unavailable right now'}
+    # The index scans the raw table (sudo), so apply the user's record
+    # rules to the hits: only rows they could open in the UI survive.
+    if rows:
+        visible = set(Model.search([('id', 'in', [r['id'] for r in rows])]).ids)
+        rows = [r for r in rows if r['id'] in visible]
     csv = Index.sudo().to_csv(rows, hint_keys=hint_fields or None)
     return {'rows': rows, 'csv': csv, 'count': len(rows), 'model': model}
 
@@ -1081,6 +1276,7 @@ register('semantic_search', _builtin_semantic_search)
 register('date_reference', _builtin_date_reference)
 register('echo', _builtin_echo)
 register('record_action', _builtin_record_action)
+register('screen_button', _builtin_screen_button)
 register('data_analysis', _builtin_data_analysis)
 register('recent_records', _builtin_recent_records)
 register('open_record', _builtin_open_record)

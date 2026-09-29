@@ -106,5 +106,28 @@ For "latest / most recent / last N records" questions ("latest invoice added", "
             ])]"/>
         </record>
 
+
+        <!-- Screen assistant — answers about the page the user is on and
+             acts on it. Auto-attached so existing tenants get it. -->
+        <record id="topic_screen_assistant" model="ai.agent.topic">
+            <field name="name">Screen Assistant</field>
+            <field name="code">screen_assistant</field>
+            <field name="description">Explain and act on the screen the user is looking at, from the live "Current screen" facts.</field>
+            <field name="auto_attach" eval="True"/>
+            <field name="instructions">When the system prompt has a "Current screen" section, the user is on that screen right now and "this page", "here", "these", "this record" all mean it.
+
+- Explain / summarise the screen from those facts only: what it is for (the "About this screen" line when present), what the filters show, the counts and the breakdown. Short: two to four sentences. Never invent a number that is not listed; call a tool for anything else.
+- "Open the first one / the second one" means that row of "Rows on screen, in order": call `open_record` with the screen's model and that row's id.
+- "Show only … / filter by … / the late ones" on this screen: call `open_list` with the screen's model and a domain on its real fields. Say what you filtered.
+- "Confirm / validate / post / cancel this" on an open record: call `screen_button` with the record id and the matching button from "Buttons visible on screen". It only proposes — tell the user to press Confirm. If no visible button matches, say the action is not available here; never offer another way around.
+- If the screen facts do not answer the question, say what you can see and offer the closest thing you can do.
+
+Always end with `__end_message`.</field>
+            <field name="tool_ids" eval="[(6, 0, [
+                ref('tool_open_record'),
+                ref('tool_open_list'),
+                ref('tool_screen_button'),
+            ])]"/>
+        </record>
     </data>
 </odoo>

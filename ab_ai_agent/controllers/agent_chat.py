@@ -335,6 +335,19 @@ class AIAgentController(http.Controller):
         This replays the captured tool with confirm=true — deterministic
         and idempotent through the audit log.
         """
+        if isinstance(action, dict) and action.get('type') in (
+                'confirm_pending', 'cancel_pending'):
+            # Engine-native proposal (ai.agent.pending.action): the chip
+            # carries only the key; what runs is looked up server-side,
+            # for this user only. No conversation needed.
+            res = request.env['ai.agent.pending.action'].resolve(
+                action.get('key'), action['type'] == 'confirm_pending')
+            self._log_decision(conversation_id, action, res)
+            return {'success': bool(res.get('ok')),
+                    'error': '' if res.get('ok') else res.get('message'),
+                    'result': {'content': res.get('message') or '',
+                               'action': (res.get('result') or {}).get('action')}}
+
         Conv = request.env.get('ai.chat.conversation')
         if Conv is None:
             return {'success': False, 'error': 'confirmation_unavailable'}
@@ -354,6 +367,45 @@ class AIAgentController(http.Controller):
                     'error': _('That action could not be completed.')}
         return {'success': True, 'result': result or {}}
 
+    @staticmethod
+    def _log_decision(conversation_id, action, res):
+        """Record the click and its outcome in the shared conversation so
+        the history shows what actually happened (best effort)."""
+        Conv = request.env.get('ai.chat.conversation')
+        if Conv is None or not conversation_id:
+            return
+        try:
+            conv = Conv.browse(int(conversation_id)).exists()
+            if not conv:
+                return
+            conv.check_access('write')
+            Msg = request.env['ai.chat.message']
+            Msg.create({'conversation_id': conv.id, 'role': 'user',
+                        'content': (_('Confirmed') if action['type'] == 'confirm_pending'
+                                    else _('Cancelled'))})
+            Msg.create({'conversation_id': conv.id, 'role': 'assistant',
+                        'content': res.get('message') or ''})
+        except Exception:
+            _logger.info('Could not log AI confirmation decision', exc_info=True)
+
+    # ── Proactive screen insight ───────────────────────────────
+
+    @http.route('/ai_agent/screen/insight', type='json', auth='user',
+                methods=['POST'], readonly=True)
+    def screen_insight(self, screen=None, **_kw):
+        """Short tip for the screen the user just opened. No AI call.
+
+        Any failure is an empty tip: a proactive hint must never surface an
+        error on a screen the user opened for something else.
+        """
+        if not isinstance(screen, dict):
+            return {'lines': []}
+        try:
+            return request.env['ai.screen.context'].insight(screen)
+        except Exception:
+            _logger.info('screen insight failed', exc_info=True)
+            return {'lines': []}
+
     # ── Run ────────────────────────────────────────────────────
 
     @http.route('/ai_agent/run', type='json', auth='user', methods=['POST'])
@@ -370,6 +422,8 @@ class AIAgentController(http.Controller):
           record_id (int, optional)
           conversation_id (str, optional) — loose pointer to the chat conv
           locale (str, default 'en')
+          screen (dict, optional) — the aiScreenContext descriptor of the
+              page the user is on; re-validated server-side as the user
         """
         message = (kwargs.get('message') or '').strip()
         if not message and not kwargs.get('skill_code'):
@@ -432,6 +486,9 @@ class AIAgentController(http.Controller):
         on_event = _make_stream_emitter(request.env) \
             if kwargs.get('stream') else None
 
+        screen = kwargs.get('screen') if isinstance(kwargs.get('screen'), dict) else None
+        locale = (kwargs.get('locale') or '')[:2] or None
+
         Conv = request.env.get('ai.chat.conversation')
         surface = kwargs.get('surface') or 'chat'
         conv = None
@@ -461,8 +518,11 @@ class AIAgentController(http.Controller):
                 conv.sudo().agent_id = agent.id
             # Run goes through ai.chat.conversation → which delegates
             # to ab_ai_agent.runtime when the flag is ON (it is).
-            result = conv.sudo().with_user(request.env.user).send_message(
-                question, on_event=on_event)
+            # Screen + locale ride on the context: the conversation path
+            # (ab_ai_chatbot) forwards them to runtime.run.
+            result = conv.sudo().with_user(request.env.user).with_context(
+                ai_screen=screen, ai_locale=locale,
+            ).send_message(question, on_event=on_event)
             env_dict = result.get('envelope') or {}
             env_dict.update({
                 'success': True,
@@ -481,8 +541,9 @@ class AIAgentController(http.Controller):
             surface=surface,
             record_ref=record_ref,
             skill=skill or None,
-            locale=kwargs.get('locale') or 'en',
+            locale=locale or 'en',
             on_event=on_event,
+            screen=screen,
         )
         envelope['success'] = True
         envelope['run_id'] = run.id

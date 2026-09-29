@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_ghaima_ai" model="ir.ui.view">
+        <field name="name">res.config.settings.form.ghaima.ai</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app string="Ghaima AI" name="ab_ai_agent" groups="ab_ai_agent.group_ai_agent_manager">
+                    <block title="Assistant" name="ghaima_ai_assistant">
+                        <setting string="Floating assistant"
+                                 help="Ghaima AI button on every screen; it knows which screen the user is on.">
+                            <field name="ai_assistant_enabled"/>
+                        </setting>
+                        <setting string="Proactive tips"
+                                 help="One or two lines from live data when a screen opens. Users can turn this off.">
+                            <field name="ai_proactive_enabled"/>
+                            <div class="mt-2" invisible="not ai_proactive_enabled">
+                                <label for="ai_insight_cache_seconds" class="o_light_label"/>
+                                <field name="ai_insight_cache_seconds" class="oe_inline"/>
+                            </div>
+                        </setting>
+                    </block>
+                    <block title="Voice" name="ghaima_ai_voice">
+                        <setting string="Voice" help="Push-to-talk microphone and Listen button. The microphone never turns on by itself.">
+                            <field name="ai_voice_enabled"/>
+                        </setting>
+                        <setting string="Speech to text" invisible="not ai_voice_enabled">
+                            <field name="ai_stt_provider" widget="radio"/>
+                        </setting>
+                        <setting string="Text to speech" invisible="not ai_voice_enabled">
+                            <field name="ai_tts_provider" widget="radio"/>
+                        </setting>
+                    </block>
+                </app>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="res_users_view_form_preferences_ghaima_ai" model="ir.ui.view">
+        <field name="name">res.users.preferences.ghaima.ai</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form_simple_modif"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='preferences']" position="after">
+                <group string="Ghaima AI" name="ghaima_ai">
+                    <field name="ai_proactive_mode" readonly="0" widget="radio"/>
+                    <field name="ai_voice_autoplay" readonly="0"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

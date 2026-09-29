@@ -199,12 +199,15 @@ class AIUsageLocalLog(models.Model):
         """Compact totals for the cost-center widget. Bypasses ORM
         for cheap aggregates — used by the live meter chip too."""
         cr = self.env.cr
+        # Range predicates on the raw column (sargable — the timestamp
+        # index is usable; DATE()/DATE_TRUNC() on it forced a scan).
+        # `timestamp` is stored as naive UTC.
         if period == 'today':
-            where = "DATE(timestamp AT TIME ZONE 'UTC') = (CURRENT_DATE AT TIME ZONE 'UTC')"
+            where = "timestamp >= date_trunc('day', NOW() AT TIME ZONE 'UTC')"
         elif period == 'week':
             where = "timestamp >= (NOW() AT TIME ZONE 'UTC') - INTERVAL '7 days'"
         elif period == 'month':
-            where = "DATE_TRUNC('month', timestamp AT TIME ZONE 'UTC') = DATE_TRUNC('month', (NOW() AT TIME ZONE 'UTC'))"
+            where = "timestamp >= date_trunc('month', NOW() AT TIME ZONE 'UTC')"
         else:
             where = "TRUE"
         cr.execute(f"""

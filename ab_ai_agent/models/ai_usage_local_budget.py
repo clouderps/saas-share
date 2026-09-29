@@ -78,11 +78,18 @@ class AIUsageLocalBudget(models.Model):
                 domain.append(('surface', '=', b.surface))
             today = fields.Date.context_today(b)
             month_start = today.replace(day=1)
+            # sudo: a budget caps the whole scope (company / agent /
+            # surface), so it must count every user's spend, not just
+            # the rows the current user may read. Aggregated in SQL —
+            # this runs before every AI turn and used to load a month
+            # of log rows into Python.
             Log = b.env['ai.usage.local.log'].sudo()
-            day_rows = Log.search(domain + [('timestamp', '>=', str(today))])
-            month_rows = Log.search(domain + [('timestamp', '>=', str(month_start))])
-            b.used_today_sar = sum(day_rows.mapped('est_cost_billable'))
-            b.used_month_sar = sum(month_rows.mapped('est_cost_billable'))
+            b.used_today_sar = Log._read_group(
+                domain + [('timestamp', '>=', str(today))],
+                aggregates=['est_cost_billable:sum'])[0][0] or 0.0
+            b.used_month_sar = Log._read_group(
+                domain + [('timestamp', '>=', str(month_start))],
+                aggregates=['est_cost_billable:sum'])[0][0] or 0.0
 
     def _compute_remaining(self):
         for b in self:

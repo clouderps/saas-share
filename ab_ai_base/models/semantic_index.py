@@ -32,12 +32,15 @@ context blocks (4–9 k tokens per hot turn) behind feature flags.
 from __future__ import annotations
 
 import logging
+import re
 
 from odoo import api, models
 
 from ..services import embeddings as _embed
 
 _logger = logging.getLogger(__name__)
+
+_IDENT = re.compile(r'^[a-z_][a-z0-9_]{0,62}$')
 
 
 class AISemanticIndex(models.AbstractModel):
@@ -148,7 +151,16 @@ class AISemanticIndex(models.AbstractModel):
         """
         if not query or not query.strip():
             return []
+        # Column names are interpolated into SQL below; accept only
+        # plain identifiers that are real columns of the model.
         Model = self.env.get(model_name)
+        if Model is not None:
+            bad = [c for c in [vector_col, *(hint_fields or [])]
+                   if not isinstance(c, str) or not _IDENT.match(c)
+                   or (c != vector_col and c not in Model._fields)]
+            if bad:
+                _logger.warning('semantic_index.search: rejected columns %s', bad)
+                return []
         if Model is None:
             _logger.warning('semantic_index.search: unknown model %s', model_name)
             return []

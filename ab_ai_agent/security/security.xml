@@ -78,4 +78,14 @@
         <field name="perm_create" eval="True"/>
         <field name="perm_unlink" eval="True"/>
     </record>
+
+    <!-- Proposed AI actions: strictly the proposer's own. No manager
+         widening — a proposal is only ever decided by the user who was
+         shown it. -->
+    <record id="rule_pending_action_own" model="ir.rule">
+        <field name="name">AI proposed action: own rows only</field>
+        <field name="model_id" ref="model_ai_agent_pending_action"/>
+        <field name="domain_force">[('user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('group_ai_agent_user'))]"/>
+    </record>
 </odoo>

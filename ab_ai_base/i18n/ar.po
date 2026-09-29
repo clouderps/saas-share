@@ -1,15 +1,13 @@
-# Arabic (Saudi Arabia) translation for ab_ai_base.
-# This file contains the translation of the following modules:
-# 	* ab_ai_base
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 18.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-04 11:53+0000\n"
-"PO-Revision-Date: 2026-04-04 11:53+0000\n"
+"POT-Creation-Date: 2026-09-29 08:59+0000\n"
+"PO-Revision-Date: 2026-09-29 08:59+0000\n"
 "Last-Translator: \n"
-"Language-Team: Arabic (Saudi Arabia)\n"
+"Language-Team: \n"
+"Language: ar\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
@@ -34,6 +32,12 @@ msgstr "<strong>إعداد النموذج اللغوي المحلي</strong>"
 #: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
 msgid "<strong>OpenAI Configuration</strong>"
 msgstr "<strong>إعداد OpenAI</strong>"
+
+#. module: ab_ai_base
+#. odoo-python
+#: code:addons/ab_ai_base/models/ai_config.py:0
+msgid "A config cannot be its own fallback."
+msgstr "لا يمكن أن تكون التهيئة بديلًا احتياطيًا لنفسها."
 
 #. module: ab_ai_base
 #: model:ir.ui.menu,name:ab_ai_base.menu_ai_config_root
@@ -108,6 +112,11 @@ msgid "Anthropic API Key"
 msgstr "مفتاح Anthropic API"
 
 #. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__claude_api_key_encrypted
+msgid "Anthropic API Key (encrypted)"
+msgstr "مفتاح Anthropic API (مشفّر)"
+
+#. module: ab_ai_base
 #. odoo-python
 #: code:addons/ab_ai_base/models/ai_config.py:0
 msgid "Anthropic API Key is required when using Claude provider"
@@ -158,6 +167,12 @@ msgstr "خطأ في Claude API: %s"
 #: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__claude_model
 msgid "Claude Model"
 msgstr "نموذج Claude"
+
+#. module: ab_ai_base
+#. odoo-python
+#: code:addons/ab_ai_base/models/ai_service.py:0
+msgid "Claude Vision Error: %s"
+msgstr "خطأ في Claude Vision: %s"
 
 #. module: ab_ai_base
 #: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__company_id
@@ -223,6 +238,86 @@ msgid "Display Name"
 msgstr "الاسم المعروض"
 
 #. module: ab_ai_base
+#. odoo-python
+#: code:addons/ab_ai_base/models/ai_service.py:0
+msgid "Embedding batch too large (max 100 per call)."
+msgstr "دفعة التضمين كبيرة جدًا (الحد الأقصى 100 لكل استدعاء)."
+
+#. module: ab_ai_base
+#. odoo-python
+#: code:addons/ab_ai_base/models/ai_service.py:0
+msgid ""
+"Embedding not implemented for provider '%s'. Switch to Google (gemini text-"
+"embedding-004) or add a wrapper."
+msgstr ""
+"التضمين غير مدعوم للمزوّد '%s'. انتقل إلى Google (gemini text-embedding-004)"
+" أو أضف مغلّفًا."
+
+#. module: ab_ai_base
+#: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
+msgid "Engaged on transport / 5xx from the primary. One-hop chain only."
+msgstr ""
+"يُفعَّل عند حدوث خطأ في الاتصال أو خطأ 5xx من المزوّد الأساسي. سلسلة بقفزة "
+"واحدة فقط."
+
+#. module: ab_ai_base
+#: model:ir.model.fields,help:ab_ai_base.field_ai_provider_config__fallback_provider_id
+msgid ""
+"Engaged once if the primary provider returns a transport error or 5xx. Both "
+"attempts are audited as separate ai.usage.log rows linked via parent_log_id."
+msgstr ""
+"يُفعَّل مرة واحدة إذا أعاد المزوّد الأساسي خطأ اتصال أو 5xx. تُسجَّل كلتا "
+"المحاولتين في التدقيق كسجلين منفصلين في ai.usage.log مرتبطين عبر "
+"parent_log_id."
+
+#. module: ab_ai_base
+#. odoo-python
+#: code:addons/ab_ai_base/lib/fernet.py:0
+msgid ""
+"Failed to decrypt an AI provider API key. The encryption key may have been "
+"rotated without re-encrypting stored secrets. Re-enter the affected provider"
+" key."
+msgstr ""
+"تعذّر فك تشفير مفتاح API لمزوّد الذكاء الاصطناعي. ربما تم تدوير مفتاح "
+"التشفير دون إعادة تشفير الأسرار المخزنة. أعد إدخال مفتاح المزوّد المتأثر."
+
+#. module: ab_ai_base
+#. odoo-python
+#: code:addons/ab_ai_base/models/ai_config.py:0
+msgid ""
+"Fallback chains are limited to one hop. %s already has its own fallback "
+"configured."
+msgstr ""
+"سلاسل البدائل الاحتياطية محدودة بقفزة واحدة. %s لديه بالفعل بديل احتياطي "
+"مهيأ."
+
+#. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__fallback_provider_id
+msgid "Fallback provider"
+msgstr "المزود الاحتياطي"
+
+#. module: ab_ai_base
+#: model:ir.model.fields,help:ab_ai_base.field_ai_provider_config__claude_api_key_encrypted
+msgid ""
+"Fernet-encrypted Anthropic key. Decrypted only when calling the provider."
+msgstr ""
+"مفتاح Anthropic مشفّر بـ Fernet. لا يُفك تشفيره إلا عند استدعاء المزوّد."
+
+#. module: ab_ai_base
+#: model:ir.model.fields,help:ab_ai_base.field_ai_provider_config__gemini_api_key_encrypted
+msgid ""
+"Fernet-encrypted Google AI key. Decrypted only when calling the provider."
+msgstr ""
+"مفتاح Google AI مشفّر بـ Fernet. لا يُفك تشفيره إلا عند استدعاء المزوّد."
+
+#. module: ab_ai_base
+#: model:ir.model.fields,help:ab_ai_base.field_ai_provider_config__openai_api_key_encrypted
+msgid ""
+"Fernet-encrypted OpenAI API key. Decrypted only when calling the provider."
+msgstr ""
+"مفتاح OpenAI API مشفّر بـ Fernet. لا يُفك تشفيره إلا عند استدعاء المزوّد."
+
+#. module: ab_ai_base
 #: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__openai_model__gpt-3_5-turbo
 msgid "GPT-3.5 Turbo"
 msgstr "GPT-3.5 Turbo"
@@ -248,19 +343,19 @@ msgid "GPT-4o Mini"
 msgstr "GPT-4o Mini"
 
 #. module: ab_ai_base
-#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__gemini_model__gemini-1_5-flash
-msgid "Gemini 1.5 Flash"
-msgstr "Gemini 1.5 Flash"
+#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__gemini_model__gemini-2_5-flash
+msgid "Gemini 2.5 Flash"
+msgstr "Gemini 2.5 Flash"
 
 #. module: ab_ai_base
-#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__gemini_model__gemini-1_5-pro
-msgid "Gemini 1.5 Pro"
-msgstr "Gemini 1.5 Pro"
+#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__gemini_model__gemini-2_5-flash-lite
+msgid "Gemini 2.5 Flash Lite"
+msgstr "Gemini 2.5 Flash Lite"
 
 #. module: ab_ai_base
-#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__gemini_model__gemini-2_0-flash-exp
-msgid "Gemini 2.0 Flash (Experimental)"
-msgstr "Gemini 2.0 Flash (تجريبي)"
+#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__gemini_model__gemini-2_5-pro
+msgid "Gemini 2.5 Pro"
+msgstr "Gemini 2.5 Pro"
 
 #. module: ab_ai_base
 #. odoo-python
@@ -269,19 +364,30 @@ msgid "Gemini API Error: %s"
 msgstr "خطأ في Gemini API: %s"
 
 #. module: ab_ai_base
+#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__gemini_model__gemini-flash-latest
+msgid "Gemini Flash (latest)"
+msgstr "Gemini Flash (الأحدث)"
+
+#. module: ab_ai_base
 #: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__gemini_model
 msgid "Gemini Model"
 msgstr "نموذج Gemini"
 
 #. module: ab_ai_base
-#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__gemini_model__gemini-pro
-msgid "Gemini Pro"
-msgstr "Gemini Pro"
+#. odoo-python
+#: code:addons/ab_ai_base/models/ai_service.py:0
+msgid "Gemini Vision Error: %s"
+msgstr "خطأ في Gemini Vision: %s"
 
 #. module: ab_ai_base
 #: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
 msgid "Generation Settings"
 msgstr "إعدادات التوليد"
+
+#. module: ab_ai_base
+#: model:ir.model,name:ab_ai_base.model_ai_semantic_index
+msgid "Generic semantic search over any model with an embedding column"
+msgstr "بحث دلالي عام في أي نموذج يحتوي على عمود تضمين"
 
 #. module: ab_ai_base
 #: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
@@ -292,6 +398,11 @@ msgstr "احصل على مفتاح الواجهة البرمجية الخاص ب
 #: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__gemini_api_key
 msgid "Google AI API Key"
 msgstr "مفتاح Google AI API"
+
+#. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__gemini_api_key_encrypted
+msgid "Google AI API Key (encrypted)"
+msgstr "مفتاح Google AI API (مشفّر)"
 
 #. module: ab_ai_base
 #. odoo-python
@@ -310,6 +421,21 @@ msgid "Google Gemini Settings"
 msgstr "إعدادات Google Gemini"
 
 #. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__has_claude_key
+msgid "Has Claude Key"
+msgstr "يوجد مفتاح Claude"
+
+#. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__has_gemini_key
+msgid "Has Gemini Key"
+msgstr "يوجد مفتاح Gemini"
+
+#. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__has_openai_key
+msgid "Has Openai Key"
+msgstr "يوجد مفتاح OpenAI"
+
+#. module: ab_ai_base
 #: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__id
 msgid "ID"
 msgstr "المعرّف"
@@ -318,6 +444,11 @@ msgstr "المعرّف"
 #: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
 msgid "Install Ollama from:"
 msgstr "ثبّت Ollama من:"
+
+#. module: ab_ai_base
+#: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
+msgid "Key stored (encrypted)"
+msgstr "المفتاح مخزّن (مشفّر)"
 
 #. module: ab_ai_base
 #: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__write_uid
@@ -394,6 +525,12 @@ msgstr ""
 "الاصطناعي أولاً."
 
 #. module: ab_ai_base
+#. odoo-python
+#: code:addons/ab_ai_base/models/ai_service.py:0
+msgid "Nothing to read."
+msgstr "لا يوجد ما يُقرأ."
+
+#. module: ab_ai_base
 #: model:ir.model.fields,help:ab_ai_base.field_ai_provider_config__local_llm_endpoint
 msgid "Ollama or other local LLM endpoint"
 msgstr "نقطة نهاية Ollama أو نموذج لغوي محلي آخر"
@@ -415,6 +552,11 @@ msgid "OpenAI API Key"
 msgstr "مفتاح OpenAI API"
 
 #. module: ab_ai_base
+#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__openai_api_key_encrypted
+msgid "OpenAI API Key (encrypted)"
+msgstr "مفتاح OpenAI API (مشفّر)"
+
+#. module: ab_ai_base
 #. odoo-python
 #: code:addons/ab_ai_base/models/ai_config.py:0
 msgid "OpenAI API Key is required when using OpenAI provider"
@@ -429,6 +571,18 @@ msgstr "نموذج OpenAI"
 #: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
 msgid "OpenAI Settings"
 msgstr "إعدادات OpenAI"
+
+#. module: ab_ai_base
+#. odoo-python
+#: code:addons/ab_ai_base/models/ai_service.py:0
+msgid "OpenAI Tools Error: %s"
+msgstr "خطأ في أدوات OpenAI: %s"
+
+#. module: ab_ai_base
+#. odoo-python
+#: code:addons/ab_ai_base/models/ai_service.py:0
+msgid "OpenAI Vision Error: %s"
+msgstr "خطأ في OpenAI Vision: %s"
 
 #. module: ab_ai_base
 #: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__timeout
@@ -451,6 +605,18 @@ msgstr ""
 "الوحدات."
 
 #. module: ab_ai_base
+#. odoo-python
+#: code:addons/ab_ai_base/models/ai_service.py:0
+msgid "Speech recognition failed. Please try again."
+msgstr "فشل التعرف على الكلام. يرجى المحاولة مرة أخرى."
+
+#. module: ab_ai_base
+#. odoo-python
+#: code:addons/ab_ai_base/models/ai_service.py:0
+msgid "Speech recognition is not available for this AI provider."
+msgstr "التعرف على الكلام غير متاح لمزوّد الذكاء الاصطناعي هذا."
+
+#. module: ab_ai_base
 #: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
 msgid "System Prompt"
 msgstr "موجه النظام"
@@ -464,6 +630,12 @@ msgstr "درجة الحرارة "
 #: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
 msgid "Test Connection"
 msgstr "اختبار الاتصال"
+
+#. module: ab_ai_base
+#. odoo-python
+#: code:addons/ab_ai_base/models/ai_service.py:0
+msgid "The recording is empty or too long."
+msgstr "التسجيل فارغ أو طويل جدًا."
 
 #. module: ab_ai_base
 #: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__total_requests
@@ -482,6 +654,12 @@ msgid "Unsupported AI provider: %s"
 msgstr "مزوّد ذكاء اصطناعي غير مدعوم: %s"
 
 #. module: ab_ai_base
+#. odoo-python
+#: code:addons/ab_ai_base/models/ai_service.py:0
+msgid "Unsupported audio format."
+msgstr "صيغة الصوت غير مدعومة."
+
+#. module: ab_ai_base
 #: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
 msgid "Usage Statistics"
 msgstr "إحصائيات الاستخدام"
@@ -492,20 +670,65 @@ msgid "User"
 msgstr "المستخدم"
 
 #. module: ab_ai_base
+#. odoo-python
+#: code:addons/ab_ai_base/models/ai_service.py:0
+msgid "Voice output failed. Please try again."
+msgstr "فشل الإخراج الصوتي. يرجى المحاولة مرة أخرى."
+
+#. module: ab_ai_base
+#. odoo-python
+#: code:addons/ab_ai_base/models/ai_service.py:0
+msgid "Voice output is not available for this AI provider."
+msgstr "الإخراج الصوتي غير متاح لمزوّد الذكاء الاصطناعي هذا."
+
+#. module: ab_ai_base
+#. odoo-python
+#: code:addons/ab_ai_base/models/ai_service.py:0
+msgid "Voice output is not available in simulation mode."
+msgstr "الإخراج الصوتي غير متاح في وضع المحاكاة."
+
+#. module: ab_ai_base
+#. odoo-python
+#: code:addons/ab_ai_base/models/ai_service.py:0
+msgid "Voice output is not configured."
+msgstr "الإخراج الصوتي غير مهيأ."
+
+#. module: ab_ai_base
 #: model:ir.model.fields,help:ab_ai_base.field_ai_provider_config__claude_api_key
-msgid "Your Anthropic API key from https://console.anthropic.com/"
-msgstr "مفتاح Anthropic API الخاص بك من https://console.anthropic.com/"
+msgid ""
+"Your Anthropic API key from https://console.anthropic.com/. Stored encrypted"
+" — leave empty to keep the existing key."
+msgstr ""
+"مفتاح Anthropic API الخاص بك من https://console.anthropic.com/. يُخزَّن "
+"مشفّرًا — اتركه فارغًا للإبقاء على المفتاح الحالي."
 
 #. module: ab_ai_base
 #: model:ir.model.fields,help:ab_ai_base.field_ai_provider_config__gemini_api_key
-msgid "Your Google AI API key from https://makersuite.google.com/app/apikey"
+msgid ""
+"Your Google AI API key from https://makersuite.google.com/app/apikey. Stored"
+" encrypted — leave empty to keep the existing key."
 msgstr ""
-"مفتاح Google AI API الخاص بك من https://makersuite.google.com/app/apikey"
+"مفتاح Google AI API الخاص بك من https://makersuite.google.com/app/apikey. "
+"يُخزَّن مشفّرًا — اتركه فارغًا للإبقاء على المفتاح الحالي."
 
 #. module: ab_ai_base
 #: model:ir.model.fields,help:ab_ai_base.field_ai_provider_config__openai_api_key
-msgid "Your OpenAI API key from https://platform.openai.com/api-keys"
-msgstr "مفتاح OpenAI API الخاص بك من https://platform.openai.com/api-keys"
+msgid ""
+"Your OpenAI API key from https://platform.openai.com/api-keys. Stored "
+"encrypted — leave empty to keep the existing key."
+msgstr ""
+"مفتاح OpenAI API الخاص بك من https://platform.openai.com/api-keys. يُخزَّن "
+"مشفّرًا — اتركه فارغًا للإبقاء على المفتاح الحالي."
+
+#. module: ab_ai_base
+#. odoo-python
+#: code:addons/ab_ai_base/lib/fernet.py:0
+msgid ""
+"cryptography library is not installed. Run:\n"
+"    pip install cryptography"
+msgstr ""
+"مكتبة cryptography غير مثبتة. نفّذ:\n"
+"    pip install cryptography"
 
 #. module: ab_ai_base
 #: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
@@ -551,28 +774,3 @@ msgstr "sk-..."
 #: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
 msgid "sk-ant-..."
 msgstr "sk-ant-..."
-
-#. module: ab_ai_base
-#: model:ir.model.fields,field_description:ab_ai_base.field_ai_provider_config__fallback_provider_id
-msgid "Fallback provider"
-msgstr "المزود الاحتياطي"
-
-#. module: ab_ai_base
-#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__gemini_model__gemini-2_5-flash
-msgid "Gemini 2.5 Flash"
-msgstr "Gemini 2.5 Flash"
-
-#. module: ab_ai_base
-#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__gemini_model__gemini-2_5-pro
-msgid "Gemini 2.5 Pro"
-msgstr "Gemini 2.5 Pro"
-
-#. module: ab_ai_base
-#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__gemini_model__gemini-2_5-flash-lite
-msgid "Gemini 2.5 Flash Lite"
-msgstr "Gemini 2.5 Flash Lite"
-
-#. module: ab_ai_base
-#: model:ir.model.fields.selection,name:ab_ai_base.selection__ai_provider_config__gemini_model__gemini-flash-latest
-msgid "Gemini Flash (latest)"
-msgstr "Gemini Flash (الأحدث)"

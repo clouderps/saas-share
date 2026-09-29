@@ -6,3 +6,8 @@ from . import ai_agent_run
 from . import ai_usage_local_log
 from . import ai_usage_price_book
 from . import ai_usage_local_budget
+from . import ai_agent_pending_action
+from . import ai_screen_context
+from . import res_users
+from . import res_config_settings
+from . import ir_http

@@ -63,7 +63,7 @@ export const aiAgentService = {
 
         // ── Run ─────────────────────────────────────────────────
         async function runAgent({ message, agent, skill, surface, record, locale,
-                                 conversationId, stream } = {}) {
+                                 conversationId, stream, screen } = {}) {
             agent = agent || state.activeAgent;
             const payload = {
                 message: message || "",
@@ -76,6 +76,9 @@ export const aiAgentService = {
                 conversation_id: conversationId || "",
                 stream: !!stream,
                 locale: locale || (user.lang || "en").slice(0, 2),
+                // What the user is looking at (aiScreenContext.snapshot()).
+                // Re-validated server-side; omitted when not screen-aware.
+                screen: screen || undefined,
             };
             const res = await rpc("/ai_agent/run", payload);
             if (!res?.success) {
@@ -214,24 +217,33 @@ export const aiAgentService = {
             }
         }
 
-        // Subscribe to live-meter bus pushes (per-company channel —
-        // chip stays current even when a cron the user didn't trigger
-        // bills the company).
-        try {
-            const channel = `ai.usage.live.${env.services?.company?.currentCompany?.id || ""}`;
-            bus_service.subscribe(channel, (payload) => {
-                if (!payload) return;
-                state.meter.today = {
-                    ...state.meter.today,
-                    tokens: payload.tokens || state.meter.today.tokens,
-                    cost_sar: payload.cost_sar || state.meter.today.cost_sar,
-                    cost_usd: payload.cost_usd || state.meter.today.cost_usd,
-                    calls: payload.calls || state.meter.today.calls,
-                    cache_hits: payload.cache_hits || state.meter.today.cache_hits,
-                };
-            });
-        } catch (e) {
-            // bus_service might not be ready in all surfaces — non-fatal.
+        // Live meter bus pushes. The server sends type `ai.usage.live`
+        // on the per-company channel `ai.usage.live.<company>` (see
+        // services/meter.py) — so subscribe to the TYPE and join the
+        // CHANNEL. (It used to subscribe to the channel name as a type
+        // and never join, so the chip never moved.) Joined lazily in
+        // ensureLoaded(): a page that never opens the assistant pays
+        // nothing.
+        function subscribeMeter() {
+            try {
+                const cid = env.services?.company?.currentCompany?.id;
+                if (cid) {
+                    bus_service.addChannel(`ai.usage.live.${cid}`);
+                }
+                bus_service.subscribe("ai.usage.live", (payload) => {
+                    if (!payload) return;
+                    state.meter.today = {
+                        ...state.meter.today,
+                        tokens: payload.tokens || state.meter.today.tokens,
+                        cost_sar: payload.cost_sar || state.meter.today.cost_sar,
+                        cost_usd: payload.cost_usd || state.meter.today.cost_usd,
+                        calls: payload.calls || state.meter.today.calls,
+                        cache_hits: payload.cache_hits || state.meter.today.cache_hits,
+                    };
+                });
+            } catch (e) {
+                // bus_service might not be ready in all surfaces — non-fatal.
+            }
         }
 
         // Live run progress. The server emits on each hop and each tool
@@ -258,12 +270,23 @@ export const aiAgentService = {
             // without the running commentary.
         }
 
-        // Initial bootstrap.
-        refreshAgents();
-        refreshMeter();
+        // Lazy bootstrap. This service is registered on every backend
+        // page, but most page loads never open the assistant; loading
+        // the agent list + meter at boot cost two RPCs and a bus join
+        // on every navigation for nothing. Components that need them
+        // await ensureLoaded() in onWillStart; the promise is shared.
+        let loaded = null;
+        function ensureLoaded() {
+            if (!loaded) {
+                subscribeMeter();
+                loaded = Promise.all([refreshAgents(), refreshMeter()]);
+            }
+            return loaded;
+        }
 
         return {
             state,
+            ensureLoaded,
             refreshAgents,
             setActiveAgent,
             runAgent,

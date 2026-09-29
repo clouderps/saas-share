@@ -2,6 +2,27 @@
 
 > Per-repo tracking log. Seeded 2026-05-31 from manifest inventory + last 90 days of `git log`. Append new entries on top as work lands.
 
+## 2026-09-29 — Ghaima AI: screen-aware assistant, confirm-first actions, voice
+
+Plan/report: `docs/ghaima-ai/IMPLEMENTATION_PLAN.md`, `IMPLEMENTATION_REPORT.md`.
+- `ab_ai_agent` 18.0.1.11.0: Screen Context Engine (`ai.screen.context` +
+  `aiScreenContext` service; browser descriptor re-validated as the user);
+  proactive insight `/ai_agent/screen/insight` (no LLM, cached); last 6 turns
+  now reach the model; `ai.agent.pending.action` — every assistant state change
+  is propose → user clicks Confirm (record_action converted, new `screen_button`
+  + auto-attached `screen_assistant` topic); voice adapters (`voice.js`,
+  push-to-talk, browser/server STT+TTS, Listen button, autoplay opt-in) +
+  `/ai_agent/voice/*`; Settings → Ghaima AI + user preferences; lazy service
+  boot (0 RPCs per page load).
+- Security: `open_action` honours action groups; HR tools need HR roles and run
+  as the user; `semantic_search` no longer bypasses record rules or accepts
+  model-chosen SQL column names; `_ai_*` args stripped from model calls; no raw
+  RPC errors in chat.
+- `ab_ai_base` 18.0.1.4.0: `call_transcription` / `call_speech` (OpenAI,
+  Gemini, gateway); Anthropic prompt cache now split at `CACHE_BREAK` so the
+  stable prefix caches across turns; semantic index rejects non-identifier
+  columns.
+
 ## 2026-09-28 — ab_error_help
 
 - New `ab_error_help` (18.0.1.0.0, depends `web`): `HelpUserError`,

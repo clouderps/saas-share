@@ -21,6 +21,7 @@ import re
 import time
 
 from odoo import fields
+from odoo.addons.ab_ai_base.models.ai_service import CACHE_BREAK
 
 from . import llm_adapter
 from . import meter as meter_svc
@@ -32,6 +33,7 @@ _logger = logging.getLogger(__name__)
 
 def run(env, *, agent, user_question, conversation=None, surface='chat',
         record_ref=None, skill=None, locale='en', max_hops=None,
+        screen=None, history=None,
         on_event=None, source_lookup=None):
     """Execute one agent run.
 
@@ -89,7 +91,16 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
     # Retrieve org knowledge ONCE here so it's both injected and
     # captured on the audit row (monitor) without a double RAG hit.
     kb_block = _org_knowledge_block(env, user_question)
+    # Screen context: what the user is looking at, re-derived as the
+    # user (ai.screen.context never trusts the browser descriptor).
+    screen_block = ''
+    if screen:
+        try:
+            screen_block = env['ai.screen.context'].prompt_block(screen)
+        except Exception:
+            _logger.info('screen context failed', exc_info=True)
     system_prompt = _compose_system_prompt(env, agent, locale=locale, skill=skill,
+                                           screen_block=screen_block,
                                            record_ref=record_ref,
                                            user_question=user_question,
                                            org_knowledge=kb_block)
@@ -99,7 +110,12 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
     # ── 4. Hop loop ───────────────────────────────────────────
     hard_cap = min(agent.max_hops or 6, max_hops or 20)
     cost_cap = float(agent.max_cost_usd or 0)
-    transcript = [user_question]
+    # Recent turns of THIS conversation, so "open the first one" / "and
+    # last month?" resolve against what was just said. Goes in the user
+    # prompt, not the system prompt, so it never breaks prefix caching.
+    transcript = ([f'## Earlier in this conversation (oldest first)\n{history}\n\n'
+                   f'## Current message\n{user_question}']
+                  if history else [user_question])
     tool_calls_audit = []
     forced_tool_retry_used = False
     cum_cost = 0.0
@@ -108,6 +124,9 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
     final_provider = ''
     final_model = ''
     last_routed_via = ''
+    # Set when a write tool proposed a change: the run stops right there
+    # and the answer carries Confirm / Cancel chips (never executed here).
+    pending_confirmation = None
 
     for hop in range(hard_cap):
         prompt_for_llm = "\n\n".join(transcript)
@@ -238,6 +257,10 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
                 tool_calls_audit.append(tool_outcome)
                 consumed_calls.append((tool_record.code, tool_outcome.get('ok'),
                                        tool_outcome))
+                pending_confirmation = _proposal_of(tool_outcome)
+                if pending_confirmation:
+                    final_text = _confirmation_text(pending_confirmation, locale)
+                    break
                 # __end_message early termination — Odoo 19 native pattern.
                 if tool_outcome.get('ok') and tool_outcome.get('end_message'):
                     final_text = tool_outcome['end_message']
@@ -285,6 +308,11 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
             )
             tool_calls_audit.append(tool_outcome)
 
+            pending_confirmation = _proposal_of(tool_outcome)
+            if pending_confirmation:
+                final_text = _confirmation_text(pending_confirmation, locale)
+                break
+
             # __end_message early termination — Odoo 19 native pattern.
             if tool_outcome.get('ok') and tool_outcome.get('end_message'):
                 final_text = tool_outcome['end_message']
@@ -321,6 +349,7 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
         if (not forced_tool_retry_used
                 and not any(c.get('ok') for c in tool_calls_audit)
                 and not kb_block
+                and not screen_block      # screen facts ARE live data
                 and agent.all_tool_ids
                 and hop < hard_cap - 1
                 and _looks_like_data_question(user_question)):
@@ -413,6 +442,14 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
                 extracted_text = ' '.join(
                     s for _r, s in tool_renders if s)[:600]
 
+    if pending_confirmation:
+        chips = _confirmation_chips(pending_confirmation, locale)
+        if extracted_render:
+            extracted_render = dict(extracted_render)
+            extracted_render['blocks'] = list(extracted_render.get('blocks') or []) + [chips]
+        else:
+            extracted_render = {'layout': 'report', 'title': '', 'blocks': [chips]}
+
     # ── 6. Citations ──────────────────────────────────────────
     rendered_text, sources = citation_svc.apply_numeric_citations(
         extracted_text, source_lookup or {})
@@ -476,7 +513,7 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
     # ungrounded = pure-LLM answer (no tool, no KB) — most likely
     #              to be inaccurate; the monitor flags these red.
     _tool_ok = any(c.get('ok') for c in tool_calls_audit)
-    if _tool_ok or kb_block:
+    if _tool_ok or kb_block or screen_block:
         grounded = 'grounded'
     elif tool_calls_audit:
         grounded = 'partial'
@@ -517,9 +554,48 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
 
 # ───────────────────────── helpers ──────────────────────────
 
+def _proposal_of(tool_outcome):
+    """The confirmation payload when a tool PROPOSED a change, else None."""
+    if not (tool_outcome or {}).get('ok'):
+        return None
+    result = tool_outcome.get('result')
+    if isinstance(result, dict) and result.get('requires_confirmation'):
+        conf = result.get('confirmation') or {}
+        if conf.get('key'):
+            return conf
+    return None
+
+
+def _confirmation_text(conf, locale):
+    summary = conf.get('summary') or ''
+    if str(locale or '').startswith('ar'):
+        return (f'{summary}\n\nلم يتغير شيء بعد. اضغط **تأكيد** للتنفيذ '
+                f'أو **إلغاء** للتراجع.')
+    return (f'{summary}\n\nNothing has changed yet. Press **Confirm** to '
+            f'go ahead or **Cancel** to leave it as it is.')
+
+
+def _confirmation_chips(conf, locale):
+    """Confirm / Cancel chips. The chip carries only the proposal key;
+    the confirm endpoint looks the call up server-side, so nothing the
+    browser sends can change WHAT gets executed."""
+    arabic = str(locale or '').startswith('ar')
+    key = conf['key']
+    return {
+        'type': 'suggestion_chips',
+        'title': '',
+        'items': [
+            {'label': 'تأكيد' if arabic else 'Confirm', 'icon': 'fa-check',
+             'action': {'type': 'confirm_pending', 'key': key}},
+            {'label': 'إلغاء' if arabic else 'Cancel', 'icon': 'fa-times',
+             'action': {'type': 'cancel_pending', 'key': key}},
+        ],
+    }
+
+
 def _compose_system_prompt(env, agent, *, locale='en', skill=None,
                            record_ref=None, user_question=None,
-                           org_knowledge=None):
+                           org_knowledge=None, screen_block=''):
     """Compose the system prompt = persona + topics + date reference
     + live business snapshot + org knowledge (RAG) + user context
     + record context.
@@ -567,6 +643,11 @@ def _compose_system_prompt(env, agent, *, locale='en', skill=None,
     # by the minute. Anything appended below this line shortens the
     # cacheable prefix for everyone, so add with care.
 
+    # Boundary for providers with explicit cache markers (Anthropic):
+    # ab_ai_base splits here and caches only what comes before. Other
+    # providers strip it (they cache by prefix on their own).
+    parts.append(CACHE_BREAK)
+
     # Caller context — who is asking, from where. Stable per user, but
     # differs between users, so it cannot sit in the shared prefix.
     parts.append(_user_context_block(env))
@@ -585,9 +666,15 @@ def _compose_system_prompt(env, agent, *, locale='en', skill=None,
 
     # Live business snapshot — comprehensive counts + open items so
     # the agent can answer overview questions without a tool round-trip.
-    snapshot = _business_snapshot_block(env)
-    if snapshot:
-        parts.append(snapshot)
+    # Skipped when the question comes with a screen: the screen block is
+    # the relevant, smaller context, and the ~14 snapshot probes were the
+    # largest per-turn cost (docs/ghaima-ai/IMPLEMENTATION_PLAN.md §3.7).
+    if screen_block:
+        parts.append(screen_block)
+    else:
+        snapshot = _business_snapshot_block(env)
+        if snapshot:
+            parts.append(snapshot)
 
     # Organisation knowledge (RAG) — retrieved against THIS question, so
     # it is the most volatile block and goes last before record context.

@@ -1,6 +1,6 @@
 {
     'name': 'AI Agent Runtime',
-    'version': '18.0.1.10.0',
+    'version': '18.0.1.11.0',
     'category': 'AI/Agents',
     'summary': 'Cross-instance AI agent runtime — personas, tools, RAG, metering. '
                'Gateway-independent: works on tenants and central DBCLOUD alike.',
@@ -51,11 +51,14 @@ agents, accounting agents) layer on top via data XML + Python tools.
         'views/ai_usage_local_log_views.xml',
         'views/ai_usage_price_book_views.xml',
         'views/menu_views.xml',
+        'views/assistant_settings_views.xml',
     ],
     'assets': {
         'web.assets_backend': [
             'ab_ai_agent/static/src/scss/ai_agent.scss',
             'ab_ai_agent/static/src/services/ai_agent_service.js',
+            'ab_ai_agent/static/src/services/screen_context_service.js',
+            'ab_ai_agent/static/src/voice/voice.js',
             'ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js',
             'ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.xml',
             'ab_ai_agent/static/src/components/ai_agent_chip/ai_agent_chip.js',
