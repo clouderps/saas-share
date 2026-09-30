@@ -89,3 +89,26 @@ class TestAnswerShaping(TransactionCase):
         raw = '{"action": "final", "text": "كلها في حالة "أمر البيع" الآن."}'
         self.assertEqual(_parse_response(raw),
                          {'kind': 'final', 'text': 'كلها في حالة "أمر البيع" الآن.'})
+
+    def test_rows_from_a_tool_become_a_table(self):
+        from odoo.addons.ab_ai_agent.services.runtime import _auto_table
+        block = _auto_table({'customers': [{'id': 1, 'name': 'A', 'total': 10.5},
+                                           {'id': 2, 'name': 'B', 'total': 3.0}]})
+        self.assertEqual(block['headers'], ['Name', 'Total'])
+        self.assertEqual(block['rows'], [['A', '10.50'], ['B', '3.00']])
+        self.assertIsNone(_auto_table({'error': 'x', 'rows': [{'a': 1}]}))
+        self.assertIsNone(_auto_table({'message': 'ok'}))
+        block = _auto_table({'headers': ['Customer', 'Total'], 'rows': [['A', 12.5]]})
+        self.assertEqual(block['rows'], [['A', '12.50']])
+
+    def test_leftover_html_is_removed(self):
+        from odoo.addons.ab_ai_agent.services.runtime import _strip_control_tokens
+        out = _strip_control_tokens('<div dir="rtl"><p>أولاً</p><ul><li>أ</li><li>ب</li></ul>سطر<br>ثاني</div>')
+        self.assertNotIn('<', out)
+        self.assertIn('- أ', out)
+        self.assertIn('سطر\nثاني', out)
+
+    def test_plumbing_rows_are_never_tables(self):
+        from odoo.addons.ab_ai_agent.services.runtime import _auto_table
+        self.assertIsNone(_auto_table({'key_fields': [{'field': 'name', 'label': 'Name'}]}))
+        self.assertIsNone(_auto_table({'matches': [{'label': 'X', 'menu_id': 1, 'action_xmlid': 'a.b'}]}))

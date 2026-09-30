@@ -2,6 +2,19 @@
 
 > Per-repo tracking log. Seeded 2026-05-31 from manifest inventory + last 90 days of `git log`. Append new entries on top as work lands.
 
+## 2026-09-30 — Ghaima AI sprint 1: native tools, ask-the-data, evaluation
+
+- `ab_ai_base`: Gemini native function calling (functionDeclarations, schema
+  reduced to Gemini's subset, functionCall → tool_calls, finish_reason); key
+  sent as a header, not in the URL; native tools default ON.
+- `ab_ai_agent`: plain-answer prompt when native; empty/malformed replies are
+  retried; write tools the agent cannot run are not offered; new `query_data`
+  tool (any readable model: measures, group-by incl. date grains, filters,
+  period comparison; read_group as the user, validated, bounded); tool rows
+  become tables (never system tools); leftover HTML stripped.
+- Evaluation (assistant category, 10 AR/EN questions): 7/10 → 10/10 (3 runs),
+  5.3 s → 2.8 s average.
+
 ## 2026-09-30 — Ghaima AI: fixes from a live FAYIAPROD run
 
 - Replies no longer reach the user as raw JSON: tolerant parser (newlines and

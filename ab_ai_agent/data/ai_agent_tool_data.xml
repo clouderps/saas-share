@@ -101,6 +101,16 @@
             <field name="allow_end_message" eval="True"/>
         </record>
 
+        <record id="tool_query_data" model="ai.agent.tool">
+            <field name="name">Ask the data (any records the user can read)</field>
+            <field name="code">query_data</field>
+            <field name="category">retrieval</field>
+            <field name="description">Totals, counts, averages, rankings and trends over ANY business records the user can read, straight from the database. Use it for every "how many / how much / total / top / by / per / trend / compare" question: sales by customer, top products, invoices per month, leave days by department, this month vs last month. model = technical model or the user's words (defaults to the screen's model); measures like "amount_total:sum" (or "count"); group_by like "partner_id" or "date_order:month"; domain = Odoo filter on real fields; date_from/date_to as YYYY-MM-DD (use date_reference for "this month"); compare_previous=true compares with the previous period of the same length. Never compute numbers yourself.</field>
+            <field name="schema">{"type": "object", "properties": {"model": {"type": "string", "description": "Technical model, e.g. sale.order, account.move, pos.order, hr.leave; or the user's words"}, "measures": {"type": "array", "items": {"type": "string"}, "description": "e.g. [\"amount_total:sum\"], [\"count\"]"}, "group_by": {"type": "array", "items": {"type": "string"}, "description": "e.g. [\"partner_id\"] or [\"date_order:month\"]"}, "domain": {"type": "array", "items": {"type": "array", "items": {"type": "string"}}, "description": "Odoo domain, e.g. [[\"state\",\"=\",\"sale\"]]"}, "date_field": {"type": "string"}, "date_from": {"type": "string"}, "date_to": {"type": "string"}, "compare_previous": {"type": "boolean"}, "limit": {"type": "integer"}, "order": {"type": "string", "enum": ["desc", "asc"]}}, "required": []}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="is_write_action" eval="False"/>
+        </record>
+
         <!-- ── HR domain tools (gated by hr / hr.attendance presence) ── -->
 
         <record id="tool_hr_attendance_missing_today" model="ai.agent.tool">

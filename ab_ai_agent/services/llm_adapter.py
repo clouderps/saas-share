@@ -27,6 +27,27 @@ class AiProviderError(Exception):
     """
 
 
+NATIVE_TOOL_PROVIDERS = ('openai', 'anthropic', 'google')
+
+
+def native_tools_active(env):
+    """True when this turn's tool calls will travel as provider-native
+    function calls: the flag is on, no tenant gateway takes the call
+    (the gateway runs its own loop from tool codes), and the active
+    provider implements native tools. The prompt then asks for plain
+    answers instead of the JSON text protocol."""
+    icp = env['ir.config_parameter'].sudo()
+    if str(icp.get_param('ab_ai_agent.native_tools_enabled', 'True')).lower() not in ('1', 'true', 'yes'):
+        return False
+    if _try_get_gateway(env):
+        return False
+    Cfg = env.get('ai.provider.config')
+    if Cfg is None:
+        return False
+    cfg = Cfg.sudo().search([('active', '=', True)], limit=1)
+    return bool(cfg) and cfg.ai_provider in NATIVE_TOOL_PROVIDERS
+
+
 def _has_active_provider(env):
     """True iff a real provider config is active — i.e. a failure is an
     OUTAGE, not just an unconfigured dev box that should simulate."""

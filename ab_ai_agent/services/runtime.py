@@ -294,6 +294,16 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
             )
             continue
 
+        if not native_calls and not str(response or '').strip() and hop < hard_cap - 1:
+            # An empty reply (Gemini: a malformed function call, reported
+            # only as a finish reason) is not an answer — say so and let
+            # the model try again instead of ending with "no answer".
+            transcript.append(
+                'Your previous reply was empty or an invalid function call '
+                f'({usage.get("finish_reason") or "no content"}). Try again: call one '
+                'tool with valid arguments, or answer the user in plain text.')
+            continue
+
         parsed = _parse_response(response)
 
         if parsed.get('kind') == 'tool' and parsed.get('tool'):
@@ -448,7 +458,7 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
                 merged.extend(r.get('blocks') or [])
             extracted_render = {
                 'layout': 'report',
-                'title': 'Results',
+                'title': env._('Results'),
                 'blocks': merged,
             }
             if not extracted_text:
@@ -467,6 +477,18 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
             extracted_render['blocks'] = list(extracted_render.get('blocks') or []) + [question, chips]
         else:
             extracted_render = {'layout': 'report', 'title': '', 'blocks': [question, chips]}
+
+    # Tools that return plain rows (no render of their own) — the model
+    # then writes "as follows:" and the list never reaches the user.
+    # Show the rows of the last such result as a table.
+    if not extracted_render:
+        for call in reversed(tool_calls_audit):
+            if call.get('tool') in _META_TOOLS:
+                continue
+            table = _auto_table(call.get('result')) if call.get('ok') else None
+            if table:
+                extracted_render = {'layout': 'report', 'title': '', 'blocks': [table]}
+                break
 
     # ── 6. Citations ──────────────────────────────────────────
     rendered_text, sources = citation_svc.apply_numeric_citations(
@@ -665,8 +687,10 @@ def _compose_system_prompt(env, agent, *, locale='en', skill=None,
 
     # Tool protocol — the largest invariant block, so it earns its place
     # inside the cacheable prefix rather than after the volatile parts.
-    if agent.all_tool_ids:
-        parts.append(_tool_protocol_block(agent.all_tool_ids))
+    offered = _resolve_tools(env, agent)
+    if offered:
+        parts.append(_tool_protocol_block(offered,
+                                          native=llm_adapter.native_tools_active(env)))
 
     # ── VOLATILE SUFFIX ────────────────────────────────────────
     # From here on the content varies by user, by data, by question or
@@ -1207,9 +1231,28 @@ def _record_context_block(env, record):
     return '\n'.join(lines)
 
 
-def _tool_protocol_block(tools):
-    """JSON-action contract the LLM follows. Mirrors our existing
-    chatbot.services.agent_loop convention for compatibility."""
+def _tool_protocol_block(tools, native=False):
+    """How the model acts and answers.
+
+    native: tools arrive as provider function declarations, so the model
+    calls them natively and answers in plain markdown — no JSON protocol
+    for it to break. Otherwise the JSON-action text contract (mirrors the
+    chatbot.services.agent_loop convention)."""
+    if native:
+        lines = [
+            '## Tools',
+            'Use the provided functions to look things up or act; call as many '
+            'as the question needs. To change anything (confirm, post, validate, '
+            'cancel) call `screen_button` (or `record_action` for a document named '
+            'by its number): it shows the user Confirm / Cancel buttons — never ask '
+            'for confirmation in text. When you have the answer, reply to the user '
+            'in plain text (markdown allowed: short paragraphs, bullet lists, '
+            'tables). Never write JSON, code fences or tool names in the reply.',
+            'Available tools:',
+        ]
+        for tool in tools:
+            lines.append(f'- `{tool.code}` — {tool.description}')
+        return '\n'.join(lines)
     lines = [
         '## Tool protocol',
         'When you want to take an action, reply with EXACTLY one JSON object:',
@@ -1229,8 +1272,16 @@ def _tool_protocol_block(tools):
 
 
 def _resolve_tools(env, agent):
-    """Effective tool set for the agent, ACL-filtered for the current user."""
-    return agent.all_tool_ids.filtered(lambda t: t.is_invocable_by(env.user))
+    """Effective tool set for the agent, ACL-filtered for the current user.
+
+    Write tools the agent may not run are not offered at all: listing a
+    tool the dispatcher will refuse only teaches the model to call it
+    again and again (a native-tools run spent 12 steps on a blocked
+    confirm_sale_order while screen_button — confirm-first — was there).
+    """
+    return agent.all_tool_ids.filtered(
+        lambda t: t.is_invocable_by(env.user)
+        and (not t.is_write_action or agent.allow_write_actions))
 
 
 def _find_tool(tools, code):
@@ -1375,6 +1426,52 @@ def _absorb_action_markup(env, text):
 
 
 _BOLD_TAG = re.compile(r'</?(?:b|strong)>', re.IGNORECASE)
+_BR_TAG = re.compile(r'<br\s*/?>', re.IGNORECASE)
+_ANY_TAG = re.compile(r'</?(?:div|p|span|section|article|ul|ol|li|h[1-6]|font|em|i|u)\b[^>]*>', re.IGNORECASE)
+
+
+# Tools that describe the system rather than the business: their rows are
+# plumbing (field names, menu ids, xmlids) and must never be shown as a table.
+_META_TOOLS = frozenset({
+    'explain_screen', 'find_menu', 'list_my_apps', 'date_reference', 'echo',
+    'open_record', 'open_list', 'open_pivot', 'open_graph', 'open_action',
+    'screen_button', 'record_action', 'list_commands', 'run_command', 'semantic_search',
+})
+_PLUMBING_KEYS = frozenset({'field', 'xmlid', 'action_xmlid', 'menu_id', 'model', 'type'})
+
+
+def _auto_table(result, max_rows=25):
+    """data_table block from a tool result holding a list of row dicts."""
+    if isinstance(result, dict) and isinstance(result.get('rows'), list) \
+            and isinstance(result.get('headers'), list) and result['rows'] \
+            and isinstance(result['rows'][0], (list, tuple)):
+        # {"headers": [...], "rows": [[...], ...]} (fact-table tools)
+        return {'type': 'data_table', 'headers': [str(h) for h in result['headers']],
+                'rows': [['' if c in (None, False) else (f'{c:,.2f}' if isinstance(c, float) else str(c))
+                          for c in r] for r in result['rows'][:max_rows]]}
+    rows = None
+    if isinstance(result, list):
+        rows = result
+    elif isinstance(result, dict) and not result.get('error') and not result.get('render'):
+        rows = next((v for v in result.values()
+                     if isinstance(v, list) and v and isinstance(v[0], dict)), None)
+    if not rows or not isinstance(rows[0], dict):
+        return None
+    if _PLUMBING_KEYS & set(rows[0]):
+        return None
+    headers = [k for k in rows[0] if k not in ('id', 'res_id', 'model') and not k.startswith('_')][:8]
+    if not headers:
+        return None
+
+    def cell(v):
+        if isinstance(v, float):
+            return f'{v:,.2f}'
+        if isinstance(v, (list, tuple)) and len(v) == 2 and isinstance(v[0], int):
+            return str(v[1])                     # many2one pair
+        return '' if v in (None, False) else str(v)
+    return {'type': 'data_table',
+            'headers': [h.replace('_', ' ').capitalize() for h in headers],
+            'rows': [[cell(r.get(h)) for h in headers] for r in rows[:max_rows]]}
 _HTML_TABLE = re.compile(r'(?:<div[^>]*>\s*)?<table\b.*?</table>(?:\s*</div>)?', re.IGNORECASE | re.DOTALL)
 _MD_TABLE = re.compile(r'(?:^\s*\|.*\|\s*$\n?){3,}', re.MULTILINE)
 
@@ -1414,8 +1511,13 @@ def _strip_control_tokens(text):
     for token in _CONTROL_TOKENS:
         text = text.replace(token, '')
     # Answers render as markdown, so HTML bold arrives as literal "<b>":
-    # say it the markdown way.
+    # say it the markdown way; line breaks become newlines, and any other
+    # tag (<div dir="rtl">, <p>, <span>) is dropped — it could only ever
+    # be shown as text. Tables were lifted into blocks before this.
     text = _BOLD_TAG.sub('**', text)
+    text = _BR_TAG.sub('\n', text)
+    text = re.sub(r'<li\b[^>]*>', '\n- ', text, flags=re.IGNORECASE)
+    text = _ANY_TAG.sub('', text)
     # Collapse the whitespace the removal leaves behind, without
     # touching intentional paragraph breaks inside the answer.
     return '\n'.join(line.rstrip() for line in text.split('\n')).strip()

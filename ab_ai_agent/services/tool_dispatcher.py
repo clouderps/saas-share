@@ -1360,6 +1360,8 @@ register('date_reference', _builtin_date_reference)
 register('echo', _builtin_echo)
 register('record_action', _builtin_record_action)
 register('screen_button', _builtin_screen_button)
+from .query_data import query_data as _builtin_query_data  # noqa: E402
+register('query_data', _builtin_query_data)
 register('data_analysis', _builtin_data_analysis)
 register('recent_records', _builtin_recent_records)
 register('open_record', _builtin_open_record)

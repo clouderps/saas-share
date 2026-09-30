@@ -198,14 +198,16 @@ class AIProviderService(models.AbstractModel):
         native ``tools=`` slot instead of dumping JSON-schema into the
         system prompt body.
 
-        Default False — when off, ``tools`` passed to ``call()`` is
+        Default True (since 2026-09-30) — when off, ``tools`` passed to ``call()`` is
         ignored and the runtime's JSON-action text protocol continues
         to work because the schemas are still embedded in the prompt.
         When on, OpenAI / Anthropic receive the schemas natively and
         we parse ``tool_calls`` from the response — saves 600–1 200
         tokens / turn and unlocks parallel tool calls."""
         icp = self.env['ir.config_parameter'].sudo()
-        return str(icp.get_param('ab_ai_agent.native_tools_enabled', 'False')).lower() \
+        # Default ON since 2026-09-30: provider-native tool calls scored
+        # 10/10 vs 9/10 on the assistant evaluation, 2.7 s vs 3.1 s.
+        return str(icp.get_param('ab_ai_agent.native_tools_enabled', 'True')).lower() \
                 in ('1', 'true', 'yes')
 
     def _cache_min_tokens(self, provider):
@@ -699,9 +701,9 @@ class AIProviderService(models.AbstractModel):
         first step.)"""
         model = model_override or config.gemini_model
         try:
-            url = "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s" % (
-                model, config._get_decrypted_key('gemini_api_key')
-            )
+            # Key in a header, not the URL: request exceptions print the
+            # URL, and it was reaching the logs with the key in it.
+            url = "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent" % model
             generation_config = {
                 "temperature": config.temperature,
                 "maxOutputTokens": config.max_tokens,
@@ -718,15 +720,29 @@ class AIProviderService(models.AbstractModel):
             }
             if system_prompt:
                 payload["systemInstruction"] = {"parts": [{"text": system_prompt}]}
+            declarations = _tools_for_gemini(tools)
+            if declarations:
+                # Native function calling: the model answers a tool call as
+                # structured data instead of JSON typed into its text.
+                payload["tools"] = [{"functionDeclarations": declarations}]
+                payload["toolConfig"] = {"functionCallingConfig": {"mode": "AUTO"}}
             response = requests.post(
                 url,
-                headers={"Content-Type": "application/json"},
+                headers={"Content-Type": "application/json",
+                         "x-goog-api-key": config._get_decrypted_key('gemini_api_key')},
                 json=payload,
                 timeout=config.timeout,
             )
             response.raise_for_status()
             data = response.json()
-            text = data['candidates'][0]['content']['parts'][0]['text'].strip()
+            parts = ((data.get('candidates') or [{}])[0].get('content') or {}).get('parts') or []
+            text = ''.join(p.get('text', '') for p in parts if not p.get('thought')).strip()
+            tool_calls = [
+                {'name': p['functionCall'].get('name'),
+                 'arguments': p['functionCall'].get('args') or {},
+                 'id': f"gemini-{i}"}
+                for i, p in enumerate(parts) if p.get('functionCall')
+            ]
             api_usage = data.get('usageMetadata', {})
             # Whether Gemini caches our prefix is not something we can
             # infer — log exactly what it reports so the question is
@@ -745,10 +761,21 @@ class AIProviderService(models.AbstractModel):
                 'model': model,
                 'provider': 'google',
             }
+            if tool_calls:
+                usage['tool_calls'] = tool_calls
+            # e.g. MALFORMED_FUNCTION_CALL: no parts at all — the runtime
+            # uses this to ask again instead of giving up.
+            usage['finish_reason'] = ((data.get('candidates') or [{}])[0].get('finishReason') or '')
             return text, usage
         except requests.exceptions.RequestException as e:
-            _logger.error("Gemini API error: %s", e)
-            raise UserError(_('Gemini API Error: %s') % e)
+            detail = ''
+            if getattr(e, 'response', None) is not None:
+                try:
+                    detail = (e.response.json().get('error') or {}).get('message', '')[:300]
+                except Exception:
+                    detail = ''
+            _logger.error("Gemini API error: %s %s", type(e).__name__, detail)
+            raise UserError(_('Gemini API Error: %s') % (detail or type(e).__name__))
 
     def _call_claude(self, prompt, config, model_override=None,
                      system_prompt=None, tools=None):
@@ -1441,3 +1468,61 @@ def _parse_anthropic_tool_uses(blocks):
             'arguments': b.get('input') or {},
         })
     return out
+
+
+_GEMINI_SCHEMA_KEYS = {'type', 'description', 'properties', 'required', 'enum',
+                       'items', 'nullable', 'format'}
+
+
+def _gemini_schema(schema):
+    """JSON schema → the OpenAPI subset Gemini's functionDeclarations accept.
+
+    Unknown keys (additionalProperties, default, $schema, …) are rejected
+    by the API with a 400, so everything outside the subset is dropped;
+    union types ["string", "null"] become string + nullable.
+    """
+    if not isinstance(schema, dict):
+        return {'type': 'string'}
+    out = {}
+    t = schema.get('type')
+    if isinstance(t, list):
+        non_null = [x for x in t if x != 'null']
+        if 'null' in t:
+            out['nullable'] = True
+        t = non_null[0] if non_null else 'string'
+    if t:
+        out['type'] = t
+    for key in ('description', 'enum', 'format', 'nullable'):
+        if key in schema and key in _GEMINI_SCHEMA_KEYS:
+            out[key] = schema[key]
+    if t == 'object':
+        props = {k: _gemini_schema(v) for k, v in (schema.get('properties') or {}).items()}
+        if props:
+            out['properties'] = props
+            req = [r for r in (schema.get('required') or []) if r in props]
+            if req:
+                out['required'] = req
+        else:
+            # Gemini refuses an OBJECT without properties; a free-form
+            # object is passed as a JSON string instead.
+            out = {'type': 'string', 'description': (schema.get('description') or '')
+                   + ' (JSON object as a string)'}
+    if t == 'array':
+        out['items'] = _gemini_schema(schema.get('items') or {'type': 'string'})
+    return out
+
+
+def _tools_for_gemini(tools):
+    """Translate unified schemas → Gemini ``functionDeclarations``."""
+    out = []
+    for t in (tools or []):
+        name = t.get('name')
+        if not name:
+            continue
+        decl = {'name': name, 'description': (t.get('description') or '')[:1024]}
+        params = t.get('parameters') or {}
+        if (params.get('properties') or {}):
+            decl['parameters'] = _gemini_schema(params)
+        out.append(decl)
+    return out
+

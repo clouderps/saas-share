@@ -3565,3 +3565,57 @@ msgstr "خيارات المحادثة"
 #: code:addons/ab_ai_agent/static/src/voice/voice.js:0
 msgid "No voice is available for this language."
 msgstr "لا يتوفر صوت لهذه اللغة."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/query_data.py:0
+msgid "(none)"
+msgstr "(بدون)"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/query_data.py:0
+msgid "Count"
+msgstr "العدد"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/query_data.py:0
+msgid "average"
+msgstr "المتوسط"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/query_data.py:0
+msgid "maximum"
+msgstr "الأعلى"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/query_data.py:0
+msgid "minimum"
+msgstr "الأدنى"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/query_data.py:0
+msgid "total"
+msgstr "الإجمالي"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/runtime.py:0
+msgid "Results"
+msgstr "النتائج"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/query_data.py:0
+msgid "quarter"
+msgstr "ربع سنة"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/query_data.py:0
+msgid "year"
+msgstr "سنة"

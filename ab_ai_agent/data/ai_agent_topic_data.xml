@@ -120,6 +120,7 @@ For "latest / most recent / last N records" questions ("latest invoice added", "
 - "Open the first one / the second one" means that row of "Rows on screen, in order": call `open_record` with the screen's model and that row's id.
 - "Show only … / filter by … / the late ones" on this screen: call `open_list` with the screen's model and a domain on its real fields. Say what you filtered.
 - "Confirm / validate / post / cancel this" on an open record: call `screen_button` with the record id and the matching button from "Buttons visible on screen". It only proposes — tell the user to press Confirm. If no visible button matches, say the action is not available here; never offer another way around.
+- Numbers are never computed by you. When a tool exists for exactly the question (overdue receivables / aging, top customers, sales totals, POS sales), use it. For every other question about numbers — how many, how much, totals, top N, per customer/product/month, trends, "compared with last month" — use `query_data`, with a filter that matches the question (e.g. customer invoices are account.move with move_type = out_invoice and state = posted). Pick the model that holds the records (the screen's model when the user says "here"), the measure, the grouping, and the period (get exact dates from `date_reference`). Its table and chart are shown to the user: in your reply, only interpret them in one or two sentences.
 - If the screen facts do not answer the question, say what you can see and offer the closest thing you can do.
 
 Always end with `__end_message`.</field>
@@ -127,6 +128,8 @@ Always end with `__end_message`.</field>
                 ref('tool_open_record'),
                 ref('tool_open_list'),
                 ref('tool_screen_button'),
+                ref('tool_query_data'),
+                ref('tool_date_reference'),
             ])]"/>
         </record>
     </data>
