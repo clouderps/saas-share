@@ -101,6 +101,7 @@ export class AiAgentChat extends Component {
         this.aiAgent = useService("aiAgentService");
         this.screenContext = this.props.screenAware ? useService("aiScreenContext") : null;
         this.radialRef = useRef("radial");
+        this.headerRadialRef = useRef("headerRadial");
         this.notification = useService("notification");
         try {
             this.actionService = useService("action");
@@ -170,6 +171,8 @@ export class AiAgentChat extends Component {
         this.state.screenCardDismissed = false;
         this.state.radialOpen = false;
         this.state.radialHover = "";
+        this.state.headerRadialOpen = false;
+        this.state.headerRadialHover = "";
         if (this.screenContext) {
             const refresh = () => this._refreshScreenCard();
             this.screenContext.bus.addEventListener("change", refresh);
@@ -184,6 +187,9 @@ export class AiAgentChat extends Component {
         const closeRadial = (ev) => {
             if (this.state.radialOpen && !this.radialRef.el?.contains(ev.target)) {
                 this.state.radialOpen = false;
+            }
+            if (this.state.headerRadialOpen && !this.headerRadialRef.el?.contains(ev.target)) {
+                this.state.headerRadialOpen = false;
             }
         };
         document.addEventListener("pointerdown", closeRadial, true);
@@ -689,6 +695,54 @@ export class AiAgentChat extends Component {
         return items;
     }
 
+    /** Compact header: everything but the name and close sits behind
+     *  one button — the same circle as the composer, opening downward. */
+    get headerCompact() {
+        return this.props.hideSidebar && this.props.surface !== "chatter";
+    }
+
+    get headerActions() {
+        const items = [];
+        if (this.state.historyAvailable) {
+            items.push({ id: "history", icon: "fa-history", label: this.labels.history,
+                         run: () => this.toggleHistory() });
+            items.push({ id: "new", icon: "fa-plus", label: this.labels.newChat,
+                         run: () => this.startNewConversation() });
+            if (this.state.conversationId) {
+                items.push(this.state.shareUrl
+                    ? { id: "unshare", icon: "fa-chain-broken", label: this.labels.unshare,
+                        run: () => this.unshareConversation() }
+                    : { id: "share", icon: "fa-share-alt", label: this.labels.share,
+                        run: () => this.shareConversation() });
+            }
+        }
+        items.push({ id: "mute", icon: this.state.muted ? "fa-volume-off" : "fa-volume-up",
+                     label: this.state.muted ? this.muteLabels.off : this.muteLabels.on,
+                     run: () => this.toggleMute() });
+        if (this.props.onExpand) {
+            items.push({ id: "expand", icon: "fa-expand", label: this.labels.expand,
+                         run: () => this.props.onExpand() });
+        }
+        return items;
+    }
+
+    toggleHeaderRadial() {
+        this.state.headerRadialOpen = !this.state.headerRadialOpen;
+        this.state.headerRadialHover = "";
+    }
+
+    pickHeaderAction(item) {
+        this.state.headerRadialOpen = false;
+        item.run();
+    }
+
+    onHeaderRadialKeydown(ev) {
+        if (ev.key === "Escape" && this.state.headerRadialOpen) {
+            ev.stopPropagation();
+            this.state.headerRadialOpen = false;
+        }
+    }
+
     toggleRadial() {
         if (this.state.recording) {
             // While listening the button IS the stop button.
@@ -877,6 +931,7 @@ export class AiAgentChat extends Component {
             moreActions: _t("Voice, files and more"),
             nowOn: _t("You are on"),
             whatDoYouNeed: _t("What do you need?"),
+            chatOptions: _t("Chat options"),
             confirmUnavailable: _t("This chat has no saved history, so there is nothing to confirm against. Ask again and confirm from the new answer."),
         };
     }

@@ -3553,3 +3553,9 @@ msgstr "شهر"
 #: code:addons/ab_ai_agent/services/tool_dispatcher.py:0
 msgid "week"
 msgstr "أسبوع"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
+msgid "Chat options"
+msgstr "خيارات المحادثة"

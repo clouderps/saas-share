@@ -1666,3 +1666,31 @@
     .o_ai_screen_card__about { display: none; }
     .o_ai_screen_card { margin-inline: var(--ai-step-3); }
 }
+
+// Header variant: a small quiet "…" button, the circle opens DOWN from
+// the header's end corner (the header sits at the top of the panel).
+.o_ai_radial--down {
+    inline-size: 32px;
+    block-size: 32px;
+
+    > .o_ai_radial__menu {
+        inset-block-end: auto;
+        inset-block-start: 40px;
+        inset-inline-start: auto;
+        inset-inline-end: -12px;
+        transform-origin: calc(100% - 16px) -16px;
+    }
+}
+.o_rtl .o_ai_radial--down > .o_ai_radial__menu { transform-origin: 16px -16px; }
+
+.o_ai_radial__toggle--quiet {
+    inline-size: 32px;
+    block-size: 32px;
+    background: transparent;
+    color: var(--ai-ghaima-muted);
+    border: 1px solid var(--ai-ghaima-line);
+    box-shadow: none;
+
+    &:hover { background: var(--ai-ghaima-bg); color: var(--ai-ghaima-ink); }
+    .is-open > & { background: var(--ai-ghaima-ink); color: #fff; }
+}

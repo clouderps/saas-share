@@ -35,6 +35,41 @@
                     <p class="o_ai_agent_chat__title" t-esc="headerTitle"/>
                     <p class="o_ai_agent_chat__subtitle text-truncate" t-esc="headerSubtitle"/>
                 </div>
+                <!-- Floating panel: one button → a circle of chat options
+                     (history, new, share, sound, full screen), opening down.
+                     The full console keeps its row of buttons. -->
+                <t t-if="headerCompact">
+                    <t t-set="headerItems" t-value="headerActions"/>
+                    <div class="o_ai_radial o_ai_radial--down" t-ref="headerRadial"
+                         t-att-class="{ 'is-open': state.headerRadialOpen }"
+                         t-on-keydown="onHeaderRadialKeydown">
+                        <div class="o_ai_radial__menu" role="menu"
+                             t-att-aria-label="labels.chatOptions"
+                             t-att-aria-hidden="state.headerRadialOpen ? 'false' : 'true'">
+                            <span class="o_ai_radial__center"
+                                  t-esc="state.headerRadialHover or labels.chatOptions"/>
+                            <button t-foreach="headerItems" t-as="item" t-key="item.id"
+                                    type="button" role="menuitem" class="o_ai_radial__item"
+                                    t-att-style="radialStyle(item_index, headerItems.length)"
+                                    t-att-tabindex="state.headerRadialOpen ? '0' : '-1'"
+                                    t-att-aria-label="item.label" t-att-title="item.label"
+                                    t-on-mouseenter="() => state.headerRadialHover = item.label"
+                                    t-on-focus="() => state.headerRadialHover = item.label"
+                                    t-on-mouseleave="() => state.headerRadialHover = ''"
+                                    t-on-click="() => this.pickHeaderAction(item)">
+                                <i t-attf-class="fa #{item.icon}" aria-hidden="true"/>
+                            </button>
+                        </div>
+                        <button type="button" class="o_ai_radial__toggle o_ai_radial__toggle--quiet"
+                                aria-haspopup="menu"
+                                t-att-aria-expanded="state.headerRadialOpen ? 'true' : 'false'"
+                                t-att-aria-label="labels.chatOptions" t-att-title="labels.chatOptions"
+                                t-on-click="toggleHeaderRadial">
+                            <i class="fa fa-ellipsis-h" aria-hidden="true"/>
+                        </button>
+                    </div>
+                </t>
+                <t t-else="">
                 <AiAgentTokenMeter compact="props.surface !== 'chat'"/>
                 <!-- Shared with the floating bubble and Discuss: these
                      read the same ai.chat.conversation rows, so a chat
@@ -76,6 +111,7 @@
                         t-att-title="labels.expand" t-att-aria-label="labels.expand">
                     <i class="fa fa-expand"/>
                 </button>
+                </t>
                 <button t-if="props.onClose" class="o_ai_agent_chat__close" type="button"
                         t-on-click="close" t-att-aria-label="labels.close">
                     <i class="fa fa-times"/>
