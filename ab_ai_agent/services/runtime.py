@@ -97,6 +97,12 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
     if screen:
         try:
             screen_block = env['ai.screen.context'].prompt_block(screen)
+            # Tools may default to what is on screen ("confirm this"):
+            # the validated model / open record, never the raw descriptor.
+            norm = env['ai.screen.context'].normalize(screen) or {}
+            if norm.get('model'):
+                env = env(context=dict(env.context, ai_screen={
+                    'model': norm['model'], 'res_id': norm.get('res_id') or False}))
         except Exception:
             _logger.info('screen context failed', exc_info=True)
     system_prompt = _compose_system_prompt(env, agent, locale=locale, skill=skill,
@@ -404,6 +410,13 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
         if not extracted_text and extracted_render:
             extracted_text = extracted_render.get('title') or ''
 
+    # Tables the model typed into its prose (HTML or markdown) reach the
+    # user as raw tags / pipes. Turn them into the renderer's own table.
+    if not extracted_render:
+        extracted_text, table = _absorb_prose_table(extracted_text)
+        if table:
+            extracted_render = {'layout': 'report', 'title': '', 'blocks': [table]}
+
     # Tool-produced render wins when the LLM didn't emit one itself.
     # Analysis/report tools (data_analysis, recent_records, …) return
     # {'render': {...}, 'summary': '...'} — numbers come straight from
@@ -444,11 +457,16 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
 
     if pending_confirmation:
         chips = _confirmation_chips(pending_confirmation, locale)
+        # The question itself must be on the card, not only the buttons.
+        question = {'type': 'callout', 'tone': 'warn',
+                    'title': pending_confirmation.get('summary') or '',
+                    # Callout bodies are plain text: no markdown emphasis.
+                    'body': _confirmation_text({'summary': ''}, locale).strip().replace('**', '')}
         if extracted_render:
             extracted_render = dict(extracted_render)
-            extracted_render['blocks'] = list(extracted_render.get('blocks') or []) + [chips]
+            extracted_render['blocks'] = list(extracted_render.get('blocks') or []) + [question, chips]
         else:
-            extracted_render = {'layout': 'report', 'title': '', 'blocks': [chips]}
+            extracted_render = {'layout': 'report', 'title': '', 'blocks': [question, chips]}
 
     # ── 6. Citations ──────────────────────────────────────────
     rendered_text, sources = citation_svc.apply_numeric_citations(
@@ -475,6 +493,18 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
     rendered_text, inline_action = _absorb_action_markup(env, rendered_text)
     if inline_action and not pending_action:
         pending_action = inline_action
+
+    # "Where do I…?" answered with a path but no button: the menu search
+    # already found the destination, so give the user the way there.
+    if not pending_action:
+        for call in tool_calls_audit:
+            res = call.get('result') if call.get('ok') else None
+            if call.get('tool') == 'find_menu' and isinstance(res, dict) and res.get('matches'):
+                xmlid = res['matches'][0].get('action_xmlid')
+                opened = tool_dispatcher.get('open_action')(env, xmlid=xmlid) if xmlid else {}
+                if isinstance(opened, dict) and opened.get('action'):
+                    pending_action = opened['action']
+                break
 
     # ── 7. Build the final envelope ───────────────────────────
     latency_ms = int((time.perf_counter() - started_perf) * 1000)
@@ -736,25 +766,31 @@ def _try_parse_report_payload(text):
         raw = raw.strip()
         if raw.endswith('```'):
             raw = raw[:-3].rstrip()
-    # Quick reject — must look like an object.
-    if not (raw.startswith('{') and raw.endswith('}')):
-        return None
     import json as _json
+    decoder = _json.JSONDecoder(strict=False)
+    if raw.startswith('{') and raw.endswith('}'):
+        try:
+            obj = decoder.decode(raw)
+        except (ValueError, TypeError):
+            obj = None
+        if isinstance(obj, dict) and isinstance(obj.get('render'), dict):
+            return {'render': obj['render'],
+                    'response': obj.get('response') or obj.get('summary') or ''}
+    # The other shape models produce: prose, then the {"render": …} object
+    # (the user used to read that JSON verbatim). Lift the object out and
+    # keep the prose as the answer text.
+    at = raw.find('{"render"')
+    if at < 0:
+        return None
     try:
-        obj = _json.loads(raw)
-    except (ValueError, TypeError):
+        obj, end = decoder.raw_decode(raw[at:])
+    except ValueError:
         return None
-    if not isinstance(obj, dict):
+    if not (isinstance(obj, dict) and isinstance(obj.get('render'), dict)):
         return None
-    if 'render' not in obj:
-        return None
-    render = obj.get('render')
-    if not isinstance(render, dict):
-        return None
-    return {
-        'render': render,
-        'response': obj.get('response') or obj.get('summary') or '',
-    }
+    prose = (raw[:at] + raw[at + end:]).strip()
+    return {'render': obj['render'],
+            'response': prose or obj.get('response') or obj.get('summary') or ''}
 
 
 def _csv_everywhere_enabled(env):
@@ -1222,17 +1258,53 @@ def _parse_response(text):
         if raw.lower().startswith('json'):
             raw = raw[4:]
         raw = raw.strip().rstrip('`').strip()
-    try:
-        obj = json.loads(raw)
-    except Exception:
-        obj = None
-    if isinstance(obj, dict) and 'action' in obj:
-        if obj.get('action') == 'tool':
-            return {'kind': 'tool', 'tool': obj.get('tool'),
-                    'args': obj.get('args') or {}}
-        if obj.get('action') == 'final':
-            return {'kind': 'final', 'text': obj.get('text') or ''}
+    obj = _loads_tolerant(raw)
+    if obj is None:
+        # Invalid JSON that is still unmistakably a final answer — usually
+        # unescaped quotes inside the text ("أمر البيع"). Take the text.
+        m = _FINAL_SHAPE.match(raw)
+        if m:
+            body = m.group(1).replace('\\n', '\n').replace('\\"', '"')
+            return {'kind': 'final', 'text': body}
+    if isinstance(obj, dict) and ('action' in obj or 'tool' in obj or 'tool_code' in obj):
+        action = obj.get('action')
+        tool = obj.get('tool') or obj.get('tool_code')
+        if action == 'final':
+            return {'kind': 'final', 'text': obj.get('text') or obj.get('response') or ''}
+        # Models answer the protocol in several shapes:
+        #   {"action": "tool", "tool": "open_record", "args": {…}}   (asked for)
+        #   {"action": "open_record", "args": {…}}                     (tool as action)
+        #   {"action": "open_record", "tool_code": "open_record", …}
+        # All are the same intent: run the tool. Showing the JSON to the
+        # user instead (what happened before) is the one wrong answer.
+        if action == 'tool' or tool or (isinstance(action, str) and 'args' in obj):
+            name = tool if tool else action
+            if isinstance(name, str) and re.fullmatch(r'[a-z][a-z0-9_]{1,63}', name):
+                return {'kind': 'tool', 'tool': name, 'args': obj.get('args') or {}}
     return {'kind': 'final', 'text': text}
+
+
+_FINAL_SHAPE = re.compile(
+    r'^\s*\{\s*"action"\s*:\s*"final"\s*,\s*"text"\s*:\s*"(.*)"\s*\}\s*$', re.DOTALL)
+
+
+def _loads_tolerant(raw):
+    """A JSON object from model output, or None.
+
+    strict=False accepts the literal newlines models put inside strings
+    (invalid JSON, but unambiguous); raw_decode finds an object that is
+    preceded or followed by prose.
+    """
+    for candidate in (raw, raw[raw.find('{'):] if '{' in raw else ''):
+        if not candidate:
+            continue
+        try:
+            obj, _end = json.JSONDecoder(strict=False).raw_decode(candidate)
+            if isinstance(obj, dict):
+                return obj
+        except ValueError:
+            continue
+    return None
 
 
 #: Protocol tokens the topic prompts instruct the model to emit. They
@@ -1302,12 +1374,48 @@ def _absorb_action_markup(env, text):
     return cleaned, action
 
 
+_BOLD_TAG = re.compile(r'</?(?:b|strong)>', re.IGNORECASE)
+_HTML_TABLE = re.compile(r'(?:<div[^>]*>\s*)?<table\b.*?</table>(?:\s*</div>)?', re.IGNORECASE | re.DOTALL)
+_MD_TABLE = re.compile(r'(?:^\s*\|.*\|\s*$\n?){3,}', re.MULTILINE)
+
+
+def _absorb_prose_table(text):
+    """(text without the table, data_table block | None)."""
+    if not text or not isinstance(text, str):
+        return text, None
+    m = _HTML_TABLE.search(text)
+    if m:
+        try:
+            from lxml import html as lhtml
+            doc = lhtml.fromstring(m.group(0))
+            rows = [[c.text_content().strip() for c in tr.xpath('./th|./td')]
+                    for tr in doc.xpath('.//tr')]
+            rows = [r for r in rows if r]
+            if len(rows) >= 2:
+                block = {'type': 'data_table', 'headers': rows[0], 'rows': rows[1:]}
+                return (text[:m.start()] + text[m.end():]).strip(), block
+        except Exception:
+            pass
+    m = _MD_TABLE.search(text)
+    if m:
+        lines = [ln.strip().strip('|') for ln in m.group(0).strip().splitlines()]
+        cells = [[c.strip() for c in ln.split('|')] for ln in lines]
+        cells = [r for r in cells if not all(re.fullmatch(r':?-{2,}:?', c or '-') for c in r)]
+        if len(cells) >= 2:
+            block = {'type': 'data_table', 'headers': cells[0], 'rows': cells[1:]}
+            return (text[:m.start()] + text[m.end():]).strip(), block
+    return text, None
+
+
 def _strip_control_tokens(text):
     """Remove protocol tokens the model echoed into its visible answer."""
     if not text:
         return text
     for token in _CONTROL_TOKENS:
         text = text.replace(token, '')
+    # Answers render as markdown, so HTML bold arrives as literal "<b>":
+    # say it the markdown way.
+    text = _BOLD_TAG.sub('**', text)
     # Collapse the whitespace the removal leaves behind, without
     # touching intentional paragraph breaks inside the answer.
     return '\n'.join(line.rstrip() for line in text.split('\n')).strip()

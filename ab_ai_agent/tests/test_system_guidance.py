@@ -89,7 +89,9 @@ class TestSystemGuidance(TransactionCase):
         for access they already had. The note has to send it back for an
         English retry before any conclusion is permitted.
         """
-        res = td._builtin_find_menu(self.env, query='فاتورة')
+        # A word no menu and no glossary entry knows. ("فاتورة" itself now
+        # resolves through the Arabic→English menu glossary.)
+        res = td._builtin_find_menu(self.env, query='زخرفة')
         self.assertEqual(res['matches'], [])
         note = res['note']
         self.assertIn('English', note)

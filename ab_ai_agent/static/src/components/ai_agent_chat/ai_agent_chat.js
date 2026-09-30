@@ -190,11 +190,25 @@ export class AiAgentChat extends Component {
         onWillUnmount(() => document.removeEventListener("pointerdown", closeRadial, true));
         this._lastSpoken = null;        // throttle re-speak of same text
 
-        // Auto-scroll on new messages.
+        // Auto-scroll on new messages. The element that scrolls is the
+        // body around the stream (the stream itself never overflows, so
+        // setting its scrollTop did nothing and new answers appeared below
+        // the fold). A new answer is shown from its question down, so the
+        // user reads it from the start rather than from its last line.
         useEffect(
             () => {
-                if (this.streamRef.el) {
-                    this.streamRef.el.scrollTop = this.streamRef.el.scrollHeight;
+                const stream = this.streamRef.el;
+                const box = stream?.closest(".o_ai_agent_chat__body") || stream;
+                if (!box) {
+                    return;
+                }
+                const last = this.state.messages[this.state.messages.length - 1];
+                const questions = stream.querySelectorAll(".o_ai_answer_q");
+                const q = questions[questions.length - 1];
+                if (last?.role === "assistant" && !this.state.isThinking && q) {
+                    box.scrollTop += q.getBoundingClientRect().top - box.getBoundingClientRect().top - 8;
+                } else {
+                    box.scrollTop = box.scrollHeight;
                 }
             },
             () => [this.state.messages.length, this.state.isThinking],

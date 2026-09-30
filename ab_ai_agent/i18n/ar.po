@@ -3445,3 +3445,111 @@ msgstr "👍 مفيدة"
 #: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_run_search
 msgid "👎 Thumbs down"
 msgstr "👎 غير مفيدة"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/tool_dispatcher.py:0
+msgid "%(date)s: %(amount)s %(unit)s across %(count)s transactions."
+msgstr "%(date)s: %(amount)s %(unit)s في %(count)s عملية."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/tool_dispatcher.py:0
+msgid "%(label)s by %(group)s"
+msgstr "%(label)s حسب %(group)s"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/tool_dispatcher.py:0
+msgid "%(label)s — last %(days)s days"
+msgstr "%(label)s — آخر %(days)s يومًا"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/tool_dispatcher.py:0
+msgid "Average per %(group)s"
+msgstr "المتوسط لكل %(group)s"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/tool_dispatcher.py:0
+msgid "Down %(pct)s%% vs the previous %(days)s days."
+msgstr "انخفاض %(pct)s%% مقارنة بآخر %(days)s يومًا قبلها."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/tool_dispatcher.py:0
+msgid "Invoiced revenue"
+msgstr "الإيرادات المفوترة"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/tool_dispatcher.py:0
+msgid "No %(label)s between %(start)s and %(end)s."
+msgstr "لا توجد %(label)s بين %(start)s و %(end)s."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/tool_dispatcher.py:0
+msgid "No comparable prior period."
+msgstr "لا توجد فترة سابقة للمقارنة."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/tool_dispatcher.py:0
+msgid "No data"
+msgstr "لا توجد بيانات"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/tool_dispatcher.py:0
+msgid "POS sales"
+msgstr "مبيعات نقاط البيع"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/tool_dispatcher.py:0
+msgid "Peak"
+msgstr "الذروة"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/tool_dispatcher.py:0
+msgid "Sales orders"
+msgstr "أوامر البيع"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/tool_dispatcher.py:0
+msgid "Total"
+msgstr "الإجمالي"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/tool_dispatcher.py:0
+msgid "Transactions"
+msgstr "العمليات"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/tool_dispatcher.py:0
+msgid "Up %(pct)s%% vs the previous %(days)s days."
+msgstr "ارتفاع %(pct)s%% مقارنة بآخر %(days)s يومًا قبلها."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/tool_dispatcher.py:0
+msgid "day"
+msgstr "يوم"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/tool_dispatcher.py:0
+msgid "month"
+msgstr "شهر"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/tool_dispatcher.py:0
+msgid "week"
+msgstr "أسبوع"

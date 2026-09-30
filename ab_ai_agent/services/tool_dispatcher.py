@@ -189,10 +189,14 @@ def _builtin_open_record(env, agent=None, model=None, id=None,
     """Open a specific record in its default form view.
 
     Args:
-      model: technical model name (e.g. 'sale.order', 'account.move')
+      model: technical model name (e.g. 'sale.order', 'account.move');
+             defaults to the model on the user's screen
       id:    record id
       view_type: 'form' (default) | 'kanban' | 'list'
     """
+    screen = env.context.get('ai_screen') or {}
+    model = model or _kw.get('res_model') or screen.get('model')
+    id = id or _kw.get('record_id') or _kw.get('res_id')
     if not model or not id:
         return {'error': 'model + id are required'}
     if model not in env:
@@ -203,8 +207,8 @@ def _builtin_open_record(env, agent=None, model=None, id=None,
             return {'error': f'{model} id={id} not found'}
         rec.check_access('read')
         display = rec.display_name
-    except Exception as e:
-        return {'error': str(e)}
+    except Exception:
+        return {'error': 'not permitted or not found'}
     return {
         'message': f'Opening {display}',
         'action': {
@@ -452,6 +456,71 @@ def _menu_search(Menu, q, cap):
     )[:cap]
 
 
+# Arabic business words → the English words menus are usually named with.
+# Substring keys, so plurals and "ال" prefixes still hit (فواتير, العملاء).
+_MENU_GLOSSARY = (
+    ('فاتور', ('invoice',)), ('فواتير', ('invoice',)), ('عميل', ('customer',)),
+    ('عملاء', ('customer',)), ('مورد', ('vendor', 'bill')), ('مرتجع', ('credit note', 'refund')),
+    ('عرض', ('quotation',)), ('عروض', ('quotation',)), ('سعر', ('quotation', 'pricelist')),
+    ('مبيع', ('sale', 'order')), ('بيع', ('sale',)), ('مشتري', ('purchase',)), ('شراء', ('purchase',)),
+    ('منتج', ('product',)), ('صنف', ('product',)), ('موظف', ('employee',)), ('إجاز', ('time off', 'leave')),
+    ('اجاز', ('time off', 'leave')), ('حضور', ('attendance',)), ('راتب', ('payslip', 'payroll')),
+    ('رواتب', ('payslip', 'payroll')), ('مخزون', ('inventory', 'stock')), ('مستودع', ('warehouse',)),
+    ('دفع', ('payment',)), ('مدفوع', ('payment',)), ('قيد', ('journal entr',)), ('قيود', ('journal entr',)),
+    ('حساب', ('account',)), ('تقرير', ('report',)), ('تقارير', ('report',)), ('اتصال', ('contact',)),
+    ('نقاط البيع', ('point of sale',)), ('كاشير', ('point of sale',)), ('طلب', ('order',)),
+)
+_MENU_STOPWORDS = {
+    'وين', 'اين', 'أين', 'كيف', 'اسوي', 'أسوي', 'سوي', 'اعمل', 'أعمل', 'انشئ', 'أنشئ', 'اضيف', 'أضيف',
+    'جديد', 'جديدة', 'في', 'من', 'على', 'الى', 'إلى', 'ابي', 'أبي', 'ابغى', 'أبغى', 'لو', 'سمحت',
+    'where', 'how', 'do', 'i', 'a', 'an', 'the', 'new', 'create', 'add', 'make', 'can', 'to', 'is',
+}
+
+
+def _menu_search_words(Menu, q, cap):
+    """Rank openable menus by how many of the question's words they carry.
+
+    The whole-phrase search misses "وين أسوي فاتورة عميل جديدة" because no
+    menu is called that; "فواتير العملاء" / "Customer Invoices" carries two
+    of its words. Arabic words also try their usual English menu names,
+    since menus are often stored in English only.
+    """
+    words = [w.strip('؟?.,،!') for w in q.split()]
+    words = [w for w in words if len(w) >= 3 and w.lower() not in _MENU_STOPWORDS]
+    terms = set()
+    for w in words:
+        base = w[2:] if w.startswith('ال') and len(w) > 4 else w
+        terms.add(base.lower())
+        for key, english in _MENU_GLOSSARY:
+            if key in w:
+                terms.update(english)
+    if not terms:
+        return Menu.browse()
+    candidates = Menu.browse()
+    for term in terms:
+        for M in (Menu, Menu.with_context(lang='en_US')):
+            candidates |= Menu.browse(
+                M.search([('name', 'ilike', term), ('action', '!=', False)], limit=40).ids)
+    if not candidates:
+        return Menu.browse()
+
+    # Score on the whole path, in both languages: "Customer Invoices" lives
+    # at Accounting / Customers / Invoices — the leaf alone says only
+    # "Invoices", its parent says "Customers".
+    def haystack(menu):
+        return ' '.join((_menu_path(menu), _menu_path(menu.with_context(lang='en_US')))).lower()
+
+    def rank(menu):
+        text = haystack(menu)
+        hits = sum(1 for t in terms if t.lower() in text)
+        model = getattr(menu.action, 'res_model', '') or ''
+        # A business document beats a report / wizard about it.
+        doc = 0 if ('report' in model or 'wizard' in model or not model) else 1
+        return (hits, doc, -len(_menu_path(menu)))
+    ranked = sorted(candidates, key=rank, reverse=True)
+    return Menu.browse([m.id for m in ranked[:cap]])
+
+
 def _builtin_find_menu(env, agent=None, query=None, limit=6, **_kw):
     """Resolve "where do I do X?" to real, openable menu entries.
 
@@ -483,6 +552,8 @@ def _builtin_find_menu(env, agent=None, query=None, limit=6, **_kw):
             # without the model needing to know anything.
             menus = Menu.browse(
                 _menu_search(Menu.with_context(lang='en_US'), q, cap).ids)
+        if not menus:
+            menus = _menu_search_words(Menu, q, cap)
     except Exception as e:
         return {'error': f'menu search failed: {type(e).__name__}'}
 
@@ -787,6 +858,11 @@ def _builtin_data_analysis(env, agent=None, metric='pos_sales',
                          f'choose one of {sorted(_DA_METRICS)}'}
     table, amt_col, date_col, state_sql, label = spec
     group = group if group in _DA_GROUPS else 'day'
+    _ = env._
+    # What the user reads is translated; `summary` (for the model) stays English.
+    ui_label = {'pos_sales': _('POS sales'), 'sale_orders': _('Sales orders'),
+                'invoiced_revenue': _('Invoiced revenue')}[metric]
+    ui_group = {'day': _('day'), 'week': _('week'), 'month': _('month')}[group]
     try:
         period_days = max(1, min(365, int(period_days)))
     except (TypeError, ValueError):
@@ -826,11 +902,12 @@ def _builtin_data_analysis(env, agent=None, metric='pos_sales',
         return {
             'render': {
                 'layout': 'report',
-                'title': f'{label} — last {period_days} days',
+                'title': _('%(label)s — last %(days)s days', label=ui_label, days=period_days),
                 'blocks': [{
                     'type': 'callout', 'tone': 'warn',
-                    'title': 'No data',
-                    'body': f'No {label.lower()} between {start} and {today}.',
+                    'title': _('No data'),
+                    'body': _('No %(label)s between %(start)s and %(end)s.',
+                              label=ui_label, start=start, end=today),
                 }],
             },
             'summary': f'No {label.lower()} in the last {period_days} days.',
@@ -847,34 +924,38 @@ def _builtin_data_analysis(env, agent=None, metric='pos_sales',
              if prev_total else None)
     tone = 'good' if (delta is None or delta >= 0) else 'bad'
     delta_txt = (f'{delta:+.1f}%' if delta is not None else '—')
-    insight = (
-        f'{"Up" if (delta or 0) >= 0 else "Down"} {abs(delta):.1f}% vs the '
-        f'previous {period_days} days.' if delta is not None
-        else 'No comparable prior period.'
-    )
+    if delta is None:
+        insight = _('No comparable prior period.')
+    elif delta >= 0:
+        insight = _('Up %(pct)s%% vs the previous %(days)s days.',
+                    pct=f'{abs(delta):.1f}', days=period_days)
+    else:
+        insight = _('Down %(pct)s%% vs the previous %(days)s days.',
+                    pct=f'{abs(delta):.1f}', days=period_days)
 
     kpis = [
-        {'label': 'Total', 'value': f'{total:,.0f} {unit}',
+        {'label': _('Total'), 'value': f'{total:,.0f} {unit}',
          'delta_pct': delta_txt, 'tone': tone},
-        {'label': 'Transactions', 'value': f'{txn:,}'},
-        {'label': f'Avg / {group}', 'value': f'{avg:,.0f} {unit}'},
+        {'label': _('Transactions'), 'value': f'{txn:,}'},
+        {'label': _('Average per %(group)s', group=ui_group), 'value': f'{avg:,.0f} {unit}'},
     ]
     return {
         'render': {
             'layout': 'report',
-            'title': f'{label} — last {period_days} days',
+            'title': _('%(label)s — last %(days)s days', label=ui_label, days=period_days),
             'blocks': [
                 {'type': 'kpi_grid', 'items': kpis},
                 {'type': 'chart', 'chart': 'area',
-                 'title': f'{label} by {group}', 'x': x,
+                 'title': _('%(label)s by %(group)s', label=ui_label, group=ui_group), 'x': x,
                  'series': [
-                     {'name': f'{label} ({unit})', 'data': amounts},
-                     {'name': 'Transactions', 'data': counts, 'axis': 'right'},
+                     {'name': f'{ui_label} ({unit})', 'data': amounts},
+                     {'name': _('Transactions'), 'data': counts, 'axis': 'right'},
                  ],
                  'unit': unit, 'tone': tone, 'insight': insight},
-                {'type': 'callout', 'tone': 'info', 'title': 'Peak',
-                 'body': f'{peak[0]}: {float(peak[1]):,.0f} {unit} '
-                         f'across {int(peak[2])} transactions.'},
+                {'type': 'callout', 'tone': 'info', 'title': _('Peak'),
+                 'body': _('%(date)s: %(amount)s %(unit)s across %(count)s transactions.',
+                           date=peak[0], amount=f'{float(peak[1]):,.0f}', unit=unit,
+                           count=int(peak[2]))},
             ],
         },
         # Compact factual line the LLM bases its narrative on. The model
@@ -1131,8 +1212,10 @@ def _header_object_buttons(Model):
 def _builtin_screen_button(env, agent=None, model=None, record_id=None,
                            button=None, _ai_confirmed=False, **_kw):
     from odoo.models import check_method_name
-    record_id = record_id or _kw.get('res_id') or _kw.get('id')
-    button = button or _kw.get('button_name') or _kw.get('name')
+    screen = env.context.get('ai_screen') or {}
+    record_id = record_id or _kw.get('res_id') or _kw.get('id') or screen.get('res_id')
+    button = button or _kw.get('button_name') or _kw.get('name') or _kw.get('label')
+    model = model or _kw.get('res_model') or screen.get('model')
     Model = env.get(model) if isinstance(model, str) else None
     if Model is None or not record_id or not button:
         return {'error': 'model, record_id and button are required',

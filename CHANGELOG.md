@@ -2,6 +2,21 @@
 
 > Per-repo tracking log. Seeded 2026-05-31 from manifest inventory + last 90 days of `git log`. Append new entries on top as work lands.
 
+## 2026-09-30 — Ghaima AI: fixes from a live FAYIAPROD run
+
+- Replies no longer reach the user as raw JSON: tolerant parser (newlines and
+  unescaped quotes inside the text, JSON after prose, tool named in `action` /
+  `tool_code`); tool calls in any of those shapes now run.
+- Tools default to what is on screen (`open_record`, `screen_button`), and
+  accept the argument names models actually use.
+- "Where do I …?" in Arabic finds the menu: word-level search, Arabic→English
+  menu glossary, ranking on the full path in both languages; a found menu
+  always gets an Open button.
+- HTML / markdown tables and `{"render": …}` typed into prose become real
+  tables; `<b>` becomes markdown bold; the confirm card shows its question.
+- Chat scrolls its real container: a new answer opens at its question.
+- data_analysis titles, KPIs and callouts are translated.
+
 ## 2026-09-30 — ab_s3_attachment 18.0.1.1.0 (not deployed)
 
 - Signed-link downloads for every file size (Odoo cloud_storage pattern) after
