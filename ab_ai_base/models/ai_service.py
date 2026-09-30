@@ -1118,7 +1118,47 @@ class AIProviderService(models.AbstractModel):
             raise UserError(_('Voice output is not configured.'))
         if config.ai_provider == 'openai':
             return self._call_openai_speech(text, config)
+        if config.ai_provider == 'google':
+            return self._call_gemini_speech(text, lang, config)
         raise UserError(_('Voice output is not available for this AI provider.'))
+
+    def _call_gemini_speech(self, text, lang, config):
+        """Gemini TTS. Speaks Arabic, which browsers on desktop usually
+        cannot (Chrome ships no Arabic voice). Returns 16-bit PCM, which we
+        wrap in a WAV header so every browser can play it."""
+        import base64
+        import struct
+        model = 'gemini-2.5-flash-preview-tts'
+        payload = {
+            'contents': [{'parts': [{'text': text}]}],
+            'generationConfig': {
+                'responseModalities': ['AUDIO'],
+                'speechConfig': {'voiceConfig': {'prebuiltVoiceConfig': {'voiceName': 'Kore'}}},
+            },
+        }
+        try:
+            resp = requests.post(
+                f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',
+                headers={'x-goog-api-key': config._get_decrypted_key('gemini_api_key'),
+                         'Content-Type': 'application/json'},
+                json=payload, timeout=max(config.timeout or 30, 45))
+            resp.raise_for_status()
+            part = resp.json()['candidates'][0]['content']['parts'][0]['inlineData']
+        except (requests.exceptions.RequestException, KeyError, IndexError, ValueError) as e:
+            _logger.warning('Gemini speech failed: %s', type(e).__name__)
+            raise UserError(_('Voice output failed. Please try again.'))
+        pcm = base64.b64decode(part['data'])
+        rate = 24000
+        for bit in (part.get('mimeType') or '').split(';'):
+            if bit.strip().startswith('rate='):
+                try:
+                    rate = int(bit.split('=', 1)[1])
+                except ValueError:
+                    pass
+        header = b'RIFF' + struct.pack('<I', 36 + len(pcm)) + b'WAVEfmt ' + struct.pack(
+            '<IHHIIHH', 16, 1, 1, rate, rate * 2, 2, 16) + b'data' + struct.pack('<I', len(pcm))
+        return (base64.b64encode(header + pcm).decode(), 'audio/wav',
+                {'provider': 'google', 'model': model})
 
     def _call_openai_transcription(self, audio_b64, mimetype, lang, config):
         import base64

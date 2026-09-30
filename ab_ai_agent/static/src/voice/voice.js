@@ -41,6 +41,7 @@ export function voiceErrorMessage(code) {
         language: _t("This language is not supported for voice. Please type instead."),
         timeout: _t("That took too long. Please try again."),
         disabled: _t("Voice is turned off for this company."),
+        no_voice: _t("No voice is available for this language."),
     }[code] || _t("Voice is unavailable right now. You can type your question instead.");
 }
 
@@ -244,16 +245,37 @@ export function pickStt(preferred) {
 }
 
 // ── Text to speech ─────────────────────────────────────────────────
+//
+// Desktop Chrome ships no Arabic voice: speechSynthesis "speaks" Arabic
+// with nothing, silently. So the browser is used only when it really has
+// a voice for the language; otherwise the answer is spoken by the AI
+// service (/ai_agent/voice/speak — Gemini or OpenAI speech).
+
+function browserVoiceFor(lang) {
+    if (typeof window === "undefined" || !window.speechSynthesis) {
+        return null;
+    }
+    const want = (lang || "").slice(0, 2).toLowerCase();
+    return window.speechSynthesis.getVoices()
+        .find((v) => (v.lang || "").toLowerCase().startsWith(want)) || null;
+}
 
 class BrowserTts {
     static supported() {
         return typeof window !== "undefined" && !!window.speechSynthesis;
     }
+    canSpeak(lang) {
+        return !!browserVoiceFor(lang);
+    }
     speak(text, lang) {
+        const voice = browserVoiceFor(lang);
+        if (!voice) {
+            return Promise.reject(new VoiceError("no_voice"));
+        }
         return new Promise((resolve) => {
             const u = new SpeechSynthesisUtterance(text.slice(0, 1500));
-            u.lang = lang;
-            u.rate = 1.0;
+            u.voice = voice;
+            u.lang = voice.lang;
             u.onend = u.onerror = () => resolve();
             window.speechSynthesis.cancel();
             window.speechSynthesis.speak(u);
@@ -265,20 +287,16 @@ class BrowserTts {
 }
 
 class ServerTts {
-    constructor(fallback) {
-        this.fallback = fallback;
-    }
     async speak(text, lang) {
         let res;
         try {
-            res = await rpc("/ai_agent/voice/speak", { text, lang: (lang || "").slice(0, 2) }, { silent: true });
+            res = await rpc("/ai_agent/voice/speak",
+                { text, lang: (lang || "").slice(0, 2) }, { silent: true });
         } catch {
-            res = null;
+            throw new VoiceError("network");
         }
         if (!res?.ok) {
-            // The text is already on screen; fall back to the browser
-            // voice when there is one, otherwise stay silent.
-            return this.fallback?.speak(text, lang);
+            throw new VoiceError(res?.error === "voice_disabled" ? "disabled" : "failed");
         }
         this._audio = new Audio(`data:${res.mimetype};base64,${res.audio}`);
         return new Promise((resolve) => {
@@ -288,16 +306,42 @@ class ServerTts {
     }
     stop() {
         this._audio?.pause();
-        this.fallback?.stop();
+    }
+}
+
+/** Browser voice when it has one for the language, else the AI service. */
+class AutoTts {
+    constructor(preferServer) {
+        this.preferServer = preferServer;
+        this.browser = BrowserTts.supported() ? new BrowserTts() : null;
+        this.server = new ServerTts();
+    }
+    async speak(text, lang) {
+        const browserOk = this.browser && this.browser.canSpeak(lang);
+        if (browserOk && !this.preferServer) {
+            return this.browser.speak(text, lang);
+        }
+        try {
+            return await this.server.speak(text, lang);
+        } catch (e) {
+            if (browserOk) {
+                return this.browser.speak(text, lang);
+            }
+            throw e;
+        }
+    }
+    stop() {
+        this.browser?.stop();
+        this.server.stop();
     }
 }
 
 export function pickTts(preferred) {
-    const browser = BrowserTts.supported() ? new BrowserTts() : null;
-    if (preferred === "server") {
-        return new ServerTts(browser);
+    // Warm the voice list: Chrome fills getVoices() asynchronously.
+    if (BrowserTts.supported()) {
+        window.speechSynthesis.getVoices();
     }
-    return browser;
+    return new AutoTts(preferred === "server");
 }
 
 /** Speakable text of an answer: prose only, no tables, markdown stripped. */

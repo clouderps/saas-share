@@ -3559,3 +3559,9 @@ msgstr "أسبوع"
 #: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
 msgid "Chat options"
 msgstr "خيارات المحادثة"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/voice/voice.js:0
+msgid "No voice is available for this language."
+msgstr "لا يتوفر صوت لهذه اللغة."

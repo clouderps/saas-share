@@ -196,6 +196,19 @@ export class AiAgentChat extends Component {
         onWillUnmount(() => document.removeEventListener("pointerdown", closeRadial, true));
         this._lastSpoken = null;        // throttle re-speak of same text
 
+        // What the assistant is doing, for the robot on the floating
+        // button (eyes, mouth): listening / thinking / speaking / idle.
+        useEffect(
+            (recording, transcribing, thinking, speaking) => {
+                const status = recording ? "listening"
+                    : (transcribing || thinking) ? "thinking"
+                    : speaking ? "speaking" : "idle";
+                this.env.bus.trigger("GHAIMA_AI:STATUS", { status });
+            },
+            () => [this.state.recording, this.state.transcribing,
+                   this.state.isThinking, this.state.speakingId],
+        );
+
         // Auto-scroll on new messages. The element that scrolls is the
         // body around the stream (the stream itself never overflows, so
         // setting its scrollTop did nothing and new answers appeared below
@@ -814,6 +827,7 @@ export class AiAgentChat extends Component {
         try {
             const { text } = await this.stt.stop();
             this.state.input = text;
+            this._voiceTurn = true;          // answer this one out loud
             await this._send(text);
         } catch (e) {
             this._voiceError(e);
@@ -831,10 +845,17 @@ export class AiAgentChat extends Component {
 
     // ── Voice out (SpeechSynthesis) ───────────────────────────
 
-    /** Read answers aloud automatically only when the user opted in. */
+    /**
+     * Speak the answer when the question was spoken (a voice turn is
+     * answered by voice), or always when the user opted in to autoplay.
+     */
     _speakResponse(text, msgId) {
-        if (!this.tts || this.state.muted || !this.voiceConfig.autoplay || !text) return;
-        this.listen({ id: msgId, text });
+        const voiceTurn = this._voiceTurn;
+        this._voiceTurn = false;
+        if (!this.tts || this.state.muted || !text) return;
+        if (voiceTurn || this.voiceConfig.autoplay) {
+            this.listen({ id: msgId, text });
+        }
     }
 
     /** "Listen" on an answer: the text stays; audio is an extra. */
@@ -850,6 +871,8 @@ export class AiAgentChat extends Component {
         this.state.speakingId = msg.id;
         try {
             await this.tts.speak(text, this.speechLang);
+        } catch (e) {
+            this._voiceError(e);
         } finally {
             if (this.state.speakingId === msg.id) {
                 this.state.speakingId = null;

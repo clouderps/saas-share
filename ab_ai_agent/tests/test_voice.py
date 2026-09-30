@@ -79,3 +79,26 @@ class TestVoiceRoutes(HttpCase):
         log = self.env['ai.usage.local.log'].sudo().search(
             [('feature', '=', 'voice')], order='id desc', limit=1)
         self.assertAlmostEqual(log.audio_seconds, 1.5)
+
+
+@tagged('post_install', '-at_install', 'ghaima_ai_agent')
+class TestGeminiSpeech(TransactionCase):
+
+    def test_pcm_is_wrapped_as_playable_wav(self):
+        svc = self.env['ai.provider.service'].sudo()
+        config = MagicMock(ai_provider='google', timeout=5)
+        config._get_decrypted_key.return_value = 'k'
+        pcm = b'\x01\x00' * 2400
+        resp = MagicMock()
+        resp.json.return_value = {'candidates': [{'content': {'parts': [{'inlineData': {
+            'mimeType': 'audio/L16;codec=pcm;rate=24000',
+            'data': base64.b64encode(pcm).decode()}}]}}]}
+        with patch('odoo.addons.ab_ai_base.models.ai_service.requests.post', return_value=resp), \
+                patch.object(type(svc), '_is_simulation_mode', return_value=False):
+            audio, mimetype, usage = svc.call_speech('مرحبا', 'ar', config=config)
+        wav = base64.b64decode(audio)
+        self.assertEqual(mimetype, 'audio/wav')
+        self.assertEqual(wav[:4], b'RIFF')
+        self.assertEqual(wav[8:12], b'WAVE')
+        self.assertEqual(int.from_bytes(wav[24:28], 'little'), 24000)
+        self.assertEqual(wav[44:], pcm)
