@@ -102,3 +102,25 @@ class TestGeminiSpeech(TransactionCase):
         self.assertEqual(wav[8:12], b'WAVE')
         self.assertEqual(int.from_bytes(wav[24:28], 'little'), 24000)
         self.assertEqual(wav[44:], pcm)
+
+
+@tagged('post_install', '-at_install', 'ghaima_ai_agent')
+class TestVoiceConfirm(TransactionCase):
+    """A spoken answer to a proposal must say what will happen, and the
+    voice-confirm switch reaches the browser only when turned on."""
+
+    def test_confirmation_text_carries_details(self):
+        from odoo.addons.ab_ai_agent.services.runtime import _confirmation_text
+        conf = {'summary': 'Create quotation for Azure', 'details': ['2 × Latte', 'Total 30.00']}
+        text = _confirmation_text(conf, 'ar_001')
+        self.assertIn('Create quotation for Azure', text)
+        self.assertIn('2 × Latte', text)
+        self.assertIn('Total 30.00', text)
+        self.assertIn('تأكيد', text)
+
+    def test_voice_confirm_flag_off_by_default(self):
+        icp = self.env['ir.config_parameter'].sudo()
+        icp.set_param('ab_ai_agent.voice_confirm', False)
+        self.assertFalse(self.env.user._ai_assistant_info().get('voice_confirm'))
+        icp.set_param('ab_ai_agent.voice_confirm', 'True')
+        self.assertTrue(self.env.user._ai_assistant_info().get('voice_confirm'))

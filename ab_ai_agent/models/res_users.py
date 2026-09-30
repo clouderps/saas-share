@@ -91,6 +91,7 @@ class ResUsers(models.Model):
             'tts': icp.get_param('ab_ai_agent.tts_provider', 'browser'),
             'autoplay': bool(self.ai_voice_autoplay),
             'conversation': flag('ab_ai_agent.voice_conversation', 'False'),
+            'voice_confirm': flag('ab_ai_agent.voice_confirm', 'False'),
             'briefing': (self._ai_briefing() if flag('ab_ai_agent.daily_briefing', 'False')
                          and self.ai_proactive_mode != 'off' else ''),
         }

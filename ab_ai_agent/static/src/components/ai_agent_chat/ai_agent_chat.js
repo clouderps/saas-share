@@ -6,7 +6,7 @@ import { _t } from "@web/core/l10n/translation";
 import { registry } from "@web/core/registry";
 import { user } from "@web/core/user";
 import { session } from "@web/session";
-import { pickStt, pickTts, speakableText, voiceErrorMessage } from "../../voice/voice";
+import { pickStt, pickTts, speakableText, spokenDecision, voiceErrorMessage } from "../../voice/voice";
 import { AiAgentChip } from "../ai_agent_chip/ai_agent_chip";
 import { AiAgentSkillCard } from "../ai_agent_skill_card/ai_agent_skill_card";
 import { AiAgentTokenMeter } from "../ai_agent_token_meter/ai_agent_token_meter";
@@ -826,14 +826,36 @@ export class AiAgentChat extends Component {
         this.state.transcribing = true;
         try {
             const { text } = await this.stt.stop();
-            this.state.input = text;
             this._voiceTurn = true;          // answer this one out loud
+            // A spoken yes / no to the proposal on screen decides it —
+            // same endpoint and rules as the button (own proposal, 15 min).
+            const proposal = this.voiceConfig.voice_confirm && this._openProposal();
+            const decision = proposal && spokenDecision(text);
+            if (decision) {
+                this.state.input = "";
+                await this._confirmAction(proposal[decision].action, text);
+                const last = this.state.messages[this.state.messages.length - 1];
+                this._speakResponse(last?.text || "", last?.id);
+                return;
+            }
+            this.state.input = text;
             await this._send(text);
         } catch (e) {
             this._voiceError(e);
         } finally {
             this.state.transcribing = false;
         }
+    }
+
+    /** Confirm / Cancel chips of the latest answer, if it is a proposal. */
+    _openProposal() {
+        const last = [...this.state.messages].reverse().find((m) => m.role === "assistant");
+        const blocks = last?.render?.blocks || last?.envelope?.render?.blocks || [];
+        const chips = blocks.find((b) => b.type === "suggestion_chips");
+        const items = chips?.items || [];
+        const confirm = items.find((i) => i.action?.type === "confirm_pending");
+        const cancel = items.find((i) => i.action?.type === "cancel_pending");
+        return confirm && cancel ? { confirm, cancel } : null;
     }
 
     _voiceError(e) {
@@ -854,6 +876,9 @@ export class AiAgentChat extends Component {
         this._voiceTurn = false;
         if (!this.tts || this.state.muted || !text) return;
         if (voiceTurn || this.voiceConfig.autoplay) {
+            if (voiceTurn && this.voiceConfig.voice_confirm && this._openProposal()) {
+                text = `${text}\n${this.labels.sayYesNo}`;
+            }
             const spoken = this.listen({ id: msgId, text });
             // Hands-free: after answering a spoken question, listen again.
             // Ends by itself when the user says nothing (empty transcript)
@@ -965,6 +990,7 @@ export class AiAgentChat extends Component {
             nowOn: _t("You are on"),
             whatDoYouNeed: _t("What do you need?"),
             chatOptions: _t("Chat options"),
+            sayYesNo: _t("Say yes to confirm, or no to cancel."),
             confirmUnavailable: _t("This chat has no saved history, so there is nothing to confirm against. Ask again and confirm from the new answer."),
         };
     }

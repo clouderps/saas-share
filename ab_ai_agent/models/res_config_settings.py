@@ -59,4 +59,11 @@ class ResConfigSettings(models.TransientModel):
         config_parameter='ab_ai_agent.voice_conversation',
         help='After a spoken answer the microphone listens again, until the user '
              'stays silent or presses stop.')
+    ai_voice_confirm = fields.Boolean(
+        string='Confirm by voice', default=False,
+        config_parameter='ab_ai_agent.voice_confirm',
+        help='In a voice conversation, a proposed action can be confirmed by saying '
+             '"yes / confirm" (or cancelled with "no / cancel") instead of clicking. '
+             'Same rules as the button: only the user\'s own proposal, within 15 minutes, '
+             'with their access rights.')
 

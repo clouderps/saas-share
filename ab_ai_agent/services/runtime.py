@@ -627,7 +627,9 @@ def _proposal_of(tool_outcome):
 
 
 def _confirmation_text(conf, locale):
-    summary = conf.get('summary') or ''
+    # The details are part of the text so a spoken answer says exactly
+    # what will happen before the user confirms by voice.
+    summary = '\n'.join([conf.get('summary') or ''] + list(conf.get('details') or [])).strip()
     if str(locale or '').startswith('ar'):
         return (f'{summary}\n\nلم يتغير شيء بعد. اضغط **تأكيد** للتنفيذ '
                 f'أو **إلغاء** للتراجع.')

@@ -490,3 +490,33 @@ export function speakableText(text) {
         .trim()
         .slice(0, 1500);
 }
+
+// ── Spoken yes / no (voice confirmation) ───────────────────────────
+// Deterministic word matching — never the model — and only for a short
+// reply: "نعم أكد" confirms, "نعم لكن غيّر الكمية" does not (too long /
+// carries more than a yes), so it goes to the assistant as a message.
+const _YES = ["نعم", "ايوه", "إيوه", "أيوه", "اي", "أكد", "اكد", "أكّد", "تأكيد", "موافق", "تمام",
+    "نفذ", "نفّذ", "اعتمد", "yes", "yeah", "yep", "confirm", "ok", "okay", "sure", "go"];
+const _NO = ["لا", "إلغاء", "الغاء", "ألغ", "الغ", "الغي", "ألغي", "توقف", "no", "nope", "cancel", "stop"];
+
+export function spokenDecision(text) {
+    const norm = String(text || "")
+        .replace(/[\u064B-\u0652\u0640]/g, "")          // tashkeel, tatweel
+        .replace(/[.,!?؟،]/g, " ")
+        .toLowerCase().trim();
+    const words = norm.split(/\s+/).filter(Boolean);
+    if (!words.length || words.length > 4) {
+        return null;
+    }
+    const has = (list) => words.some((w) => list.includes(w) || list.includes(w.replace(/^و/, "")));
+    const yes = has(_YES);
+    const no = has(_NO);
+    if (yes && !no) {
+        return "confirm";
+    }
+    if (no && !yes) {
+        return "cancel";
+    }
+    return null;
+}
+

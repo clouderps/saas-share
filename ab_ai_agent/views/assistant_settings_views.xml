@@ -51,6 +51,10 @@
                         <setting string="Text to speech" invisible="not ai_voice_enabled">
                             <field name="ai_tts_provider" widget="radio"/>
                         </setting>
+                        <setting string="Confirm by voice" invisible="not ai_voice_enabled"
+                                 help="Say yes / confirm (or no / cancel) to a proposed action instead of clicking.">
+                            <field name="ai_voice_confirm"/>
+                        </setting>
                         <setting string="Hands-free conversation" invisible="not ai_voice_enabled"
                                  help="After a spoken answer the microphone listens again.">
                             <field name="ai_voice_conversation"/>

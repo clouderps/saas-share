@@ -2,6 +2,15 @@
 
 > Per-repo tracking log. Seeded 2026-05-31 from manifest inventory + last 90 days of `git log`. Append new entries on top as work lands.
 
+## 2026-09-30 — Ghaima AI: confirm proposed actions by voice
+
+- `ab_ai_agent` 18.0.1.13.0: in a voice conversation a proposal is read out
+  with its details plus «قل نعم للتأكيد، أو لا للإلغاء»; a short spoken reply
+  (≤4 words, fixed yes/no word lists, AR+EN, never the model) calls the same
+  confirm/cancel endpoint as the buttons — own proposal, 15-min TTL, user's
+  access rights. Mixed/longer replies go to the assistant as a normal message.
+  Switch `ab_ai_agent.voice_confirm` (Settings → Ghaima AI → Voice), default off.
+
 ## 2026-09-30 — Ghaima AI sprint 2: agent control, routing, memory, briefing, lip-sync
 
 - `ab_ai_agent`: agent actions (create_record, update_record, act_on_record,

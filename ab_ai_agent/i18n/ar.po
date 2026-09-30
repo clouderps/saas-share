@@ -3856,3 +3856,35 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:ab_ai_agent.res_config_settings_view_form_ghaima_ai
 msgid "gemini-2.5-pro"
 msgstr "gemini-2.5-pro"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.res_config_settings_view_form_ghaima_ai
+#: model:ir.model.fields,field_description:ab_ai_agent.field_res_config_settings__ai_voice_confirm
+msgid "Confirm by voice"
+msgstr "التأكيد بالصوت"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.res_config_settings_view_form_ghaima_ai
+msgid ""
+"Say yes / confirm (or no / cancel) to a proposed action instead of clicking."
+msgstr ""
+"قل «نعم» أو «أكّد» (أو «لا» / «إلغاء») للإجراء المقترح بدلًا من الضغط على "
+"الزر."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_res_config_settings__ai_voice_confirm
+msgid ""
+"In a voice conversation, a proposed action can be confirmed by saying \"yes "
+"/ confirm\" (or cancelled with \"no / cancel\") instead of clicking. Same "
+"rules as the button: only the user's own proposal, within 15 minutes, with "
+"their access rights."
+msgstr ""
+"في المحادثة الصوتية يمكن تأكيد الإجراء المقترح بقول «نعم / أكّد» (أو إلغاؤه "
+"بقول «لا / إلغاء») بدلًا من الضغط. تنطبق قواعد الزر نفسها: اقتراح المستخدم "
+"نفسه فقط، خلال 15 دقيقة، وبصلاحياته."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
+msgid "Say yes to confirm, or no to cancel."
+msgstr "قل نعم للتأكيد، أو لا للإلغاء."
