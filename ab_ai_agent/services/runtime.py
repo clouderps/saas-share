@@ -1299,6 +1299,11 @@ def _resolve_tools(env, agent):
     def flag(key, default='True'):
         return str(icp.get_param(key, default)).lower() in ('1', 'true', 'yes')
     actions_on = flag('ab_ai_agent.actions_enabled')
+    # The plan (central) is a ceiling: a tenant setting cannot re-enable
+    # what the subscription does not include.
+    from .llm_adapter import gateway_policy
+    if gateway_policy(env).get('actions') is False:
+        actions_on = False
     memory_on = flag('ab_ai_agent.user_memory')
 
     def allowed(t):

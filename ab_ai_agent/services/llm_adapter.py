@@ -13,6 +13,7 @@ The agent module never imports ab_ai_gateway directly.
 from __future__ import annotations
 
 import logging
+import time
 import uuid
 
 _logger = logging.getLogger(__name__)
@@ -29,17 +30,83 @@ class AiProviderError(Exception):
 
 NATIVE_TOOL_PROVIDERS = ('openai', 'anthropic', 'google')
 
+# ``ab_ai_agent.llm_mode``:
+#   auto    — the central gateway when this tenant is linked, else its own
+#             provider key (default; the historical behaviour)
+#   gateway — always the gateway; no silent fallback to a local key
+#   direct  — always the tenant's own provider key; the gateway is ignored
+LLM_MODES = ('auto', 'gateway', 'direct')
+
+# Gateway unreachable (DNS, refused, 5xx, bad URL) in auto mode: skip it
+# for this long instead of paying a failed round-trip on every step.
+_BREAKER_SECONDS = 300
+_gateway_down_until = {}      # dbname → epoch seconds
+
+
+def llm_mode(env):
+    mode = env['ir.config_parameter'].sudo().get_param('ab_ai_agent.llm_mode', 'auto')
+    return mode if mode in LLM_MODES else 'auto'
+
+
+def gateway_for_turn(env):
+    """The gateway link this turn will use, or None. One answer shared by
+    the prompt builder (native or text protocol) and call_llm, so the two
+    always agree."""
+    mode = llm_mode(env)
+    if mode == 'direct':
+        return None
+    if mode == 'auto' and _gateway_down_until.get(env.cr.dbname, 0) > time.time():
+        return None
+    return _try_get_gateway(env)
+
+
+def _trip_breaker(env, error):
+    _gateway_down_until[env.cr.dbname] = time.time() + _BREAKER_SECONDS
+    _logger.warning('AI gateway unreachable (%s) — using the direct provider '
+                    'for %d s', error, _BREAKER_SECONDS)
+
+
+def _is_transport_error(error):
+    """Unreachable / broken gateway, as opposed to an answer from it
+    (quota exceeded, plan refuses the feature) that must be respected."""
+    try:
+        import requests
+    except ImportError:            # pragma: no cover
+        return False
+    return isinstance(error, (requests.exceptions.ConnectionError,
+                              requests.exceptions.Timeout,
+                              requests.exceptions.HTTPError,
+                              requests.exceptions.InvalidURL,
+                              requests.exceptions.MissingSchema,
+                              ValueError))      # non-JSON reply
+
+
+def gateway_policy(env):
+    """The plan's ceiling for the assistant, as last reported by central
+    ({'actions': bool, 'voice': bool}); {} when not linked / not reported."""
+    gw = _try_get_gateway(env) if llm_mode(env) != 'direct' else None
+    if not gw or not hasattr(gw, 'get_policy'):
+        return {}
+    try:
+        return gw.get_policy()
+    except Exception:
+        return {}
+
 
 def native_tools_active(env):
     """True when this turn's tool calls will travel as provider-native
-    function calls: the flag is on, no tenant gateway takes the call
-    (the gateway runs its own loop from tool codes), and the active
-    provider implements native tools. The prompt then asks for plain
-    answers instead of the JSON text protocol."""
+    function calls: the flag is on, and either the gateway this turn uses
+    passes native tools through, or the active local provider implements
+    them. The prompt then asks for plain answers instead of the JSON text
+    protocol."""
     icp = env['ir.config_parameter'].sudo()
     if str(icp.get_param('ab_ai_agent.native_tools_enabled', 'True')).lower() not in ('1', 'true', 'yes'):
         return False
-    if _try_get_gateway(env):
+    gateway = gateway_for_turn(env)
+    if gateway:
+        return bool(getattr(gateway, 'has_capability', None)
+                    and gateway.has_capability('native_tools'))
+    if llm_mode(env) == 'gateway':
         return False
     Cfg = env.get('ai.provider.config')
     if Cfg is None:
@@ -101,9 +168,15 @@ def call_llm(env, agent, *, system_prompt, user_prompt, tools=None,
 
     last_error = None
 
+    mode = llm_mode(env)
+
     # ── Path 1: central gateway via ab_ai_client ──────────────
-    gateway = _try_get_gateway(env)
+    gateway = gateway_for_turn(env)
+    if mode == 'gateway' and not gateway:
+        raise AiProviderError('LLM mode is "gateway" but this company is not '
+                              'linked to the central AI gateway.')
     if gateway:
+        native = bool(tools) and native_tools_active(env)
         try:
             tool_codes = [t.get('name') for t in (tools or []) if t.get('name')]
             response, usage = gateway.call_ai(
@@ -116,15 +189,30 @@ def call_llm(env, agent, *, system_prompt, user_prompt, tools=None,
                 **({'model_override': model_override} if model_override else {}),
                 image_data=image_data,
                 image_mimetype=image_mimetype,
-                tools=tool_codes if tool_codes else None,
+                request_id=request_id,
+                # Native: full schemas travel, tool calls come back, tools
+                # run here as the user. Otherwise the legacy name list.
+                **({'tool_schemas': tools} if native else
+                   {'tools': tool_codes} if tool_codes else {}),
             )
             usage = dict(usage or {})
+            if not usage.get('tool_calls'):
+                usage.pop('tool_calls', None)
             usage.setdefault('request_id', request_id)
             usage.setdefault('routed_via', 'gateway')
             return response, usage, 'gateway'
         except Exception as e:
-            _logger.warning('Gateway call failed (%s) — trying direct provider', e)
             last_error = e
+            if mode == 'gateway':
+                raise AiProviderError(str(e))
+            if _is_transport_error(e):
+                _trip_breaker(env, e)
+            elif not _has_active_provider(env):
+                # The gateway ANSWERED with a refusal (quota, plan) and
+                # there is no own key to fall back to: say so.
+                raise AiProviderError(str(e))
+            else:
+                _logger.warning('Gateway call failed (%s) — trying direct provider', e)
 
     # ── Path 2: direct provider via ab_ai_base ────────────────
     # T.1/3 native tools: pass full unified schemas through. The provider

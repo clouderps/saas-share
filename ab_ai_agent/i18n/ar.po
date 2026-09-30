@@ -3888,3 +3888,44 @@ msgstr ""
 #: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
 msgid "Say yes to confirm, or no to cancel."
 msgstr "قل نعم للتأكيد، أو لا للإلغاء."
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.res_config_settings_view_form_ghaima_ai
+#: model:ir.model.fields,field_description:ab_ai_agent.field_res_config_settings__ai_llm_mode
+msgid "AI connection"
+msgstr "اتصال الذكاء الاصطناعي"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.res_config_settings_view_form_ghaima_ai
+msgid ""
+"Automatic uses the central Ghaima AI gateway when linked, else the company's"
+" own provider key."
+msgstr ""
+"التلقائي يستخدم بوابة غيمة المركزية للذكاء الاصطناعي عند الربط، وإلا فمفتاح "
+"المزوّد الخاص بالشركة."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_res_config_settings__ai_llm_mode
+msgid ""
+"Automatic: the central Ghaima AI gateway when this company is linked to it, "
+"otherwise its own provider key. If the gateway cannot be reached, the own "
+"key is used for 5 minutes before trying again."
+msgstr ""
+"تلقائي: بوابة غيمة المركزية للذكاء الاصطناعي عند ربط الشركة بها، وإلا فمفتاح"
+" المزوّد الخاص بها. إذا تعذّر الوصول إلى البوابة يُستخدم المفتاح الخاص لمدة "
+"5 دقائق قبل المحاولة مجددًا."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__res_config_settings__ai_llm_mode__auto
+msgid "Automatic"
+msgstr "تلقائي"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__res_config_settings__ai_llm_mode__gateway
+msgid "Central gateway only"
+msgstr "البوابة المركزية فقط"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__res_config_settings__ai_llm_mode__direct
+msgid "Own provider key only"
+msgstr "مفتاح المزوّد الخاص فقط"

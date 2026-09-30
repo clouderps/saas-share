@@ -22,6 +22,10 @@
                         </setting>
                     </block>
                     <block title="Intelligence" name="ghaima_ai_intelligence">
+                        <setting string="AI connection"
+                                 help="Automatic uses the central Ghaima AI gateway when linked, else the company's own provider key.">
+                            <field name="ai_llm_mode"/>
+                        </setting>
                         <setting string="Assistant actions"
                                  help="Create, change, approve, confirm, send, schedule — proposed first, run only after Confirm, within the user's access rights.">
                             <field name="ai_actions_enabled"/>

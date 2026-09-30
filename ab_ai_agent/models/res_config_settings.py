@@ -66,4 +66,12 @@ class ResConfigSettings(models.TransientModel):
              '"yes / confirm" (or cancelled with "no / cancel") instead of clicking. '
              'Same rules as the button: only the user\'s own proposal, within 15 minutes, '
              'with their access rights.')
+    ai_llm_mode = fields.Selection(
+        [('auto', 'Automatic'), ('gateway', 'Central gateway only'),
+         ('direct', 'Own provider key only')],
+        string='AI connection', default='auto',
+        config_parameter='ab_ai_agent.llm_mode',
+        help='Automatic: the central Ghaima AI gateway when this company is linked '
+             'to it, otherwise its own provider key. If the gateway cannot be '
+             'reached, the own key is used for 5 minutes before trying again.')
 

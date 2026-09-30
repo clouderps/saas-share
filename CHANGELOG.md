@@ -2,6 +2,16 @@
 
 > Per-repo tracking log. Seeded 2026-05-31 from manifest inventory + last 90 days of `git log`. Append new entries on top as work lands.
 
+## 2026-09-30 — Agent ↔ central gateway link
+
+- `ab_ai_agent` 18.0.1.14.0: native tools now work THROUGH the gateway when it
+  reports `native_tools` (full schemas out, tool calls back, tools run locally
+  as the user); `ab_ai_agent.llm_mode` auto/gateway/direct; unreachable gateway
+  is skipped for 5 min (was a failed round-trip on every step); gateway
+  refusals (quota/plan) are no longer masked when there is no own key; the
+  plan's policy is a ceiling on actions and voice. Same request id on both sides.
+- `ab_ai_base`: `_gateway_analyze` sends schemas to a capable gateway, names otherwise.
+
 ## 2026-09-30 — Ghaima AI: confirm proposed actions by voice
 
 - `ab_ai_agent` 18.0.1.13.0: in a voice conversation a proposal is read out

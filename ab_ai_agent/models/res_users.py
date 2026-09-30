@@ -73,6 +73,11 @@ class ResUsers(models.Model):
             _logger.debug('briefing cache write skipped', exc_info=True)
         return text
 
+    def _ai_plan_allows(self, what):
+        """False only when the central plan explicitly withholds ``what``."""
+        from odoo.addons.ab_ai_agent.services.llm_adapter import gateway_policy
+        return gateway_policy(self.env).get(what) is not False
+
     def _ai_assistant_info(self):
         """Assistant flags for the web client (company settings AND the
         user's own preference)."""
@@ -86,7 +91,7 @@ class ResUsers(models.Model):
             'enabled': flag('ab_ai_agent.assistant_enabled'),
             'proactive': (self.ai_proactive_mode
                           if flag('ab_ai_agent.proactive_enabled') else 'off'),
-            'voice': flag('ab_ai_agent.voice_enabled'),
+            'voice': flag('ab_ai_agent.voice_enabled') and self._ai_plan_allows('voice'),
             'stt': icp.get_param('ab_ai_agent.stt_provider', 'browser'),
             'tts': icp.get_param('ab_ai_agent.tts_provider', 'browser'),
             'autoplay': bool(self.ai_voice_autoplay),

@@ -10,3 +10,4 @@ from . import test_live_findings
 from . import test_query_data
 from . import test_native_tools
 from . import test_agent_actions
+from . import test_gateway_link

@@ -172,7 +172,14 @@ class AIProviderService(models.AbstractModel):
         if model_override:
             kw['model_override'] = model_override
         if tools:
-            kw['tools'] = tools
+            # A gateway that passes native tools through gets the full
+            # schemas (tool calls come back in usage); an older one only
+            # understands tool names for its own loop.
+            if getattr(gw, 'has_capability', None) and gw.has_capability('native_tools') \
+                    and self._native_tools_enabled():
+                kw['tool_schemas'] = tools
+            else:
+                kw['tools'] = [t.get('name') if isinstance(t, dict) else t for t in tools]
         if image_data:
             kw['image_data'] = image_data
             kw['image_mimetype'] = image_mimetype or 'image/png'
