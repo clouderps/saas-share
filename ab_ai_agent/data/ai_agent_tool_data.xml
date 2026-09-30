@@ -111,6 +111,61 @@
             <field name="is_write_action" eval="False"/>
         </record>
 
+        <record id="tool_act_on_record" model="ai.agent.tool">
+            <field name="name">Press a button on any record</field>
+            <field name="code">act_on_record</field>
+            <field name="category">write</field>
+            <field name="description">Press a button (confirm, approve, validate, send, post, cancel, refuse…) on any record the user can open, e.g. "approve Ahmed's leave", "confirm SO00045", "send quotation S00012". The button must exist on the user's own form (use its label). Only PROPOSES: the user gets Confirm / Cancel and nothing changes until they click Confirm; it then runs with the user's own access rights. Never say it is done.</field>
+            <field name="schema">{"type": "object", "properties": {"model": {"type": "string", "description": "Technical model (sale.order, purchase.order, account.move, hr.leave, crm.lead, project.task, res.partner…) or the user's words; empty = the screen's model"}, "record": {"type": "string", "description": "Record id, number or name, e.g. S00012 or the customer name; empty = the record on screen"}, "button": {"type": "string", "description": "Button label or technical name, e.g. Confirm, Approve, action_confirm"}}, "required": ["button"]}</field>
+            <field name="dispatch_kind">python</field>
+            <!-- Proposal only at dispatch; the change runs from the user's click. -->
+            <field name="is_write_action" eval="False"/>
+        </record>
+
+        <record id="tool_create_record" model="ai.agent.tool">
+            <field name="name">Create a record</field>
+            <field name="code">create_record</field>
+            <field name="category">write</field>
+            <field name="description">Create a record: a quotation, RFQ / purchase order, customer invoice, lead, task, leave request, contact… values = {field: value} using real field names (partner_id takes a name); lines = [{product, quantity, price}] for orders and invoices. Only PROPOSES: the user gets Confirm / Cancel and nothing changes until they click Confirm; it then runs with the user's own access rights. Never say it is done.</field>
+            <field name="schema">{"type": "object", "properties": {"model": {"type": "string", "description": "Technical model (sale.order, purchase.order, account.move, hr.leave, crm.lead, project.task, res.partner…) or the user's words; empty = the screen's model"}, "values": {"type": "object", "description": "Field values as {field: value}, e.g. {\"partner_id\": \"Acme\", \"date_order\": \"2026-10-01\"}"}, "lines": {"type": "array", "items": {"type": "object", "properties": {"product": {"type": "string"}, "quantity": {"type": "number"}, "price": {"type": "number"}}}}}, "required": ["model"]}</field>
+            <field name="dispatch_kind">python</field>
+            <!-- Proposal only at dispatch; the change runs from the user's click. -->
+            <field name="is_write_action" eval="False"/>
+        </record>
+
+        <record id="tool_update_record" model="ai.agent.tool">
+            <field name="name">Change fields on a record</field>
+            <field name="code">update_record</field>
+            <field name="category">write</field>
+            <field name="description">Change field values on one record, e.g. "set the expected date of S00012 to 5 October", "assign this lead to Sara". Only PROPOSES: the user gets Confirm / Cancel and nothing changes until they click Confirm; it then runs with the user's own access rights. Never say it is done.</field>
+            <field name="schema">{"type": "object", "properties": {"model": {"type": "string", "description": "Technical model (sale.order, purchase.order, account.move, hr.leave, crm.lead, project.task, res.partner…) or the user's words; empty = the screen's model"}, "record": {"type": "string", "description": "Record id, number or name, e.g. S00012 or the customer name; empty = the record on screen"}, "values": {"type": "object", "description": "Field values to set as {field: value}, e.g. {\"user_id\": \"Sara\"}"}}, "required": ["values"]}</field>
+            <field name="dispatch_kind">python</field>
+            <!-- Proposal only at dispatch; the change runs from the user's click. -->
+            <field name="is_write_action" eval="False"/>
+        </record>
+
+        <record id="tool_post_message" model="ai.agent.tool">
+            <field name="name">Send a message or log a note</field>
+            <field name="code">post_message</field>
+            <field name="category">write</field>
+            <field name="description">Log an internal note on a record, or (send_to_customer=true) email the message to the record's contact through its chatter. Only PROPOSES: the user gets Confirm / Cancel and nothing changes until they click Confirm; it then runs with the user's own access rights. Never say it is done.</field>
+            <field name="schema">{"type": "object", "properties": {"model": {"type": "string", "description": "Technical model (sale.order, purchase.order, account.move, hr.leave, crm.lead, project.task, res.partner…) or the user's words; empty = the screen's model"}, "record": {"type": "string", "description": "Record id, number or name, e.g. S00012 or the customer name; empty = the record on screen"}, "body": {"type": "string"}, "send_to_customer": {"type": "boolean"}}, "required": ["body"]}</field>
+            <field name="dispatch_kind">python</field>
+            <!-- Proposal only at dispatch; the change runs from the user's click. -->
+            <field name="is_write_action" eval="False"/>
+        </record>
+
+        <record id="tool_schedule_activity" model="ai.agent.tool">
+            <field name="name">Schedule a to-do</field>
+            <field name="code">schedule_activity</field>
+            <field name="category">write</field>
+            <field name="description">Schedule an activity (to-do / reminder) on a record for the user or a colleague, with a due date. Only PROPOSES: the user gets Confirm / Cancel and nothing changes until they click Confirm; it then runs with the user's own access rights. Never say it is done.</field>
+            <field name="schema">{"type": "object", "properties": {"model": {"type": "string", "description": "Technical model (sale.order, purchase.order, account.move, hr.leave, crm.lead, project.task, res.partner…) or the user's words; empty = the screen's model"}, "record": {"type": "string", "description": "Record id, number or name, e.g. S00012 or the customer name; empty = the record on screen"}, "summary": {"type": "string"}, "date_deadline": {"type": "string", "description": "YYYY-MM-DD"}, "assign_to": {"type": "string", "description": "User name; empty = me"}}, "required": ["summary"]}</field>
+            <field name="dispatch_kind">python</field>
+            <!-- Proposal only at dispatch; the change runs from the user's click. -->
+            <field name="is_write_action" eval="False"/>
+        </record>
+
         <!-- ── HR domain tools (gated by hr / hr.attendance presence) ── -->
 
         <record id="tool_hr_attendance_missing_today" model="ai.agent.tool">

@@ -105,13 +105,17 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
                     'model': norm['model'], 'res_id': norm.get('res_id') or False}))
         except Exception:
             _logger.info('screen context failed', exc_info=True)
+    # Only the tools this question can use (performance: the tool list is
+    # the largest part of every request), then the prompt that goes with them.
+    tools = _route_tools(env, _resolve_tools(env, agent), user_question, screen)
     system_prompt = _compose_system_prompt(env, agent, locale=locale, skill=skill,
                                            screen_block=screen_block,
                                            record_ref=record_ref,
                                            user_question=user_question,
-                                           org_knowledge=kb_block)
-    tools = _resolve_tools(env, agent)
+                                           org_knowledge=kb_block,
+                                           tools=tools)
     llm_tool_schemas = [t.as_llm_schema(agent=agent) for t in tools]
+    strong_model = _route_model(env, user_question)
 
     # ── 4. Hop loop ───────────────────────────────────────────
     hard_cap = min(agent.max_hops or 6, max_hops or 20)
@@ -144,6 +148,7 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
                 system_prompt=system_prompt,
                 user_prompt=prompt_for_llm,
                 tools=llm_tool_schemas,
+                model_override=strong_model,
                 temperature=agent.temperature(),
                 # None = take the ceiling from the provider config
                 # rather than pinning it here, where it silently
@@ -470,8 +475,11 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
         # The question itself must be on the card, not only the buttons.
         question = {'type': 'callout', 'tone': 'warn',
                     'title': pending_confirmation.get('summary') or '',
-                    # Callout bodies are plain text: no markdown emphasis.
-                    'body': _confirmation_text({'summary': ''}, locale).strip().replace('**', '')}
+                    # What will happen (fields, lines, message), then the
+                    # reminder. Callout bodies are plain text.
+                    'body': '\n'.join((pending_confirmation.get('details') or [])
+                                      + [_confirmation_text({'summary': ''}, locale)
+                                         .strip().replace('**', '')])}
         if extracted_render:
             extracted_render = dict(extracted_render)
             extracted_render['blocks'] = list(extracted_render.get('blocks') or []) + [question, chips]
@@ -647,7 +655,7 @@ def _confirmation_chips(conf, locale):
 
 def _compose_system_prompt(env, agent, *, locale='en', skill=None,
                            record_ref=None, user_question=None,
-                           org_knowledge=None, screen_block=''):
+                           org_knowledge=None, screen_block='', tools=None):
     """Compose the system prompt = persona + topics + date reference
     + live business snapshot + org knowledge (RAG) + user context
     + record context.
@@ -687,7 +695,7 @@ def _compose_system_prompt(env, agent, *, locale='en', skill=None,
 
     # Tool protocol — the largest invariant block, so it earns its place
     # inside the cacheable prefix rather than after the volatile parts.
-    offered = _resolve_tools(env, agent)
+    offered = tools if tools is not None else _resolve_tools(env, agent)
     if offered:
         parts.append(_tool_protocol_block(offered,
                                           native=llm_adapter.native_tools_active(env)))
@@ -705,6 +713,12 @@ def _compose_system_prompt(env, agent, *, locale='en', skill=None,
     # Caller context — who is asking, from where. Stable per user, but
     # differs between users, so it cannot sit in the shared prefix.
     parts.append(_user_context_block(env))
+
+    # What this user asked us to remember (their preferences / notes),
+    # when memory is on and the user has not opted out.
+    memory = _user_memory_block(env)
+    if memory:
+        parts.append(memory)
 
     # Today + date math (§3.8 borrowed pattern).
     date_block = tool_dispatcher.get('date_reference')(env, agent=agent)
@@ -1248,10 +1262,9 @@ def _tool_protocol_block(tools, native=False):
             'for confirmation in text. When you have the answer, reply to the user '
             'in plain text (markdown allowed: short paragraphs, bullet lists, '
             'tables). Never write JSON, code fences or tool names in the reply.',
-            'Available tools:',
         ]
-        for tool in tools:
-            lines.append(f'- `{tool.code}` — {tool.description}')
+        # No tool list here: the function declarations already carry every
+        # name and description — listing them twice doubled the prompt.
         return '\n'.join(lines)
     lines = [
         '## Tool protocol',
@@ -1279,9 +1292,125 @@ def _resolve_tools(env, agent):
     again and again (a native-tools run spent 12 steps on a blocked
     confirm_sale_order while screen_button — confirm-first — was there).
     """
-    return agent.all_tool_ids.filtered(
-        lambda t: t.is_invocable_by(env.user)
-        and (not t.is_write_action or agent.allow_write_actions))
+    icp = env['ir.config_parameter'].sudo()
+
+    def flag(key, default='True'):
+        return str(icp.get_param(key, default)).lower() in ('1', 'true', 'yes')
+    actions_on = flag('ab_ai_agent.actions_enabled')
+    memory_on = flag('ab_ai_agent.user_memory')
+
+    def allowed(t):
+        if not t.is_invocable_by(env.user):
+            return False
+        if t.code in ACTION_TOOLS and not actions_on:
+            return False
+        if t.is_write_action:
+            # A user's own memory is theirs to write; everything else needs
+            # the agent's write permission (confirm-first action tools are
+            # not write actions at dispatch — they only propose).
+            return (t.category == 'memory' and memory_on) or agent.allow_write_actions
+        return True
+    return agent.all_tool_ids.filtered(allowed)
+
+
+ACTION_TOOLS = frozenset({'screen_button', 'act_on_record', 'create_record', 'update_record',
+                          'post_message', 'schedule_activity'})
+
+# Tool routing: which tools a question can need. CORE is always offered;
+# a group joins when the question (Arabic or English) mentions its world.
+_CORE_TOOLS = frozenset({'explain_screen', 'open_record', 'open_list', 'open_action', 'find_menu',
+                         'list_my_apps', 'date_reference', 'query_data', 'get_record',
+                         'search_records', 'recent_records', 'kb_search', 'kb_read'})
+_TOOL_GROUPS = (
+    (ACTION_TOOLS | {'record_action'},
+     ('أنشئ', 'انشئ', 'اعمل', 'سو', 'أضف', 'اضف', 'أكد', 'اكد', 'اعتمد', 'وافق', 'ارفض', 'أرسل', 'ارسل',
+      'رحل', 'رحّل', 'ألغ', 'الغ', 'غير', 'غيّر', 'عدل', 'عدّل', 'حدث', 'ذكر', 'جدول', 'اكتب', 'سجل',
+      'create', 'add', 'new', 'make', 'confirm', 'approve', 'validate', 'reject', 'refuse', 'send',
+      'post', 'cancel', 'change', 'update', 'set ', 'edit', 'remind', 'schedule', 'log ', 'note',
+      'press', 'click')),
+    ({'sales_totals', 'top_customers', 'top_products', 'sales_trend_monthly', 'sales_by_branch',
+      'data_analysis', 'open_graph', 'open_pivot', 'customer_activity'},
+     ('مبيع', 'بيع', 'عميل', 'عملاء', 'منتج', 'فرع', 'إيراد', 'ايراد', 'اتجاه', 'رسم', 'مقارن',
+      'sale', 'sold', 'revenue', 'customer', 'product', 'branch', 'trend', 'chart', 'compare', 'top')),
+    ({'ar_aging', 'overdue_receivables', 'top_overdue_partners', 'cash_position', 'cashflow_by_journal',
+      'cashflow_daily', 'pl_summary', 'pl_trend', 'tax_summary'},
+     ('فاتور', 'متأخر', 'متاخر', 'مستحق', 'دين', 'نقد', 'صندوق', 'بنك', 'ربح', 'خسار', 'ضريب', 'حساب',
+      'invoice', 'overdue', 'receivable', 'aging', 'cash', 'bank', 'profit', 'loss', 'p&l', 'tax', 'vat',
+      'account')),
+    ({'inventory_summary', 'low_stock_products', 'out_of_stock_products', 'product_stock_status',
+      'reorder_rules'},
+     ('مخزون', 'مخزن', 'كمية', 'نفد', 'نفاد', 'stock', 'inventory', 'warehouse', 'quantity', 'reorder')),
+    ({'pos_session_status', 'top_cashiers'},
+     ('كاشير', 'نقاط البيع', 'جلسة', 'وردية', 'pos', 'cashier', 'session', 'shift')),
+    ({'hr_attendance_missing_today', 'hr_leave_pending', 'hr_attendance_open_shifts'},
+     ('موظف', 'حضور', 'غياب', 'إجاز', 'اجاز', 'دوام', 'employee', 'attendance', 'leave', 'absent',
+      'time off', 'staff')),
+    ({'remember_note', 'remember_fact', 'update_preference'},
+     ('تذكر', 'احفظ', 'فضل', 'دائما', 'دائماً', 'remember', 'prefer', 'always', 'note that')),
+)
+_ALL_ROUTED = frozenset().union(*(g for g, _w in _TOOL_GROUPS)) | _CORE_TOOLS
+
+
+def _user_memory_block(env):
+    icp = env['ir.config_parameter'].sudo()
+    if str(icp.get_param('ab_ai_agent.user_memory', 'True')).lower() not in ('1', 'true', 'yes'):
+        return ''
+    Profile = env.get('ai.chat.user.profile')
+    if Profile is None:
+        return ''
+    try:
+        profile = Profile.get_for_user()
+        if not profile.opt_in_memory:
+            return ''
+        block = profile.to_prompt_block() or ''
+    except Exception:
+        _logger.debug('user memory unavailable', exc_info=True)
+        return ''
+    return f'## What this user asked you to remember\n{block[:1500]}' if block.strip() else ''
+
+
+_COMPLEX_WORDS = ('حلل', 'تحليل', 'قارن', 'مقارنة', 'لماذا', 'ليش', 'خطة', 'اقترح', 'توقع', 'استراتيج',
+                  'analy', 'compare', 'why', 'plan', 'suggest', 'forecast', 'strategy', 'explain why',
+                  'recommend')
+
+
+def _route_model(env, question):
+    """The stronger model for complex questions (analysis, why, plans,
+    multi-part), when one is configured; None = the default model."""
+    strong = (env['ir.config_parameter'].sudo().get_param('ab_ai_agent.strong_model') or '').strip()
+    if not strong:
+        return None
+    q = (question or '').lower()
+    parts = sum(q.count(c) for c in ('?', '؟', ' and ', ' و'))
+    if any(w in q for w in _COMPLEX_WORDS) or len(q) > 220 or parts >= 3:
+        return strong
+    return None
+
+
+def _route_tools(env, tools, question, screen=None):
+    """The tools this question can use.
+
+    Every function declaration costs tokens on every step; 50 tools is the
+    largest part of a request. Core tools are always there; a group joins
+    when the question mentions its subject; a question that matches no
+    group keeps everything (never worse than before). Tools no group
+    knows (from other modules) are always kept. Switch:
+    ``ab_ai_agent.tool_routing``.
+    """
+    icp = env['ir.config_parameter'].sudo()
+    if str(icp.get_param('ab_ai_agent.tool_routing', 'True')).lower() not in ('1', 'true', 'yes'):
+        return tools
+    q = f" {(question or '').lower()} "
+    wanted, matched = set(_CORE_TOOLS), False
+    for group, words in _TOOL_GROUPS:
+        if any(w in q for w in words):
+            wanted |= group
+            matched = True
+    if (screen or {}).get('res_id') or (screen or {}).get('view_type') == 'form':
+        wanted |= ACTION_TOOLS          # "this" record: acting on it is likely
+    if not matched:
+        return tools
+    return tools.filtered(lambda t: t.code in wanted or t.code not in _ALL_ROUTED)
 
 
 def _find_tool(tools, code):

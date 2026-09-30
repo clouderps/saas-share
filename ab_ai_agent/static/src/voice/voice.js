@@ -244,6 +244,73 @@ export function pickStt(preferred) {
     return Cls ? new Cls() : null;
 }
 
+// ── Voice level (lip-sync) ─────────────────────────────────────────
+// 0..1 loudness of what the assistant is saying right now, read by the
+// robot on the floating button to move its mouth. Server audio: measured
+// with a WebAudio analyser each frame. Browser voices do not expose their
+// audio, so each spoken word gives a short pulse instead.
+export const voiceLevel = { value: 0 };
+let _levelFrame = 0;
+
+function meterAudio(audio) {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) {
+        return () => {};
+    }
+    let ctx;
+    try {
+        ctx = new Ctx();
+        if (ctx.state !== "running") {
+            // Autoplay policy: routing the voice through a suspended
+            // context would make it silent. Keep the voice, pulse instead.
+            ctx.close?.();
+            const beat = setInterval(pulseWord, 260);
+            return () => {
+                clearInterval(beat);
+                voiceLevel.value = 0;
+            };
+        }
+        const src = ctx.createMediaElementSource(audio);
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 512;
+        src.connect(analyser);
+        analyser.connect(ctx.destination);
+        const buf = new Uint8Array(analyser.fftSize);
+        const tick = () => {
+            analyser.getByteTimeDomainData(buf);
+            let sum = 0;
+            for (let i = 0; i < buf.length; i++) {
+                const v = (buf[i] - 128) / 128;
+                sum += v * v;
+            }
+            voiceLevel.value = Math.min(1, Math.sqrt(sum / buf.length) * 4);
+            _levelFrame = requestAnimationFrame(tick);
+        };
+        tick();
+    } catch {
+        return () => {};
+    }
+    return () => {
+        cancelAnimationFrame(_levelFrame);
+        voiceLevel.value = 0;
+        ctx?.close?.();
+    };
+}
+
+function pulseWord() {
+    voiceLevel.value = 0.8;
+    const decay = () => {
+        voiceLevel.value *= 0.82;
+        if (voiceLevel.value > 0.05) {
+            _levelFrame = requestAnimationFrame(decay);
+        } else {
+            voiceLevel.value = 0;
+        }
+    };
+    cancelAnimationFrame(_levelFrame);
+    _levelFrame = requestAnimationFrame(decay);
+}
+
 // ── Text to speech ─────────────────────────────────────────────────
 //
 // Desktop Chrome ships no Arabic voice: speechSynthesis "speaks" Arabic
@@ -276,7 +343,11 @@ class BrowserTts {
             const u = new SpeechSynthesisUtterance(text.slice(0, 1500));
             u.voice = voice;
             u.lang = voice.lang;
-            u.onend = u.onerror = () => resolve();
+            u.onboundary = () => pulseWord();
+            u.onend = u.onerror = () => {
+                voiceLevel.value = 0;
+                resolve();
+            };
             window.speechSynthesis.cancel();
             window.speechSynthesis.speak(u);
         });
@@ -286,25 +357,89 @@ class BrowserTts {
     }
 }
 
+/** Sentence-sized pieces (≤ ~220 chars) so the first one is spoken quickly. */
+function speechChunks(text, max = 220) {
+    const parts = String(text || "").split(/(?<=[.!?؟؛\n])\s+/);
+    const out = [];
+    let cur = "";
+    for (const p of parts) {
+        if ((cur + " " + p).trim().length > max && cur) {
+            out.push(cur.trim());
+            cur = p;
+        } else {
+            cur = `${cur} ${p}`;
+        }
+    }
+    if (cur.trim()) {
+        out.push(cur.trim());
+    }
+    const pieces = out.flatMap((c) => (c.length > max * 1.6 ? c.match(new RegExp(`.{1,${max}}(\\s|$)`, "g")) : [c]));
+    // Speech time grows with length (Gemini: 17 chars 2.9 s, 143 chars
+    // 8.4 s), so the FIRST piece is kept short to start talking fast; the
+    // longer ones after it are fetched while the previous one plays.
+    const first = pieces[0] || "";
+    if (first.length > 70) {
+        const cut = Math.max(first.lastIndexOf("،", 70), first.lastIndexOf(",", 70), first.lastIndexOf(" ", 70));
+        if (cut > 20) {
+            pieces.splice(0, 1, first.slice(0, cut + 1).trim(), first.slice(cut + 1).trim());
+        }
+    }
+    return pieces.filter(Boolean);
+}
+
 class ServerTts {
+    /**
+     * Whole-answer synthesis took Gemini 11–21 s before a sound was heard.
+     * Speak sentence by sentence instead: the first piece plays after a
+     * couple of seconds, and the next is fetched while the current plays.
+     */
     async speak(text, lang) {
-        let res;
-        try {
-            res = await rpc("/ai_agent/voice/speak",
-                { text, lang: (lang || "").slice(0, 2) }, { silent: true });
-        } catch {
-            throw new VoiceError("network");
+        const chunks = speechChunks(text);
+        if (!chunks.length) {
+            return;
         }
-        if (!res?.ok) {
-            throw new VoiceError(res?.error === "voice_disabled" ? "disabled" : "failed");
+        this._stopped = false;
+        const fetchChunk = (chunk) => rpc("/ai_agent/voice/speak",
+            { text: chunk, lang: (lang || "").slice(0, 2) }, { silent: true })
+            .then((res) => {
+                if (!res?.ok) {
+                    throw new VoiceError(res?.error === "voice_disabled" ? "disabled" : "failed");
+                }
+                return res;
+            }, () => {
+                throw new VoiceError("network");
+            });
+        let next = fetchChunk(chunks[0]);
+        for (let i = 0; i < chunks.length && !this._stopped; i++) {
+            const res = await next;               // first chunk errors surface to AutoTts
+            next = i + 1 < chunks.length ? fetchChunk(chunks[i + 1]).catch(() => null) : null;
+            if (this._stopped) {
+                break;
+            }
+            await this._play(res);
+            if (next) {
+                const peek = await next;
+                if (!peek) {
+                    break;                         // later piece failed: stop quietly
+                }
+                next = Promise.resolve(peek);
+            }
         }
+    }
+    _play(res) {
         this._audio = new Audio(`data:${res.mimetype};base64,${res.audio}`);
+        const stopMeter = meterAudio(this._audio);
         return new Promise((resolve) => {
-            this._audio.onended = this._audio.onerror = () => resolve();
-            this._audio.play().catch(() => resolve());
+            const done = () => {
+                stopMeter();
+                resolve();
+            };
+            this._audio.onended = this._audio.onerror = done;
+            this._audio.play().catch(done);
         });
     }
     stop() {
+        this._stopped = true;
         this._audio?.pause();
     }
 }

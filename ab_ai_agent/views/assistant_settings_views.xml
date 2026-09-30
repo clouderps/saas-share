@@ -21,6 +21,26 @@
                             </div>
                         </setting>
                     </block>
+                    <block title="Intelligence" name="ghaima_ai_intelligence">
+                        <setting string="Assistant actions"
+                                 help="Create, change, approve, confirm, send, schedule — proposed first, run only after Confirm, within the user's access rights.">
+                            <field name="ai_actions_enabled"/>
+                        </setting>
+                        <setting string="Offer only relevant tools" help="Faster, cheaper answers.">
+                            <field name="ai_tool_routing"/>
+                        </setting>
+                        <setting string="Model for complex questions"
+                                 help="Analysis, planning and multi-part questions. Empty: the default model.">
+                            <field name="ai_strong_model" placeholder="gemini-2.5-pro"/>
+                        </setting>
+                        <setting string="Remember user preferences">
+                            <field name="ai_user_memory"/>
+                        </setting>
+                        <setting string="Daily briefing"
+                                 help="Morning summary of what needs attention, shown when the assistant opens.">
+                            <field name="ai_daily_briefing"/>
+                        </setting>
+                    </block>
                     <block title="Voice" name="ghaima_ai_voice">
                         <setting string="Voice" help="Push-to-talk microphone and Listen button. The microphone never turns on by itself.">
                             <field name="ai_voice_enabled"/>
@@ -30,6 +50,10 @@
                         </setting>
                         <setting string="Text to speech" invisible="not ai_voice_enabled">
                             <field name="ai_tts_provider" widget="radio"/>
+                        </setting>
+                        <setting string="Hands-free conversation" invisible="not ai_voice_enabled"
+                                 help="After a spoken answer the microphone listens again.">
+                            <field name="ai_voice_conversation"/>
                         </setting>
                     </block>
                 </app>

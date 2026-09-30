@@ -3619,3 +3619,240 @@ msgstr "ربع سنة"
 #: code:addons/ab_ai_agent/services/query_data.py:0
 msgid "year"
 msgstr "سنة"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/res_users.py:0
+msgid "%(due)s activities due today, %(late)s overdue."
+msgstr "%(due)s أنشطة مستحقة اليوم، و%(late)s متأخرة."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/res_users.py:0
+msgid "%(n)s customer invoices are overdue."
+msgstr "%(n)s فواتير عملاء متأخرة."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/res_users.py:0
+msgid "%(n)s leave requests to approve."
+msgstr "%(n)s طلبات إجازة بانتظار الاعتماد."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/res_users.py:0
+msgid "%(n)s sent quotations waiting for the customer."
+msgstr "%(n)s عروض أسعار مرسلة بانتظار رد العميل."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/agent_actions.py:0
+msgid "%(name)s updated."
+msgstr "تم تحديث %(name)s."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/agent_actions.py:0
+msgid "%(what)s created: %(name)s"
+msgstr "تم إنشاء %(what)s: %(name)s"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/agent_actions.py:0
+msgid "Activity scheduled."
+msgstr "تمت جدولة النشاط."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_res_config_settings__ai_voice_conversation
+msgid ""
+"After a spoken answer the microphone listens again, until the user stays "
+"silent or presses stop."
+msgstr ""
+"بعد الإجابة الصوتية يستمع الميكروفون مجددًا، حتى يصمت المستخدم أو يضغط "
+"إيقاف."
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.res_config_settings_view_form_ghaima_ai
+msgid "After a spoken answer the microphone listens again."
+msgstr "بعد الإجابة الصوتية يستمع الميكروفون مجددًا."
+
+#. module: ab_ai_agent
+#: model:ai.agent.topic,name:ab_ai_agent.topic_agent_actions
+msgid "Agent Actions"
+msgstr "إجراءات المساعد"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_res_users__ai_briefing_date
+msgid "Ai Briefing Date"
+msgstr "تاريخ الموجز اليومي"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_res_users__ai_briefing_text
+msgid "Ai Briefing Text"
+msgstr "نص الموجز اليومي"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.res_config_settings_view_form_ghaima_ai
+msgid "Analysis, planning and multi-part questions. Empty: the default model."
+msgstr ""
+"أسئلة التحليل والتخطيط والأسئلة متعددة الأجزاء. فارغ: النموذج الافتراضي."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_res_config_settings__ai_actions_enabled
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.res_config_settings_view_form_ghaima_ai
+msgid "Assistant actions"
+msgstr "إجراءات المساعد"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/agent_actions.py:0
+msgid "Create %(what)s?"
+msgstr "إنشاء %(what)s؟"
+
+#. module: ab_ai_agent
+#: model:ai.agent.topic,description:ab_ai_agent.topic_agent_actions
+msgid ""
+"Create, change, approve, confirm, send and schedule on the user's behalf — "
+"every change confirmed by the user and limited by their access rights."
+msgstr ""
+"الإنشاء والتعديل والاعتماد والتأكيد والإرسال والجدولة نيابةً عن المستخدم — "
+"كل تغيير يؤكده المستخدم وفي حدود صلاحياته."
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.res_config_settings_view_form_ghaima_ai
+msgid ""
+"Create, change, approve, confirm, send, schedule — proposed first, run only "
+"after Confirm, within the user's access rights."
+msgstr ""
+"إنشاء، تعديل، اعتماد، تأكيد، إرسال، جدولة — يُقترح أولًا ولا يُنفَّذ إلا بعد"
+" التأكيد، وفي حدود صلاحيات المستخدم."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_res_config_settings__ai_daily_briefing
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.res_config_settings_view_form_ghaima_ai
+msgid "Daily briefing"
+msgstr "الموجز اليومي"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_res_config_settings__ai_daily_briefing
+msgid ""
+"Each morning, a short summary of what needs the user's attention, shown when"
+" they open the assistant (no AI cost)."
+msgstr ""
+"كل صباح ملخص قصير لما يحتاج إلى متابعة المستخدم، يظهر عند فتح المساعد (دون "
+"تكلفة ذكاء اصطناعي)."
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.res_config_settings_view_form_ghaima_ai
+msgid "Faster, cheaper answers."
+msgstr "إجابات أسرع وأقل تكلفة."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_res_config_settings__ai_tool_routing
+msgid ""
+"Faster, cheaper answers: each question is sent with the tools it can use."
+msgstr "إجابات أسرع وأقل تكلفة: يُرسل كل سؤال مع الأدوات التي يحتاجها فقط."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/agent_actions.py:0
+msgid "Follow up"
+msgstr "متابعة"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.res_config_settings_view_form_ghaima_ai
+msgid "Hands-free conversation"
+msgstr "محادثة بدون استخدام اليدين"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_res_config_settings__ai_voice_conversation
+msgid "Hands-free voice conversation"
+msgstr "محادثة صوتية بدون استخدام اليدين"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.res_config_settings_view_form_ghaima_ai
+msgid "Intelligence"
+msgstr "الذكاء"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_res_config_settings__ai_actions_enabled
+msgid ""
+"Let the assistant create, change, approve, confirm, send and schedule — "
+"always proposed first, run only after the user clicks Confirm, and limited "
+"by that user's access rights."
+msgstr ""
+"السماح للمساعد بالإنشاء والتعديل والاعتماد والتأكيد والإرسال والجدولة — "
+"يُقترح دائمًا أولًا، ولا يُنفَّذ إلا بعد ضغط المستخدم على تأكيد، وفي حدود "
+"صلاحياته."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/agent_actions.py:0
+msgid "Log a note on %(name)s?"
+msgstr "إضافة ملاحظة على %(name)s؟"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_res_config_settings__ai_strong_model
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.res_config_settings_view_form_ghaima_ai
+msgid "Model for complex questions"
+msgstr "نموذج الأسئلة المعقدة"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.res_config_settings_view_form_ghaima_ai
+msgid ""
+"Morning summary of what needs attention, shown when the assistant opens."
+msgstr "ملخص صباحي لما يحتاج متابعة، يظهر عند فتح المساعد."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_res_config_settings__ai_tool_routing
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.res_config_settings_view_form_ghaima_ai
+msgid "Offer only relevant tools"
+msgstr "إتاحة الأدوات المناسبة فقط"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_res_config_settings__ai_user_memory
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.res_config_settings_view_form_ghaima_ai
+msgid "Remember user preferences"
+msgstr "تذكّر تفضيلات المستخدم"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/agent_actions.py:0
+msgid "Schedule \"%(what)s\" for %(who)s on %(when)s?"
+msgstr "جدولة \"%(what)s\" لـ %(who)s بتاريخ %(when)s؟"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/agent_actions.py:0
+msgid "Send to %(who)s by email?"
+msgstr "إرسال إلى %(who)s بالبريد الإلكتروني؟"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/agent_actions.py:0
+msgid "Update %(name)s?"
+msgstr "تحديث %(name)s؟"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_res_config_settings__ai_strong_model
+msgid ""
+"Used for analysis / planning / multi-part questions, e.g. gemini-2.5-pro "
+"(must belong to the active AI provider). Empty: always the default model."
+msgstr ""
+"يُستخدم لأسئلة التحليل والتخطيط والأسئلة متعددة الأجزاء، مثل gemini-2.5-pro "
+"(يجب أن يتبع مزوّد الذكاء الاصطناعي المفعّل). فارغ: النموذج الافتراضي "
+"دائمًا."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_res_config_settings__ai_user_memory
+msgid ""
+"Users can ask the assistant to remember preferences; they are used in later "
+"chats."
+msgstr ""
+"يمكن للمستخدمين أن يطلبوا من المساعد تذكّر تفضيلاتهم؛ وتُستخدم في المحادثات "
+"اللاحقة."
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.res_config_settings_view_form_ghaima_ai
+msgid "gemini-2.5-pro"
+msgstr "gemini-2.5-pro"

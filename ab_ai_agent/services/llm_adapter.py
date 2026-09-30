@@ -81,7 +81,7 @@ def _configured_max_tokens(env, fallback=2000):
 
 def call_llm(env, agent, *, system_prompt, user_prompt, tools=None,
              temperature=None, max_tokens=None, image_data=None,
-             image_mimetype=None, model_class_hint=None):
+             image_mimetype=None, model_class_hint=None, model_override=None):
     """Resolve the LLM call path + execute.
 
     Returns:
@@ -113,6 +113,7 @@ def call_llm(env, agent, *, system_prompt, user_prompt, tools=None,
                 max_tokens=max_tokens,
                 temperature=temperature,
                 model_class=model_class_hint,
+                **({'model_override': model_override} if model_override else {}),
                 image_data=image_data,
                 image_mimetype=image_mimetype,
                 tools=tool_codes if tool_codes else None,
@@ -140,7 +141,8 @@ def call_llm(env, agent, *, system_prompt, user_prompt, tools=None,
                 system_prompt=system_prompt,
                 image_data=image_data,
                 image_mimetype=image_mimetype,
-                model_override=None,    # no central routing without the gateway
+                # the stronger model for complex questions (runtime._route_model)
+                model_override=model_override,
                 tools=tools or None,
             )
             usage = dict(usage or {})

@@ -132,5 +132,28 @@ Always end with `__end_message`.</field>
                 ref('tool_date_reference'),
             ])]"/>
         </record>
+
+        <!-- Agent actions — do things for the user, confirm-first, within
+             their access rights. Auto-attached; switch: actions_enabled. -->
+        <record id="topic_agent_actions" model="ai.agent.topic">
+            <field name="name">Agent Actions</field>
+            <field name="code">agent_actions</field>
+            <field name="description">Create, change, approve, confirm, send and schedule on the user's behalf — every change confirmed by the user and limited by their access rights.</field>
+            <field name="auto_attach" eval="True"/>
+            <field name="instructions">You can act for the user. When they ask you to create, change, confirm, approve, reject, send, post, cancel or schedule something, call the matching tool:
+- the record on screen or a named record + a button → `screen_button` / `act_on_record` (button by its label, e.g. "Approve", "Confirm", "Send by Email");
+- a new record → `create_record` (look up exact names with `search_records` first if unsure; lines for orders);
+- changing fields → `update_record`; a note or an email to the customer → `post_message`; a reminder → `schedule_activity`.
+Each tool only proposes: the user sees Confirm / Cancel. Tell them briefly what will happen and to press Confirm. Never claim it is done, never ask for confirmation in text instead of calling the tool, and never retry a refused action another way — if the tool says "not permitted", say the user's access does not allow it.
+Several changes in one request → one tool call per change.</field>
+            <field name="tool_ids" eval="[(6, 0, [
+                ref('tool_screen_button'),
+                ref('tool_act_on_record'),
+                ref('tool_create_record'),
+                ref('tool_update_record'),
+                ref('tool_post_message'),
+                ref('tool_schedule_activity'),
+            ])]"/>
+        </record>
     </data>
 </odoo>

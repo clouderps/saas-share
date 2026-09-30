@@ -62,7 +62,7 @@ class AiAgentPendingAction(models.Model):
     # ── Proposal ───────────────────────────────────────────────
 
     @api.model
-    def propose(self, tool_code, args, *, target=None, summary='', agent_run=None):
+    def propose(self, tool_code, args, *, target=None, summary='', agent_run=None, details=None):
         """Record a proposal for the CURRENT user and return the chip payload.
 
         Created as the user (the ACL grants create on own rows), so a
@@ -79,7 +79,9 @@ class AiAgentPendingAction(models.Model):
         })
         return {
             'requires_confirmation': True,
-            'confirmation': {'key': row.key, 'summary': row.summary},
+            'confirmation': {'key': row.key, 'summary': row.summary,
+                             # what exactly will happen, shown on the card
+                             'details': [str(d)[:200] for d in (details or [])][:12]},
         }
 
     # ── Decision ───────────────────────────────────────────────

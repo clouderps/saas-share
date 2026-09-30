@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Phase 2 — the Screen Context Engine trusts nothing from the browser."""
+from odoo import fields
 from odoo.tests.common import TransactionCase, new_test_user, tagged
 
 
@@ -121,3 +122,15 @@ class TestScreenInsight(TransactionCase):
     def test_tips_default_to_on(self):
         user = new_test_user(self.env, login='ai_tip_default', groups='base.group_user')
         self.assertEqual(user.ai_proactive_mode, 'on')
+
+    def test_briefing_is_counts_for_the_user_cached_per_day(self):
+        user = new_test_user(self.env, login='ai_brief_user', groups='base.group_user')
+        partner = self.env['res.partner'].create({'name': 'Brief Co'})
+        partner.activity_schedule('mail.mail_activity_data_todo', user_id=user.id,
+                                  date_deadline='2000-01-01', summary='late one')
+        text = user._ai_briefing()
+        self.assertIn('1', text)
+        self.assertEqual(user.ai_briefing_date, fields.Date.context_today(user))
+        partner.activity_schedule('mail.mail_activity_data_todo', user_id=user.id,
+                                  date_deadline='2000-01-02', summary='late two')
+        self.assertEqual(user._ai_briefing(), text)          # cached for today

@@ -2,6 +2,16 @@
 
 > Per-repo tracking log. Seeded 2026-05-31 from manifest inventory + last 90 days of `git log`. Append new entries on top as work lands.
 
+## 2026-09-30 — Ghaima AI sprint 2: agent control, routing, memory, briefing, lip-sync
+
+- `ab_ai_agent`: agent actions (create_record, update_record, act_on_record,
+  post_message, schedule_activity) — propose → Confirm → run as the user,
+  validated values, details on the confirm card; tool routing by question;
+  optional stronger model for complex questions; user memory in the prompt;
+  daily briefing (counts, cached per day); hands-free voice mode; speech
+  sentence by sentence (first sound ~5 s, was 11–21 s) with a voice-level
+  meter for lip-sync. All switches in Settings → Ghaima AI. Eval 14/14 ×3.
+
 ## 2026-09-30 — Ghaima AI sprint 1: native tools, ask-the-data, evaluation
 
 - `ab_ai_base`: Gemini native function calling (functionDeclarations, schema

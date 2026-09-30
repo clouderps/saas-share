@@ -854,7 +854,17 @@ export class AiAgentChat extends Component {
         this._voiceTurn = false;
         if (!this.tts || this.state.muted || !text) return;
         if (voiceTurn || this.voiceConfig.autoplay) {
-            this.listen({ id: msgId, text });
+            const spoken = this.listen({ id: msgId, text });
+            // Hands-free: after answering a spoken question, listen again.
+            // Ends by itself when the user says nothing (empty transcript)
+            // or presses stop / mute.
+            if (voiceTurn && this.voiceConfig.conversation) {
+                spoken.then(() => {
+                    if (!this.state.muted && !this.state.recording && !this.state.isThinking) {
+                        this.toggleRecording();
+                    }
+                });
+            }
         }
     }
 
