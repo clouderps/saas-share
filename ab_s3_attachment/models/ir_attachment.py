@@ -1,6 +1,9 @@
 import logging
+import re
 import threading
 import time
+from datetime import datetime, timedelta, timezone
+from urllib.parse import quote
 
 from odoo import api, models, _
 from odoo.exceptions import UserError
@@ -45,6 +48,12 @@ def _get_s3_config(env):
         'access_key_id': ICP.get_param('ab_s3.access_key_id', ''),
         'secret_access_key': ICP.get_param('ab_s3.secret_access_key', ''),
         'max_storage_bytes': int(ICP.get_param('ab_s3.max_storage_bytes', '0')),
+        # Serve downloads as a short-lived signed S3 link (Odoo's
+        # cloud_storage pattern) — for every size, from 0 bytes. OFF until
+        # the platform (or an admin) turns it on: no change to live tenants
+        # by merely upgrading the module.
+        'signed_urls': str(ICP.get_param('ab_s3.signed_urls', 'False')).lower() in ('true', '1', 'yes'),
+        'signed_url_ttl': max(60, int(ICP.get_param('ab_s3.signed_url_ttl', '300') or 300)),
     }
 
 
@@ -148,9 +157,11 @@ class IrAttachment(models.Model):
 
             if disk_data:
                 _logger.info(
-                    'ab_s3_attachment: S3 miss (%s) — served from local disk: key=%s',
-                    s3_err_name, key,
+                    'ab_s3_attachment: S3 miss (%s) — served from local disk, '
+                    're-uploading: key=%s', s3_err_name, key,
                 )
+                # Heal: the next read (and the signed link) finds it on S3.
+                self._s3_heal_upload(key, disk_data)
                 return disk_data
 
             _logger.warning(
@@ -174,6 +185,14 @@ class IrAttachment(models.Model):
         from odoo.http import Stream
         from werkzeug.exceptions import NotFound
         self.ensure_one()
+
+        # Signed link: the browser downloads straight from S3; Odoo has
+        # already checked access (this runs inside the binary controller).
+        # Only when the object is really there — otherwise fall through to
+        # the proxied read, which serves from local disk and heals S3.
+        url_stream = self._s3_signed_stream()
+        if url_stream:
+            return url_stream
 
         data = self._file_read(self.store_fname)
         if not data and self.db_datas:
@@ -328,6 +347,165 @@ class IrAttachment(models.Model):
         # thing (spool checklist for the local filestore GC).
         return super()._file_delete(fname)
 
+    # ==================== Signed links ====================
+
+    _S3_RESIZE_PATH = re.compile(r'/\d+x\d+(/|$)')
+
+    def _s3_can_redirect(self):
+        """Whether THIS request may be answered with a signed S3 link.
+
+        Everything qualifies (any size) except what cannot follow a
+        redirect to another origin:
+          * compiled asset bundles — CSS resolves fonts/images relative to
+            its own URL, which would then point at S3;
+          * wkhtmltopdf — it has no TLS, so an https S3 link renders as a
+            missing image in the PDF;
+          * /web/image requests that ask for a resize/crop — Odoo does not
+            resize a link, the browser would get the full original.
+        """
+        from odoo.http import request
+        if not request or not getattr(request, 'httprequest', None):
+            return False
+        if not self._s3_config()['signed_urls'] or self._is_regenerable_asset() \
+                or (self.url or '').startswith('/web/assets/'):
+            return False
+        http = request.httprequest
+        if 'wkhtmltopdf' in (http.headers.get('User-Agent') or '').lower():
+            return False
+        if http.path.startswith('/web/image'):
+            params = request.params or {}
+            if any(params.get(k) for k in ('width', 'height', 'crop')) \
+                    or self._S3_RESIZE_PATH.search(http.path):
+                return False
+        return True
+
+    def _s3_signed_stream(self):
+        """A 'url' Stream to a signed S3 GET link, or None to proxy instead."""
+        if not self._s3_can_redirect():
+            return None
+        from odoo.http import request, Stream
+        config = self._s3_config()
+        key = self._s3_key(self.store_fname)
+        try:
+            client = self._s3_client()
+            client.head_object(Bucket=config['bucket'], Key=key)
+        except Exception:
+            return None          # not on S3 (yet): proxied path serves + heals
+        disposition = 'attachment' if (request.params or {}).get('download') else 'inline'
+        filename = self.name or 'file'
+        params = {
+            'Bucket': config['bucket'],
+            'Key': key,
+            'ResponseContentType': self.mimetype or 'application/octet-stream',
+            'ResponseContentDisposition':
+                f"{disposition}; filename*=UTF-8''{quote(filename)}",
+        }
+        try:
+            url = client.generate_presigned_url(
+                'get_object', Params=params, ExpiresIn=config['signed_url_ttl'])
+        except Exception:
+            _logger.warning('ab_s3_attachment: could not sign key=%s', key, exc_info=True)
+            return None
+        stream = Stream(type='url', url=url, mimetype=self.mimetype,
+                        download_name=self.name)
+        # Browsers may reuse the redirect until shortly before it expires.
+        stream.max_age = max(config['signed_url_ttl'] - 10, 0)
+        return stream
+
+    # ==================== Self-healing ====================
+
+    def _s3_heal_upload(self, key, data):
+        """Best-effort re-upload of bytes found only on local disk."""
+        try:
+            self._s3_client().put_object(
+                Bucket=self._s3_config()['bucket'], Key=key, Body=data)
+            return True
+        except Exception:
+            _logger.warning('ab_s3_attachment: heal upload failed key=%s', key, exc_info=True)
+            return False
+
+    def _s3_listed_fnames(self):
+        """store_fnames present on S3 under this tenant's prefix."""
+        config = self._s3_config()
+        prefix = config['prefix']
+        cut = len(prefix) + 1 if prefix else 0
+        found = set()
+        paginator = self._s3_client().get_paginator('list_objects_v2')
+        for page in paginator.paginate(Bucket=config['bucket'],
+                                       Prefix=f"{prefix}/" if prefix else ''):
+            for obj in page.get('Contents', []):
+                found.add(obj['Key'][cut:])
+        return found
+
+    @api.model
+    def _s3_self_check(self, heal=True, limit=5000):
+        """Every file the database references must exist on S3.
+
+        Lists the prefix once, and for each referenced store_fname that is
+        not there uploads it from local disk when the bytes still exist.
+        Returns counts; called hourly by cron and by the central platform
+        right after it switches this tenant's credentials.
+        """
+        if not self._is_s3_storage():
+            return {'status': 'skipped', 'reason': 's3 not active'}
+        self.env.cr.execute(
+            "SELECT DISTINCT store_fname FROM ir_attachment WHERE store_fname IS NOT NULL")
+        referenced = {r[0] for r in self.env.cr.fetchall()}
+        try:
+            on_s3 = self._s3_listed_fnames()
+        except Exception as e:
+            _logger.warning('ab_s3_attachment: self-check cannot list S3: %s', e)
+            return {'status': 'error', 'error': type(e).__name__,
+                    'referenced': len(referenced)}
+        missing = sorted(referenced - on_s3)
+        healed = unrecoverable = 0
+        if heal:
+            for fname in missing[:limit]:
+                data = super(IrAttachment, self)._file_read(fname)
+                if data and self._s3_heal_upload(self._s3_key(fname), data):
+                    healed += 1
+                elif not data:
+                    unrecoverable += 1
+        result = {
+            'status': 'ok',
+            'referenced': len(referenced),
+            'on_s3': len(on_s3 & referenced),
+            'missing': len(missing),
+            'healed': healed,
+            'unrecoverable': unrecoverable,
+            'checked_at': datetime.now(timezone.utc).isoformat(timespec='seconds'),
+        }
+        self.env['ir.config_parameter'].sudo().set_param(
+            'ab_s3.last_self_check', repr(result))
+        if missing:
+            _logger.info('ab_s3_attachment: self-check %s', result)
+        return result
+
+    @api.model
+    def _cron_s3_self_check(self):
+        self._s3_self_check(heal=True)
+
+    # ── Remote entry points (central platform, XML-RPC) ────────
+    # Odoo refuses to run methods starting with "_" over RPC, so the
+    # platform's call to _s3_migrate_local_to_s3 never ran: every new
+    # tenant kept its pre-S3 files on container disk only. These public
+    # wrappers are what the platform calls; administrators only.
+
+    def _s3_require_admin(self):
+        from odoo.exceptions import AccessError
+        if not self.env.user._is_system():
+            raise AccessError(_('Only administrators can run S3 maintenance.'))
+
+    @api.model
+    def s3_migrate_local_to_s3(self):
+        self._s3_require_admin()
+        return self.sudo()._s3_migrate_local_to_s3()
+
+    @api.model
+    def s3_self_check(self, heal=True):
+        self._s3_require_admin()
+        return self.sudo()._s3_self_check(heal=bool(heal))
+
     # ==================== Helpers ====================
 
     def _s3_dedup_skip_write(self, fname, key):
@@ -399,11 +577,17 @@ class IrAttachment(models.Model):
             _logger.warning('S3 GC skipped: no prefix configured')
             return
 
-        # Get all store_fname values from DB
+        # Same guard as Odoo's own filestore GC: block new attachment rows
+        # while we read the reference list, so a file written by a
+        # transaction that has not committed yet is never judged orphaned.
+        self.env.cr.execute("LOCK ir_attachment IN SHARE MODE")
         self.env.cr.execute(
             "SELECT store_fname FROM ir_attachment WHERE store_fname IS NOT NULL"
         )
         db_fnames = set(row[0] for row in self.env.cr.fetchall())
+        # …and never touch an object younger than a day: an upload whose
+        # row is still being created in another request must survive.
+        min_age = datetime.now(timezone.utc) - timedelta(days=1)
 
         # List all S3 objects under prefix
         paginator = client.get_paginator('list_objects_v2')
@@ -412,7 +596,10 @@ class IrAttachment(models.Model):
             for obj in page.get('Contents', []):
                 s3_key = obj['Key']
                 fname = s3_key[len(prefix) + 1:]
-                if fname and fname not in db_fnames:
+                modified = obj.get('LastModified')
+                if modified and modified > min_age:
+                    continue
+                if fname and fname not in db_fnames and not fname.startswith('.'):
                     to_delete.append({'Key': s3_key})
 
         # Batch delete orphans (max 1000 per request)

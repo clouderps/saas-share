@@ -56,3 +56,14 @@ msgstr ""
 #: code:addons/ab_s3_attachment/models/ir_attachment.py:0
 msgid "boto3 is not installed. Run: pip install boto3"
 msgstr "مكتبة boto3 غير مُثبَّتة. نفّذ: pip install boto3"
+
+#. module: ab_s3_attachment
+#. odoo-python
+#: code:addons/ab_s3_attachment/models/ir_attachment.py:0
+msgid "Only administrators can run S3 maintenance."
+msgstr "صيانة S3 متاحة للمسؤولين فقط."
+
+#. module: ab_s3_attachment
+#: model:ir.actions.server,name:ab_s3_attachment.ir_cron_s3_self_check_ir_actions_server
+msgid "S3: verify and heal missing files"
+msgstr "S3: التحقق من الملفات المفقودة واستعادتها"

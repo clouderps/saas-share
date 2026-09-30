@@ -2,6 +2,19 @@
 
 > Per-repo tracking log. Seeded 2026-05-31 from manifest inventory + last 90 days of `git log`. Append new entries on top as work lands.
 
+## 2026-09-30 — ab_s3_attachment 18.0.1.1.0 (not deployed)
+
+- Signed-link downloads for every file size (Odoo cloud_storage pattern) after
+  Odoo's access check; assets, wkhtmltopdf and resized images stay proxied.
+  OFF by default (`ab_s3.signed_urls`).
+- No missing files: an S3 miss is served from local disk and re-uploaded;
+  `_s3_self_check` / hourly cron (inactive by default) uploads anything the DB
+  references but S3 lacks; GC now locks like Odoo's and never deletes objects
+  younger than a day.
+- Public admin-only RPC entry points `s3_migrate_local_to_s3` / `s3_self_check`:
+  the platform's call to the private method was refused by Odoo, so new
+  tenants' pre-S3 files were never migrated.
+
 ## 2026-09-29 — Ghaima AI: one action button + screen card
 
 - `ab_ai_agent` 18.0.1.12.0: the composer's loose icons (mic, attach, camera…)

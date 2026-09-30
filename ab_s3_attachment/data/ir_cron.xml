@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- Every file the database references must exist on S3: uploads
+         anything missing from the local copy, hourly. -->
+    <record id="ir_cron_s3_self_check" model="ir.cron">
+        <field name="name">S3: verify and heal missing files</field>
+        <field name="model_id" ref="base.model_ir_attachment"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_s3_self_check()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">hours</field>
+        <!-- Off by default: enable per tenant once verified. -->
+        <field name="active" eval="False"/>
+    </record>
+</odoo>
