@@ -303,7 +303,10 @@ def api_route(path, methods=('POST',), scope=None, auth='token', summary='',
             'response_example': response_example,
         })
 
+        # readonly=False: Odoo 18 runs auth='none' routes on a read-only cursor
+        # (a replica when one is configured) and retries read/write only when
+        # the write error escapes -- the wrapper above catches it first.
         return http.route(path, type='http', auth='none', methods=methods,
-                          csrf=csrf, cors=cors)(wrapper)
+                          csrf=csrf, cors=cors, readonly=False)(wrapper)
 
     return decorator

@@ -3,10 +3,14 @@
 
 import unittest
 
+from odoo.tests import tagged
+from odoo.tests.common import BaseCase
+
 from odoo.addons.ab_api_base.lib.openapi import build_openapi_spec, _openapi_path
 
 
-class TestOpenApiBuilder(unittest.TestCase):
+@tagged('post_install', '-at_install')
+class TestOpenApiBuilder(BaseCase):
 
     def _entry(self, **kw):
         base = {
@@ -60,3 +64,25 @@ class TestOpenApiBuilder(unittest.TestCase):
         self.assertEqual(
             op['responses']['200']['content']['application/json']['example'],
             {'success': True})
+
+
+@tagged('post_install', '-at_install')
+class TestApiRouteReadWrite(BaseCase):
+    """Every @api_route endpoint gets a read/write cursor (see api.py)."""
+
+    def test_routes_are_read_write(self):
+        from odoo import http as odoo_http
+        from odoo.addons.ab_api_base.controllers import api as api_mod
+        seen = {}
+
+        def fake_route(*args, **kwargs):
+            seen.update(kwargs)
+            return lambda f: f
+        original = odoo_http.route
+        api_mod.http.route = fake_route
+        try:
+            api_mod.api_route('/api/v1/test/rw', methods=('POST',), auth='public')(lambda self: None)
+        finally:
+            api_mod.http.route = original
+            api_mod.ENDPOINT_REGISTRY[:] = [e for e in api_mod.ENDPOINT_REGISTRY if e['path'] != '/api/v1/test/rw']
+        self.assertIs(seen.get('readonly'), False)

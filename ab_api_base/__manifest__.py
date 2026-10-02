@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'CloudERPs API Base',
-    'version': '18.0.1.7.1',
+    'version': '18.0.1.7.2',
     'category': 'Technical',
     'summary': 'Unified API seam: one token, one decorator, auto OpenAPI/Swagger docs',
     'description': """
