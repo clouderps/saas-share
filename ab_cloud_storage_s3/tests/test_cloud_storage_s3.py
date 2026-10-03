@@ -73,3 +73,36 @@ class TestCloudStorageS3(TransactionCase):
         self.assertEqual(rules[1]['AllowedOrigins'], ['https://fayia.ghaima.sa'])
         wildcard = [{'AllowedOrigins': ['https://*.ghaima.sa'], 'AllowedMethods': ['GET', 'PUT']}]
         self.assertEqual(merge_cors(wildcard, 'https://qira.ghaima.sa', 300), (wildcard, False))
+
+    def test_migration_moves_record_files_only(self):
+        ICP = self.env['ir.config_parameter'].sudo()
+        ICP.set_param('ir_attachment.location', 's3')
+        partner = self.env['res.partner'].create({'name': 'P'})
+        Att = self.env['ir.attachment']
+        # rows are inserted as they would be on an S3 tenant: the bytes are
+        # already in the bucket, only store_fname/file_size are in the DB
+        def row(**vals):
+            att = Att.create({'name': 'x', 'type': 'url', 'url': 'about:blank', **vals})
+            self.env.cr.execute("UPDATE ir_attachment SET type='binary', url=NULL, store_fname=%s, "
+                                "file_size=%s, checksum=%s WHERE id=%s", ('ab/abcd', 42, 'abcd', att.id))
+            att.invalidate_recordset()
+            return att
+        chatter = row(name='quote.pdf', res_model='res.partner', res_id=partner.id, mimetype='application/pdf')
+        image = row(res_model='res.partner', res_id=partner.id, res_field='image_1920')
+        invoice_model = next(iter(Att._get_cloud_storage_unsupported_models()), None)
+        kept = [image] + ([row(res_model=invoice_model, res_id=1)] if invoice_model else [])
+
+        candidates = Att._s3_cloud_migration_candidates()
+        self.assertIn(chatter, candidates)
+        self.assertFalse(set(kept) & set(candidates))
+
+        copies = []
+        with patch.object(s3mod, 's3_client', lambda settings: type('C', (), {
+                'copy_object': lambda self, **kw: copies.append(kw)})()):
+            self.assertEqual(chatter._s3_migrate_to_cloud_storage(), {'migrated': 1, 'failed': 0})
+        self.assertEqual((chatter.type, chatter.file_size, chatter.checksum), ('cloud_storage', 42, 'abcd'))
+        self.assertFalse(chatter.store_fname)
+        self.assertEqual(copies[0]['CopySource'], {'Bucket': 'tenant-bucket', 'Key': 'entity_7/filestore/ab/abcd'})
+        self.assertTrue(copies[0]['Key'].startswith(f'entity_7/cloud_storage/{chatter.id}/'))
+        self.assertEqual(copies[0]['ContentType'], 'application/pdf')
+        self.assertEqual(image.type, 'binary')

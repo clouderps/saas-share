@@ -1,3 +1,4 @@
+import logging
 import re
 import threading
 from urllib.parse import quote, unquote
@@ -10,6 +11,9 @@ except ImportError:  # pragma: no cover - boto3 ships in the tenant image
 
 from odoo import _, models
 from odoo.exceptions import UserError, ValidationError
+from odoo.tools import SQL
+
+_logger = logging.getLogger(__name__)
 
 _clients = {}  # (access key, region) -> boto3 client; signing is local, clients are thread-safe
 _clients_lock = threading.Lock()
@@ -102,3 +106,60 @@ class IrAttachment(models.Model):
             'method': 'PUT',
             'response_status': 200,
         }
+
+    # MIGRATION — Odoo's cloud_storage_migration, S3-native: that module reads
+    # the bytes from the local filestore, but tenant files already live on S3
+    # (ab_s3_attachment), so each one is a server-side copy, no download.
+    def _s3_cloud_migration_candidates(self, limit=None):
+        """Odoo's own rules: record/chatter files only. Field binaries
+        (images), models whose code reads the bytes (mail.thread.main.attachment
+        = invoices/ZATCA, documents) and website/asset files stay S3-backed
+        binaries."""
+        excluded = (*self._get_cloud_storage_unsupported_models(), 'ir.ui.view', 'website')
+        self.env.cr.execute(SQL(
+            """SELECT id FROM ir_attachment
+                WHERE type = 'binary' AND url IS NULL AND store_fname IS NOT NULL
+                  AND res_field IS NULL AND res_model IS NOT NULL AND res_id > 0
+                  AND res_model NOT IN %s
+                ORDER BY id %s""",
+            excluded, SQL('LIMIT %s', limit) if limit else SQL()))
+        return self.browse(r[0] for r in self.env.cr.fetchall())
+
+    def _s3_migrate_to_cloud_storage(self):
+        """Copy each file to its cloud_storage key, then switch the row to
+        type=cloud_storage. Size/checksum/mimetype are kept; the old filestore
+        object goes to the GC checklist (deleted only once unreferenced). A
+        failed copy leaves the attachment untouched."""
+        if not self._cloud_storage_s3_active():
+            raise UserError(_('Amazon S3 cloud storage is not enabled.'))
+        ICP = self.env['ir.config_parameter'].sudo()
+        settings = s3_settings(self.env)
+        client = s3_client(settings)
+        on_s3 = ICP.get_param('ir_attachment.location') == 's3'
+        src_bucket = ICP.get_param('ab_s3.bucket') or settings['bucket']
+        src_prefix = (ICP.get_param('ab_s3.prefix') or '').strip('/')
+        done = failed = 0
+        for att in self:
+            url = att._generate_cloud_storage_url()
+            key = unquote(URL_RE.fullmatch(url)['key'])
+            extra = {'ContentType': att.mimetype or 'application/octet-stream',
+                     'ServerSideEncryption': 'AES256'}
+            try:
+                if on_s3:
+                    src = f'{src_prefix}/{att.store_fname}' if src_prefix else att.store_fname
+                    client.copy_object(Bucket=settings['bucket'], Key=key, MetadataDirective='REPLACE',
+                                       CopySource={'Bucket': src_bucket, 'Key': src}, **extra)
+                else:
+                    client.put_object(Bucket=settings['bucket'], Key=key, Body=att.raw, **extra)
+            except Exception as e:  # noqa: BLE001 — keep going, report the count
+                _logger.warning('cloud storage migration: attachment %s not copied: %s', att.id, e)
+                failed += 1
+                continue
+            fname = att.store_fname
+            self.env.cr.execute(
+                "UPDATE ir_attachment SET type = 'cloud_storage', url = %s, store_fname = NULL, "
+                "db_datas = NULL WHERE id = %s", (url, att.id))
+            att.invalidate_recordset(['type', 'url', 'store_fname', 'db_datas', 'raw', 'datas'])
+            self._file_delete(fname)
+            done += 1
+        return {'migrated': done, 'failed': failed}
