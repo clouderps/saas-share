@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="cloud_storage_s3_config_settings_view_form" model="ir.ui.view">
+        <field name="name">cloud_storage_s3_config_settings_view_form</field>
+        <field name="model">res.config.settings</field>
+        <field name="priority" eval="70"/>
+        <field name="inherit_id" ref="cloud_storage.cloud_storage_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//setting[@id='cloud_storage_provider']" position="inside">
+                <div class="content-group mt16" invisible="cloud_storage_provider != 's3'">
+                    <div class="text-muted mb8">Leave empty to use this instance's file storage settings.</div>
+                    <label for="cloud_storage_s3_bucket_name" class="o_light_label mr8"/>
+                    <field name="cloud_storage_s3_bucket_name"/>
+                    <br/>
+                    <label for="cloud_storage_s3_region" class="o_light_label mr8"/>
+                    <field name="cloud_storage_s3_region" placeholder="us-east-1"/>
+                    <br/>
+                    <label for="cloud_storage_s3_prefix" class="o_light_label mr8"/>
+                    <field name="cloud_storage_s3_prefix"/>
+                    <br/>
+                    <label for="cloud_storage_s3_access_key_id" class="o_light_label mr8"/>
+                    <field name="cloud_storage_s3_access_key_id"/>
+                    <br/>
+                    <label for="cloud_storage_s3_secret_access_key" class="o_light_label mr8"/>
+                    <field name="cloud_storage_s3_secret_access_key" password="True"/>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>
