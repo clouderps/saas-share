@@ -13,7 +13,8 @@ class TestAgentLimit(TransactionCase):
         self.system = self.Agent.search([('active', '=', True)])
 
     def _agent(self, code, **kw):
-        return self.Agent.create(dict({'name': code, 'code': code, 'surface_ids': 'chatter'}, **kw))
+        return self.Agent.create(dict({'name': code, 'code': code, 'surface_ids': 'chatter',
+                                      'system_prompt': 'test agent'}, **kw))
 
     def test_no_limit_means_everyone_works(self):
         self.ICP.set_param('ab_ai_agent.max_agents', '0')
@@ -29,7 +30,7 @@ class TestAgentLimit(TransactionCase):
     def test_module_data_never_breaks_on_the_limit(self):
         self.ICP.set_param('ab_ai_agent.max_agents', str(len(self.system)))
         extra = self.Agent.with_context(install_mode=True).create(
-            {'name': 'shipped', 'code': 'shipped', 'surface_ids': 'chatter'})
+            {'name': 'shipped', 'code': 'shipped', 'surface_ids': 'chatter', 'system_prompt': 'test agent'})
         working = self.Agent._working_agent_ids()
         self.assertNotIn(extra.id, working)          # loads, but does not answer
         self.assertTrue(set(self.system.ids) <= working)  # the assistant always works
