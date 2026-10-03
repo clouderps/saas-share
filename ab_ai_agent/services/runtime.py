@@ -87,6 +87,19 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
             on_event('done', run_id=agent_run.id, state='budget')
             return envelope['response'], agent_run, envelope
 
+    # ── 2b. AI plan: only the first N active agents answer ────
+    working = env['ai.agent'].sudo()._working_agent_ids()
+    if working is not None and agent.id not in working:
+        envelope = _agent_limit_envelope(env['ai.agent'].sudo()._agent_limit(), locale)
+        agent_run.finalize(
+            state='budget',
+            response=envelope['response'],
+            error='AGENT_LIMIT',
+            latency_ms=int((time.perf_counter() - started_perf) * 1000),
+        )
+        on_event('done', run_id=agent_run.id, state='budget')
+        return envelope['response'], agent_run, envelope
+
     # ── 3. Build system prompt + tool schemas ─────────────────
     # Retrieve org knowledge ONCE here so it's both injected and
     # captured on the audit row (monitor) without a double RAG hit.
@@ -1676,6 +1689,26 @@ def _stringify_ref(ref):
 
 
 # ───── envelopes for terminal non-done states ─────
+
+def _agent_limit_envelope(limit, locale):
+    if locale == 'ar':
+        msg = (f'باقة الذكاء الاصطناعي الحالية تسمح بـ {limit} وكيل نشط فقط، وهذا الوكيل خارج الحد. '
+               'استخدم مساعد غيمة أو قم بترقية الباقة.')
+    else:
+        msg = (f'Your AI plan allows {limit} active agent(s) and this agent is beyond the limit. '
+               'Use the Ghaima Assistant or upgrade the AI plan.')
+    return {
+        'response': msg,
+        'error': 'AGENT_LIMIT',
+        'render': {
+            'layout': 'chat',
+            'blocks': [
+                {'type': 'callout', 'title': 'AI plan limit', 'body': msg,
+                 'tone': 'bad', 'icon': 'fa-exclamation-triangle'},
+            ],
+        },
+    }
+
 
 def _budget_envelope(check, locale):
     if locale == 'ar':

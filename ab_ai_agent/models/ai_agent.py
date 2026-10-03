@@ -16,6 +16,8 @@ from odoo.exceptions import UserError, ValidationError
 
 _logger = logging.getLogger(__name__)
 
+LIMIT_PARAM = 'ab_ai_agent.max_agents'  # pushed by the platform from the AI plan; 0 = unlimited
+
 
 PERSONA_SELECTION = [
     ('assistant', 'Assistant'),
@@ -247,6 +249,41 @@ class AIAgent(models.Model):
                 raise ValidationError(_(
                     "The code 'ghaima_assistant' is reserved for the system agent."
                 ))
+
+    # ── AI plan: how many agents may work on this instance ─────
+
+    @api.model
+    def _agent_limit(self):
+        try:
+            return max(0, int(self.env['ir.config_parameter'].sudo().get_param(LIMIT_PARAM) or 0))
+        except (TypeError, ValueError):
+            return 0
+
+    @api.model
+    def _working_agent_ids(self):
+        """Ids of the active agents allowed to answer under the plan, or None
+        when there is no limit. The Ghaima Assistant (system) comes first, so
+        it always keeps working; then by sequence and age."""
+        limit = self._agent_limit()
+        if not limit:
+            return None
+        agents = self.sudo().search([('active', '=', True)])
+        ordered = agents.sorted(lambda a: (not a.is_system, a.code != 'ghaima_assistant', a.sequence, a.id))
+        return set(ordered[:limit].ids)
+
+    @api.constrains('active')
+    def _check_plan_agent_limit(self):
+        # Not while modules load their data: an agent shipped by a module must
+        # never break that install (it just does not answer beyond the limit).
+        if 'ai.gateway.service' in self.env or self.env.context.get('install_mode') \
+                or self.env.context.get('module'):
+            return
+        limit = self._agent_limit()
+        if limit and any(self.mapped('active')) and \
+                self.sudo().search_count([('active', '=', True)]) > limit:
+            raise ValidationError(_(
+                'Your AI plan allows %s active agent(s). Archive an agent or upgrade the AI plan.',
+                limit))
 
     @api.ondelete(at_uninstall=False)
     def _unlink_system(self):

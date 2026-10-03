@@ -3929,3 +3929,13 @@ msgstr "البوابة المركزية فقط"
 #: model:ir.model.fields.selection,name:ab_ai_agent.selection__res_config_settings__ai_llm_mode__direct
 msgid "Own provider key only"
 msgstr "مفتاح المزوّد الخاص فقط"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent.py:0
+msgid ""
+"Your AI plan allows %s active agent(s). Archive an agent or upgrade the AI "
+"plan."
+msgstr ""
+"باقة الذكاء الاصطناعي تسمح بـ %s وكيل نشط فقط. قم بأرشفة وكيل أو ترقية "
+"الباقة."
