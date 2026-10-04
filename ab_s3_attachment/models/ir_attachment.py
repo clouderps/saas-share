@@ -297,14 +297,7 @@ class IrAttachment(models.Model):
         last_err = None
         for attempt in (1, 2):
             try:
-                self._s3_client().put_object(
-                    Bucket=config['bucket'],
-                    Key=key,
-                    Body=bin_value,
-                    # S3 recomputes the SHA-256 and rejects a corrupted body
-                    ChecksumAlgorithm='SHA256',
-                    **self._s3_encryption_args(),
-                )
+                self._s3_put(key, bin_value)
                 _logger.debug(
                     'ab_s3_attachment: wrote key=%s size=%d (attempt %d)',
                     key, len(bin_value), attempt,
@@ -366,6 +359,13 @@ class IrAttachment(models.Model):
             return args
         return {'ServerSideEncryption': 'AES256'}
 
+    def _s3_put(self, key, body):
+        """Every write: S3 recomputes the SHA-256 and rejects a corrupted
+        body, and the object is encrypted (ab_s3.encryption)."""
+        return self._s3_client().put_object(
+            Bucket=self._s3_config()['bucket'], Key=key, Body=body,
+            ChecksumAlgorithm='SHA256', **self._s3_encryption_args())
+
     def _s3_protected_fnames(self):
         """Files referenced by retained snapshots, as published by the
         platform; None (= do not collect anything) when the list is missing,
@@ -391,20 +391,31 @@ class IrAttachment(models.Model):
         key = self._s3_key(f'.ghaima/healthcheck/{uuid.uuid4().hex}')
         payload = uuid.uuid4().bytes * 64
         started = time.monotonic()
+        client = None
         try:
             client = self._s3_client()
-            client.put_object(Bucket=config['bucket'], Key=key, Body=payload,
-                              ChecksumAlgorithm='SHA256', **self._s3_encryption_args())
+            self._s3_put(key, payload)
             got = client.get_object(Bucket=config['bucket'], Key=key)['Body'].read()
-            client.delete_object(Bucket=config['bucket'], Key=key)
             elapsed = time.monotonic() - started
             ok = hashlib.sha256(got).digest() == hashlib.sha256(payload).digest()
             status = 'FAILED' if not ok else ('DEGRADED' if elapsed > 5 else 'HEALTHY')
             result = {'status': status, 'seconds': round(elapsed, 2)}
         except Exception as e:
             result = {'status': 'FAILED', 'error': type(e).__name__}
+        finally:
+            if client:   # never leave a probe behind, even on failure
+                try:
+                    client.delete_object(Bucket=config['bucket'], Key=key)
+                except Exception:
+                    pass
         result['checked_at'] = datetime.now(timezone.utc).isoformat(timespec='seconds')
-        self.env['ir.config_parameter'].sudo().set_param('ab_s3.last_health', json.dumps(result))
+        ICP = self.env['ir.config_parameter'].sudo()
+        try:
+            previous = json.loads(ICP.get_param('ab_s3.last_health') or '{}').get('status')
+        except ValueError:
+            previous = None
+        if previous != result['status']:   # a param write flushes every worker's cache
+            ICP.set_param('ab_s3.last_health', json.dumps(result))
         if result['status'] != 'HEALTHY':
             _logger.warning('ab_s3_attachment: S3 health %s', result)
         return result
@@ -479,8 +490,7 @@ class IrAttachment(models.Model):
     def _s3_heal_upload(self, key, data):
         """Best-effort re-upload of bytes found only on local disk."""
         try:
-            self._s3_client().put_object(
-                Bucket=self._s3_config()['bucket'], Key=key, Body=data)
+            self._s3_put(key, data)
             return True
         except Exception:
             _logger.warning('ab_s3_attachment: heal upload failed key=%s', key, exc_info=True)
@@ -656,9 +666,9 @@ class IrAttachment(models.Model):
             "SELECT store_fname FROM ir_attachment WHERE store_fname IS NOT NULL"
         )
         db_fnames = set(row[0] for row in self.env.cr.fetchall()) | protected
-        # …and never touch an object inside the deletion grace period: an
-        # upload whose row is still being created must survive, and a file
-        # deleted today can still be brought back.
+        # …and never touch an object uploaded within the grace period (an
+        # upload whose row is still being created must survive). Files that
+        # backups/snapshots still reference are kept via `protected` above.
         grace = int(self.env['ir.config_parameter'].sudo().get_param('ab_s3.gc_grace_days', '7') or 7)
         min_age = datetime.now(timezone.utc) - timedelta(days=max(grace, 1))
 
@@ -719,11 +729,7 @@ class IrAttachment(models.Model):
             try:
                 data = super(IrAttachment, att)._file_read(att.store_fname)
                 if data:
-                    self._s3_client().put_object(
-                        Bucket=self._s3_config()['bucket'],
-                        Key=key,
-                        Body=data,
-                    )
+                    self._s3_put(key, data)
                     migrated += 1
             except Exception as e:
                 _logger.warning('S3 migration failed for %s: %s', att.store_fname, e)
