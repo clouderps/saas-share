@@ -1,5 +1,8 @@
+import hashlib
+import json
 import logging
 import re
+import uuid
 import threading
 import time
 from datetime import datetime, timedelta, timezone
@@ -298,6 +301,9 @@ class IrAttachment(models.Model):
                     Bucket=config['bucket'],
                     Key=key,
                     Body=bin_value,
+                    # S3 recomputes the SHA-256 and rejects a corrupted body
+                    ChecksumAlgorithm='SHA256',
+                    **self._s3_encryption_args(),
                 )
                 _logger.debug(
                     'ab_s3_attachment: wrote key=%s size=%d (attempt %d)',
@@ -346,6 +352,62 @@ class IrAttachment(models.Model):
         # Always defer — even when S3 is not active, base does the right
         # thing (spool checklist for the local filestore GC).
         return super()._file_delete(fname)
+
+    PROTECTED_KEY = '.ghaima/protected.json'   # under the tenant prefix (IAM scope)
+
+    def _s3_encryption_args(self):
+        """SSE for every write: ab_s3.encryption = AES256 (default) | aws:kms."""
+        ICP = self.env['ir.config_parameter'].sudo()
+        mode = ICP.get_param('ab_s3.encryption', 'AES256') or 'AES256'
+        if mode == 'aws:kms':
+            args = {'ServerSideEncryption': 'aws:kms'}
+            if ICP.get_param('ab_s3.kms_key_id'):
+                args['SSEKMSKeyId'] = ICP.get_param('ab_s3.kms_key_id')
+            return args
+        return {'ServerSideEncryption': 'AES256'}
+
+    def _s3_protected_fnames(self):
+        """Files referenced by retained snapshots, as published by the
+        platform; None (= do not collect anything) when the list is missing,
+        unreadable or marked incomplete."""
+        config = self._s3_config()
+        try:
+            body = self._s3_client().get_object(
+                Bucket=config['bucket'], Key=self._s3_key(self.PROTECTED_KEY))['Body'].read()
+            data = json.loads(body)
+        except Exception:
+            return None
+        if not data.get('complete'):
+            return None
+        return set(data.get('fnames') or [])
+
+    @api.model
+    def _s3_health_check(self):
+        """put -> get -> SHA-256 compare -> delete a probe object.
+        HEALTHY / DEGRADED (slow) / FAILED, stored in ab_s3.last_health."""
+        if not self._is_s3_storage():
+            return {'status': 'skipped'}
+        config = self._s3_config()
+        key = self._s3_key(f'.ghaima/healthcheck/{uuid.uuid4().hex}')
+        payload = uuid.uuid4().bytes * 64
+        started = time.monotonic()
+        try:
+            client = self._s3_client()
+            client.put_object(Bucket=config['bucket'], Key=key, Body=payload,
+                              ChecksumAlgorithm='SHA256', **self._s3_encryption_args())
+            got = client.get_object(Bucket=config['bucket'], Key=key)['Body'].read()
+            client.delete_object(Bucket=config['bucket'], Key=key)
+            elapsed = time.monotonic() - started
+            ok = hashlib.sha256(got).digest() == hashlib.sha256(payload).digest()
+            status = 'FAILED' if not ok else ('DEGRADED' if elapsed > 5 else 'HEALTHY')
+            result = {'status': status, 'seconds': round(elapsed, 2)}
+        except Exception as e:
+            result = {'status': 'FAILED', 'error': type(e).__name__}
+        result['checked_at'] = datetime.now(timezone.utc).isoformat(timespec='seconds')
+        self.env['ir.config_parameter'].sudo().set_param('ab_s3.last_health', json.dumps(result))
+        if result['status'] != 'HEALTHY':
+            _logger.warning('ab_s3_attachment: S3 health %s', result)
+        return result
 
     # ==================== Signed links ====================
 
@@ -483,6 +545,7 @@ class IrAttachment(models.Model):
 
     @api.model
     def _cron_s3_self_check(self):
+        self._s3_health_check()
         self._s3_self_check(heal=True)
 
     # ── Remote entry points (central platform, XML-RPC) ────────
@@ -580,14 +643,24 @@ class IrAttachment(models.Model):
         # Same guard as Odoo's own filestore GC: block new attachment rows
         # while we read the reference list, so a file written by a
         # transaction that has not committed yet is never judged orphaned.
+        # Snapshots are DB dumps that still point at these objects. The
+        # platform publishes the files every retained snapshot references;
+        # without a complete list nothing is collected (a deleted object
+        # would make that snapshot unrestorable).
+        protected = self._s3_protected_fnames()
+        if protected is None:
+            _logger.warning('S3 GC paused: no complete snapshot protection list for %s', prefix)
+            return
         self.env.cr.execute("LOCK ir_attachment IN SHARE MODE")
         self.env.cr.execute(
             "SELECT store_fname FROM ir_attachment WHERE store_fname IS NOT NULL"
         )
-        db_fnames = set(row[0] for row in self.env.cr.fetchall())
-        # …and never touch an object younger than a day: an upload whose
-        # row is still being created in another request must survive.
-        min_age = datetime.now(timezone.utc) - timedelta(days=1)
+        db_fnames = set(row[0] for row in self.env.cr.fetchall()) | protected
+        # …and never touch an object inside the deletion grace period: an
+        # upload whose row is still being created must survive, and a file
+        # deleted today can still be brought back.
+        grace = int(self.env['ir.config_parameter'].sudo().get_param('ab_s3.gc_grace_days', '7') or 7)
+        min_age = datetime.now(timezone.utc) - timedelta(days=max(grace, 1))
 
         # List all S3 objects under prefix
         paginator = client.get_paginator('list_objects_v2')

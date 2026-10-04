@@ -24,7 +24,9 @@ class TestS3Serving(HttpCase):
         for k, v in {'ab_s3.bucket': 'test-bucket', 'ab_s3.prefix': PREFIX,
                      'ab_s3.region': 'me-south-1', 'ab_s3.access_key_id': 'AKIATEST',
                      'ab_s3.secret_access_key': 'x', 'ab_s3.signed_urls': 'True',
-                     'ab_s3.signed_url_ttl': '300'}.items():
+                     'ab_s3.signed_url_ttl': '300',
+                     # start from disk storage even where the DB itself is on S3
+                     'ir_attachment.location': 'file'}.items():
             self.ICP.set_param(k, v)
 
     def _s3_on(self):
@@ -110,7 +112,9 @@ class TestS3SelfCheckAndGc(HttpCase):
         self.addCleanup(patcher.stop)
         ICP = self.env['ir.config_parameter'].sudo()
         for k, v in {'ab_s3.bucket': 'b', 'ab_s3.prefix': PREFIX,
-                     'ab_s3.access_key_id': 'AKIATEST', 'ab_s3.secret_access_key': 'x'}.items():
+                     'ab_s3.access_key_id': 'AKIATEST', 'ab_s3.secret_access_key': 'x',
+                     # start from disk storage even where the DB itself is on S3
+                     'ir_attachment.location': 'file'}.items():
             ICP.set_param(k, v)
         self.ICP = ICP
 
@@ -124,12 +128,19 @@ class TestS3SelfCheckAndGc(HttpCase):
         for a in atts:
             self.assertIn(f"{PREFIX}/{a.store_fname}", self.s3.objects)
         again = self.env['ir.attachment']._s3_self_check()
-        self.assertEqual(again['missing'], 0)
+        # only rows whose bytes exist nowhere stay missing (real DBs have some)
+        self.assertEqual(again['missing'], res['unrecoverable'])
+
+    def _protect(self, fnames, complete=True):
+        import json
+        self.s3.objects[f'{PREFIX}/.ghaima/protected.json'] = [
+            json.dumps({'complete': complete, 'fnames': list(fnames)}).encode(), datetime.now(timezone.utc)]
 
     def test_gc_never_deletes_young_or_referenced_objects(self):
         self.ICP.set_param('ir_attachment.location', 's3')
         att = self.env['ir.attachment'].create({'name': 'kept', 'raw': b'kept'})
-        old = datetime.now(timezone.utc) - timedelta(days=3)
+        self._protect([])
+        old = datetime.now(timezone.utc) - timedelta(days=10)
         self.s3.objects[f'{PREFIX}/zz/orphan_old'] = [b'o', old]
         self.s3.objects[f'{PREFIX}/zz/orphan_new'] = [b'n', datetime.now(timezone.utc)]
         self.s3.objects[f'{PREFIX}/{att.store_fname}'][1] = old
@@ -137,6 +148,38 @@ class TestS3SelfCheckAndGc(HttpCase):
         self.assertNotIn(f'{PREFIX}/zz/orphan_old', self.s3.objects)
         self.assertIn(f'{PREFIX}/zz/orphan_new', self.s3.objects)   # upload in flight
         self.assertIn(f'{PREFIX}/{att.store_fname}', self.s3.objects)
+
+    def test_gc_keeps_snapshot_files_and_pauses_without_a_complete_list(self):
+        self.ICP.set_param('ir_attachment.location', 's3')
+        old = datetime.now(timezone.utc) - timedelta(days=10)
+        self.s3.objects[f'{PREFIX}/aa/in_snapshot'] = [b's', old]
+        self.s3.objects[f'{PREFIX}/bb/orphan'] = [b'o', old]
+        self.s3.objects[f'{PREFIX}/cc/in_grace'] = [b'g', datetime.now(timezone.utc) - timedelta(days=3)]
+        # no list -> nothing collected
+        self.env['ir.attachment']._gc_s3_file_store()
+        self.assertIn(f'{PREFIX}/bb/orphan', self.s3.objects)
+        # incomplete list -> still paused
+        self._protect(['aa/in_snapshot'], complete=False)
+        self.env['ir.attachment']._gc_s3_file_store()
+        self.assertIn(f'{PREFIX}/bb/orphan', self.s3.objects)
+        # complete list -> orphan goes, snapshot file and grace-period file stay
+        self._protect(['aa/in_snapshot'])
+        self.env['ir.attachment']._gc_s3_file_store()
+        self.assertNotIn(f'{PREFIX}/bb/orphan', self.s3.objects)
+        self.assertIn(f'{PREFIX}/aa/in_snapshot', self.s3.objects)
+        self.assertIn(f'{PREFIX}/cc/in_grace', self.s3.objects)
+
+    def test_writes_are_encrypted_and_checksummed_and_health_check(self):
+        self.ICP.set_param('ir_attachment.location', 's3')
+        self.env['ir.attachment'].create({'name': 'w', 'raw': b'payload-1'})
+        self.assertEqual(self.s3.last_put_args.get('ChecksumAlgorithm'), 'SHA256')
+        self.assertEqual(self.s3.last_put_args.get('ServerSideEncryption'), 'AES256')
+        self.ICP.set_param('ab_s3.encryption', 'aws:kms')
+        self.ICP.set_param('ab_s3.kms_key_id', 'k-1')
+        res = self.env['ir.attachment']._s3_health_check()
+        self.assertEqual(res['status'], 'HEALTHY')
+        self.assertEqual(self.s3.last_put_args.get('SSEKMSKeyId'), 'k-1')
+        self.assertFalse([k for k in self.s3.objects if 'healthcheck' in k])   # probe removed
 
     def test_remote_entry_points_are_admin_only(self):
         from odoo.exceptions import AccessError

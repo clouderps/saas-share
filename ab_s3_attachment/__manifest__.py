@@ -22,7 +22,7 @@ images stay proxied). A file missing on S3 is served from local disk and
 re-uploaded; an hourly job (inactive by default) verifies every referenced
 file is on S3.
     """,
-    'version': '18.0.1.1.0',
+    'version': '18.0.1.2.0',
     'category': 'Technical',
     'author': 'Ghaima Tech',
     'license': 'LGPL-3',

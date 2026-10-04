@@ -13,7 +13,8 @@ class FakeS3:
     def _missing(self, key):
         return ClientError({'Error': {'Code': '404', 'Message': key}}, 'HeadObject')
 
-    def put_object(self, Bucket, Key, Body):
+    def put_object(self, Bucket, Key, Body, **kwargs):
+        self.last_put_args = kwargs
         self.objects[Key] = [bytes(Body), datetime.now(timezone.utc)]
 
     def get_object(self, Bucket, Key):
@@ -45,6 +46,9 @@ class FakeS3:
                 yield {'Contents': [{'Key': k, 'LastModified': v[1]}
                                     for k, v in fake.objects.items() if k.startswith(Prefix)]}
         return _P()
+
+    def delete_object(self, Bucket, Key):
+        self.objects.pop(Key, None)
 
     def delete_objects(self, Bucket, Delete):
         for o in Delete['Objects']:
