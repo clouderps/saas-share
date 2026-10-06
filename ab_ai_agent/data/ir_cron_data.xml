@@ -39,5 +39,32 @@
             <field name="active" eval="True"/>
         </record>
 
+        <!-- ERP knowledge digest: structure the assistant knows up front
+             (cached prompt prefix). Nightly; also rebuilt on every -u. -->
+        <record id="ir_cron_knowledge_digest" model="ir.cron">
+            <field name="name">Ghaima AI: rebuild ERP knowledge digest</field>
+            <field name="model_id" ref="model_ai_agent_knowledge_digest"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_rebuild()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="nextcall" eval="(DateTime.now().replace(hour=3, minute=30, second=0) + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="active" eval="True"/>
+        </record>
+
+        <!-- Weekly refresh of the ghaima.sa website excerpt (allow-listed
+             hosts only; failure keeps the shipped knowledge). -->
+        <record id="ir_cron_refresh_ghaima_website" model="ir.cron">
+            <field name="name">Ghaima AI: refresh website knowledge</field>
+            <field name="model_id" ref="model_ai_agent"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_refresh_ghaima_website()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">weeks</field>
+            <field name="active" eval="True"/>
+        </record>
+    </data>
+    <data noupdate="0">
+        <function model="ai.agent.knowledge.digest" name="_schedule_rebuild"/>
     </data>
 </odoo>

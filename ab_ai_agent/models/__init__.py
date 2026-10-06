@@ -1,4 +1,5 @@
 from . import ai_agent
+from . import ai_agent_console
 from . import ai_agent_topic
 from . import ai_agent_tool
 from . import ai_agent_skill
@@ -11,3 +12,6 @@ from . import ai_screen_context
 from . import res_users
 from . import res_config_settings
 from . import ir_http
+from . import ai_agent_knowledge_digest
+from . import ai_agent_ghaima
+from . import ai_agent_builder

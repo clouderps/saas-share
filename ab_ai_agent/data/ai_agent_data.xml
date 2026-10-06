@@ -22,7 +22,11 @@
             <field name="max_hops">6</field>
             <field name="max_cost_usd">0.10</field>
             <field name="allow_pii" eval="False"/>
-            <field name="allow_write_actions" eval="False"/>
+            <!-- Default assistant: every tool / topic / skill, including ones
+                 installed later. Each call still runs as the user (ACL +
+                 record rules) and data changes stay confirm-first. -->
+            <field name="allow_write_actions" eval="True"/>
+            <field name="use_all_capabilities" eval="True"/>
             <field name="surface_ids">chat</field>
             <field name="topic_ids" eval="[(6, 0, [
                 ref('topic_general_conversation'),

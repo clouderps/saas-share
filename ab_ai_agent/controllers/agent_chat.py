@@ -19,6 +19,7 @@ import json
 import logging
 
 from odoo import http, _
+from odoo.exceptions import AccessError, UserError
 from odoo.api import Environment as Env
 from odoo.http import request
 from odoo.modules.registry import Registry as registry
@@ -47,7 +48,7 @@ class AIAgentController(http.Controller):
                 'description': a.description or '',
                 'avatar_url': f'/web/image/ai.agent/{a.id}/avatar' if a.avatar else '',
                 'accent': _persona_accent(a.persona),
-                'skill_count': len(a.skill_ids),
+                'skill_count': len(a._effective_skills()),
                 'is_default': a.code == 'ghaima_assistant',
             } for a in visible],
         }
@@ -444,11 +445,10 @@ class AIAgentController(http.Controller):
         # Resolve optional skill
         skill = request.env['ai.agent.skill']
         if kwargs.get('skill_code'):
-            skill = skill.search([
-                ('agent_id', '=', agent.id),
-                ('code', '=', kwargs['skill_code']),
-                ('active', '=', True),
-            ], limit=1)
+            # Own skill first, then shared / full-access ones.
+            pool = agent._effective_skills().filtered(
+                lambda s: s.code == kwargs['skill_code'])
+            skill = (pool.filtered(lambda s: s.agent_id == agent) or pool)[:1]
 
         # Resolve optional record
         record_ref = None
@@ -466,7 +466,7 @@ class AIAgentController(http.Controller):
             try:
                 question = skill.render_prompt({
                     'message': message,
-                    'model': record_ref._name if record_ref else '',
+                    'model': record_ref._name if record_ref else (skill.context_model or ''),
                     'id': record_ref.id if record_ref else 0,
                     'record_name': record_ref.display_name if record_ref else '',
                 })
@@ -487,7 +487,7 @@ class AIAgentController(http.Controller):
             if kwargs.get('stream') else None
 
         screen = kwargs.get('screen') if isinstance(kwargs.get('screen'), dict) else None
-        locale = (kwargs.get('locale') or '')[:2] or None
+        locale = (kwargs.get('locale') or '')[:2] or _user_locale(request.env.user)
 
         Conv = request.env.get('ai.chat.conversation')
         surface = kwargs.get('surface') or 'chat'
@@ -541,13 +541,82 @@ class AIAgentController(http.Controller):
             surface=surface,
             record_ref=record_ref,
             skill=skill or None,
-            locale=locale or 'en',
+            locale=locale or _user_locale(request.env.user),
             on_event=on_event,
             screen=screen,
         )
         envelope['success'] = True
         envelope['run_id'] = run.id
         return envelope
+
+    # ── Agent Console (config + KPIs) ──────────────────────────
+
+    def _console_agent(self, agent_id):
+        try:
+            agent = request.env['ai.agent'].browse(int(agent_id or 0)).exists()
+        except (TypeError, ValueError):
+            agent = None
+        return agent or None
+
+    @http.route('/ai_agent/console/config', type='json', auth='user', methods=['POST'])
+    def console_config(self, agent_id=None, **_kw):
+        agent = self._console_agent(agent_id)
+        if agent is None:
+            return {'success': False, 'error': 'not_found'}
+        try:
+            return {'success': True, 'agent': agent.console_payload()}
+        except AccessError:
+            return {'success': False, 'error': 'forbidden'}
+
+    @http.route('/ai_agent/console/save', type='json', auth='user', methods=['POST'])
+    def console_save(self, agent_id=None, values=None, **_kw):
+        agent = self._console_agent(agent_id)
+        if agent is None:
+            return {'success': False, 'error': 'not_found'}
+        try:
+            # Savepoint: a constraint that fires after write() must roll
+            # the write back, not get committed with an error reply.
+            with request.env.cr.savepoint():
+                payload = agent.console_save(values if isinstance(values, dict) else {})
+            return {'success': True, 'agent': payload}
+        except AccessError:
+            return {'success': False, 'error': 'forbidden',
+                    'message': _('Only AI agent designers can change agents.')}
+        except UserError as e:
+            # UserError / ValidationError text is user-facing by design.
+            return {'success': False, 'error': 'invalid', 'message': str(e)}
+
+    # Builder: add / edit / remove tools, skills and topics without code.
+    # Whitelisted methods only; each runs as the caller and checks the
+    # designer right itself (ORM ACL is the final gate).
+    _BUILDER_METHODS = {
+        'models': lambda A, kw: A.builder_models(kw.get('query') or '', bool(kw.get('write'))),
+        'fields': lambda A, kw: A.builder_fields(kw.get('model') or ''),
+        'suggest': lambda A, kw: A.builder_suggest(kw.get('model') or '', kw.get('op') or ''),
+        'create_tool': lambda A, kw: A.builder_create_tool(kw.get('values') or {}),
+        'update_tool': lambda A, kw: A.builder_update_tool(kw.get('id'), kw.get('values') or {}),
+        'create_skill': lambda A, kw: A.builder_create_skill(kw.get('agent_id'), kw.get('values') or {}),
+        'update_skill': lambda A, kw: A.builder_update_skill(kw.get('id'), kw.get('values') or {}),
+        'create_topic': lambda A, kw: A.builder_create_topic(kw.get('agent_id'), kw.get('values') or {}),
+        'update_topic': lambda A, kw: A.builder_update_topic(kw.get('id'), kw.get('values') or {}),
+        'delete': lambda A, kw: A.builder_delete(kw.get('kind'), kw.get('id')),
+    }
+
+    @http.route('/ai_agent/console/builder/<string:method>', type='json', auth='user',
+                methods=['POST'])
+    def console_builder(self, method, **kw):
+        fn = self._BUILDER_METHODS.get(method)
+        if fn is None:
+            return {'success': False, 'error': 'bad_request'}
+        try:
+            with request.env.cr.savepoint():
+                result = fn(request.env['ai.agent'], kw)
+            return {'success': True, 'result': result}
+        except AccessError:
+            return {'success': False, 'error': 'forbidden',
+                    'message': _('Only AI agent designers can add or change tools, skills and topics.')}
+        except UserError as e:
+            return {'success': False, 'error': 'invalid', 'message': str(e)}
 
     # ── Rating ─────────────────────────────────────────────────
 
@@ -641,6 +710,13 @@ def _serialise_messages(conv):
             'created': str(m.create_date or ''),
         })
     return out
+
+
+def _user_locale(user):
+    """Fallback locale when the client sends none: the user's own
+    language, not English — Arabic users used to get English
+    budget / max-hops / provider-error envelopes."""
+    return 'ar' if (user.lang or '').startswith('ar') else 'en'
 
 
 def _persona_accent(persona):

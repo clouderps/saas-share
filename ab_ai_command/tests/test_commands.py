@@ -81,6 +81,26 @@ class TestQuoteCommand(TransactionCase):
         self.assertEqual(len(order.order_line), 1)
         self.assertEqual(order.order_line.product_uom_qty, 2)
 
+    def test_agent_tool_proposes_then_creates_on_confirm(self):
+        from odoo.addons.ab_ai_command.services.tools import _builtin_run_command
+        if not self.quote:
+            return
+        before = self.env['sale.order'].search_count([])
+        res = _builtin_run_command(self.env, command='create_quote',
+                                   fields={'partner_id': 'Zzq Cmd Customer',
+                                           'order_line': '2x Zzq Cmd Latte'})
+        self.assertTrue(res.get('requires_confirmation'), res)
+        self.assertEqual(self.env['sale.order'].search_count([]), before,
+                         'the agent tool must not create before Confirm')
+        out = self.env['ai.agent.pending.action'].resolve(res['confirmation']['key'], True)
+        self.assertTrue(out['ok'], out)
+        self.assertEqual(self.env['sale.order'].search_count([]), before + 1)
+        # needs_input still comes back directly, nothing proposed.
+        res = _builtin_run_command(self.env, command='create_quote',
+                                   fields={'partner_id': 'Zzq Cmd Twin',
+                                           'order_line': 'Zzq Cmd Latte'})
+        self.assertEqual(res['status'], 'needs_input')
+
     def test_barcode_resolves_the_line(self):
         res = self._run(partner_id='Zzq Cmd Customer', order_line='3x 7551000010')
         order = self.env['sale.order'].browse(res['id'])

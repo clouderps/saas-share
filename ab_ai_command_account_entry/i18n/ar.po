@@ -1,0 +1,141 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* ab_ai_command_account_entry
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-06 16:13+0000\n"
+"PO-Revision-Date: 2026-10-06 16:13+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ar\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: ab_ai_command_account_entry
+#. odoo-python
+#: code:addons/ab_ai_command_account_entry/services/journal_entry.py:0
+msgid "Account is missing."
+msgstr "الحساب غير محدد."
+
+#. module: ab_ai_command_account_entry
+#. odoo-python
+#: code:addons/ab_ai_command_account_entry/services/journal_entry.py:0
+msgid "Account | Debit | Credit"
+msgstr "الحساب | مدين | دائن"
+
+#. module: ab_ai_command_account_entry
+#: model:ai.agent.topic,name:ab_ai_command_account_entry.topic_journal_entry
+msgid "Create Draft Journal Entry"
+msgstr "إنشاء قيد يومية كمسودة"
+
+#. module: ab_ai_command_account_entry
+#. odoo-python
+#: code:addons/ab_ai_command_account_entry/services/journal_entry.py:0
+msgid "Create draft journal entry for %(amount)s %(cur)s?"
+msgstr "إنشاء قيد يومية كمسودة بمبلغ %(amount)s %(cur)s؟"
+
+#. module: ab_ai_command_account_entry
+#. odoo-python
+#: code:addons/ab_ai_command_account_entry/services/journal_entry.py:0
+msgid "Date: %s"
+msgstr "التاريخ: %s"
+
+#. module: ab_ai_command_account_entry
+#. odoo-python
+#: code:addons/ab_ai_command_account_entry/services/journal_entry.py:0
+msgid "Debit and credit accounts"
+msgstr "الحساب المدين والحساب الدائن"
+
+#. module: ab_ai_command_account_entry
+#. odoo-python
+#: code:addons/ab_ai_command_account_entry/services/journal_entry.py:0
+msgid "Debits %(d)s ≠ credits %(c)s"
+msgstr "المدين %(d)s ≠ الدائن %(c)s"
+
+#. module: ab_ai_command_account_entry
+#. odoo-python
+#: code:addons/ab_ai_command_account_entry/services/journal_entry.py:0
+msgid "Draft journal entry created: %s"
+msgstr "تم إنشاء قيد يومية كمسودة: %s"
+
+#. module: ab_ai_command_account_entry
+#. odoo-python
+#: code:addons/ab_ai_command_account_entry/services/journal_entry.py:0
+msgid "It will be saved as a DRAFT; nothing is posted."
+msgstr "سيُحفظ كمسودة، ولن يُرحَّل أي شيء."
+
+#. module: ab_ai_command_account_entry
+#. odoo-python
+#: code:addons/ab_ai_command_account_entry/services/journal_entry.py:0
+msgid "Journal entry"
+msgstr "قيد اليومية"
+
+#. module: ab_ai_command_account_entry
+#. odoo-python
+#: code:addons/ab_ai_command_account_entry/services/journal_entry.py:0
+msgid "Journal not found."
+msgstr "لم يتم العثور على دفتر اليومية."
+
+#. module: ab_ai_command_account_entry
+#. odoo-python
+#: code:addons/ab_ai_command_account_entry/services/journal_entry.py:0
+msgid "Journal: %s"
+msgstr "دفتر اليومية: %s"
+
+#. module: ab_ai_command_account_entry
+#. odoo-python
+#: code:addons/ab_ai_command_account_entry/services/journal_entry.py:0
+msgid "Line %s needs either a debit or a credit amount."
+msgstr "السطر %s يحتاج مبلغًا مدينًا أو دائنًا."
+
+#. module: ab_ai_command_account_entry
+#. odoo-python
+#: code:addons/ab_ai_command_account_entry/services/journal_entry.py:0
+msgid "No account matches \"%s\"."
+msgstr "لا يوجد حساب يطابق \"%s\"."
+
+#. module: ab_ai_command_account_entry
+#. odoo-python
+#: code:addons/ab_ai_command_account_entry/services/journal_entry.py:0
+msgid "No single journal called \"%s\"."
+msgstr "لا يوجد دفتر يومية واحد باسم \"%s\"."
+
+#. module: ab_ai_command_account_entry
+#. odoo-python
+#: code:addons/ab_ai_command_account_entry/services/journal_entry.py:0
+msgid "Reference: %s"
+msgstr "المرجع: %s"
+
+#. module: ab_ai_command_account_entry
+#. odoo-python
+#: code:addons/ab_ai_command_account_entry/services/journal_entry.py:0
+msgid "Several accounts match \"%s\". Which one?"
+msgstr "عدة حسابات تطابق \"%s\". أيها تقصد؟"
+
+#. module: ab_ai_command_account_entry
+#. odoo-python
+#: code:addons/ab_ai_command_account_entry/services/journal_entry.py:0
+msgid "The entry was not left as a draft; nothing was saved."
+msgstr "لم يبقَ القيد كمسودة، ولم يُحفظ أي شيء."
+
+#. module: ab_ai_command_account_entry
+#. odoo-python
+#: code:addons/ab_ai_command_account_entry/services/journal_entry.py:0
+msgid "There is no general journal."
+msgstr "لا يوجد دفتر يومية عام."
+
+#. module: ab_ai_command_account_entry
+#. odoo-python
+#: code:addons/ab_ai_command_account_entry/services/journal_entry.py:0
+msgid "Total | %(d)s | %(c)s"
+msgstr "الإجمالي | %(d)s | %(c)s"
+
+#. module: ab_ai_command_account_entry
+#: model:ai.agent.topic,description:ab_ai_command_account_entry.topic_journal_entry
+msgid "Turn \"paid rent 5000 from bank\" into a balanced draft journal entry."
+msgstr "حوّل عبارة مثل \"دفعنا إيجار 5000 من البنك\" إلى قيد يومية متوازن كمسودة."

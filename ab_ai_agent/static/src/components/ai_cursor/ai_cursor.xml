@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="ab_ai_agent.AiCursor">
+        <div class="o_ai_cursor_live visually-hidden" role="status" aria-live="polite" t-esc="nav.announce"/>
+        <div t-if="nav.visible" class="o_ai_cursor" aria-hidden="true"
+             t-att-class="{ 'is-gliding': nav.gliding, 'is-landed': nav.ripple }"
+             t-att-style="style">
+            <span class="o_ai_cursor__ripple"/>
+            <svg class="o_ai_cursor__pointer" viewBox="0 0 24 24" width="28" height="28">
+                <path d="M4 2.5 19.5 12l-6.6 1.6L9.6 20z"/>
+            </svg>
+            <span t-if="nav.label" class="o_ai_cursor__label" t-esc="nav.label"/>
+        </div>
+    </t>
+</templates>

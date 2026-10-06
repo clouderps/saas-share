@@ -14,7 +14,7 @@
                 <field name="model_class"/>
                 <field name="run_count" string="Runs (30d)"/>
                 <field name="success_rate" widget="percentage" string="Success"/>
-                <field name="avg_cost_usd" string="Avg cost (USD)" widget="monetary"/>
+                <field name="avg_cost_usd" groups="base.group_system" string="Avg cost (USD)" widget="monetary"/>
                 <field name="last_run_at"/>
                 <field name="is_system" string="System" widget="boolean"/>
                 <field name="active" widget="boolean_toggle"/>
@@ -30,6 +30,8 @@
                 <header>
                     <button name="open_chat" type="object" class="btn-primary"
                             string="Open Chat" icon="fa-comments-o"/>
+                    <button name="open_console" type="object"
+                            string="Open Console" icon="fa-sliders"/>
                 </header>
                 <sheet>
                     <widget name="web_ribbon" title="System Agent"
@@ -55,24 +57,37 @@
                             <field name="response_style"/>
                             <field name="model_class"/>
                             <field name="max_hops"/>
-                            <field name="max_cost_usd" widget="monetary"/>
+                            <field name="max_cost_usd" groups="base.group_system" widget="monetary"/>
                         </group>
                         <group string="Permissions">
                             <field name="allow_pii"/>
                             <field name="allow_write_actions"/>
+                            <field name="use_all_capabilities"/>
                             <field name="allow_web_grounding"/>
                             <field name="is_public"/>
                         </group>
                         <group string="Performance (30 days)">
                             <field name="run_count" readonly="1"/>
                             <field name="success_rate" widget="percentage" readonly="1"/>
-                            <field name="avg_cost_usd" readonly="1" widget="monetary"/>
-                            <field name="total_cost_30d_usd" readonly="1" widget="monetary"/>
+                            <field name="avg_cost_usd" groups="base.group_system" readonly="1" widget="monetary"/>
+                            <field name="total_cost_30d_usd" groups="base.group_system" readonly="1" widget="monetary"/>
                             <field name="last_run_at" readonly="1"/>
                         </group>
                     </group>
                     <notebook>
                         <page string="System Prompt">
+                            <div class="alert alert-info" role="note">
+                                <i class="fa fa-lock me-1" aria-hidden="true"/>
+                                <strong>Ghaima base instructions (locked)</strong>
+                                — applied before this prompt for every agent; set by Ghaima, cannot be edited here.
+                                <button name="action_refresh_ghaima_website" type="object"
+                                        string="Refresh website knowledge" icon="fa-refresh"
+                                        class="btn-link p-0 ms-2" groups="base.group_system"/>
+                            </div>
+                            <details class="mb-3">
+                                <summary>Show Ghaima base instructions</summary>
+                                <field name="ghaima_base_instruction" readonly="1" nolabel="1"/>
+                            </details>
                             <field name="system_prompt"
                                    placeholder="# Identity&#10;You are a..."/>
                         </page>
@@ -120,7 +135,7 @@
                                                 <field name="kpi_label"/>
                                                 <field name="kpi_target_text"/>
                                                 <field name="run_count" readonly="1"/>
-                                                <field name="avg_cost_usd" readonly="1"/>
+                                                <field name="avg_cost_usd" groups="base.group_system" readonly="1"/>
                                             </group>
                                         </group>
                                         <separator string="Prompt template"/>

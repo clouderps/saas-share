@@ -36,7 +36,7 @@ class AIAgentTool(models.Model):
     _description = 'Ghaima AI — Agent tool'
     _order = 'category, sequence, name'
 
-    name = fields.Char(required=True, index=True)
+    name = fields.Char(required=True, index=True, translate=True)
     code = fields.Char(
         required=True, index=True, copy=False,
         help='Stable identifier exposed to the LLM as the tool name. '
@@ -81,6 +81,19 @@ class AIAgentTool(models.Model):
         'ir.actions.server', ondelete='set null',
         help='When dispatch_kind=server_action, this action runs with '
              'arguments injected as the env.context.')
+
+    # Console builder: a no-code tool is a preset over one of the generic
+    # data tools (search / count / read / open / create / update).
+    is_custom = fields.Boolean(
+        default=False, readonly=True, copy=False,
+        help='Created from the Agent Console builder. Module-shipped tools '
+             'are protected.')
+    preset_json = fields.Text(
+        help='Builder preset: {"model", "op", "domain", "fields", "limit"}. '
+             'When set, the dispatcher runs the matching generic data tool '
+             'with this preset; the model cannot widen the fixed filter.')
+    preset_model = fields.Char(readonly=True, index=True)
+    preset_op = fields.Char(readonly=True)
 
     # ACL
     group_ids = fields.Many2many(
@@ -159,6 +172,20 @@ class AIAgentTool(models.Model):
             'allow_end_message': self.allow_end_message,
         }
 
+    @api.constrains('preset_json')
+    def _check_preset(self):
+        from ..services import generic_data
+        for tool in self.filtered('preset_json'):
+            try:
+                preset = json.loads(tool.preset_json)
+            except (ValueError, TypeError):
+                raise ValidationError(_("Tool '%(name)s' has a malformed preset.", name=tool.name))
+            if not isinstance(preset, dict) or preset.get('op') not in generic_data.PRESET_OPS:
+                raise ValidationError(_("Tool '%(name)s' has an unknown operation.", name=tool.name))
+            if not preset.get('model') or generic_data.model_blocked(self.env, preset['model']):
+                raise ValidationError(_(
+                    "Tool '%(name)s': the assistant cannot use this model.", name=tool.name))
+
     def is_invocable_by(self, user):
         """Per-tool ACL check used by the runtime BEFORE dispatching."""
         self.ensure_one()
@@ -167,3 +194,20 @@ class AIAgentTool(models.Model):
         if self.group_ids and not (self.group_ids & user.groups_id):
             return False
         return True
+
+    def _builder_edit_payload(self):
+        """What the console's edit dialog needs to show a builder tool as
+        saved (fixed filter, fields, Arabic description), so saving an edit
+        never silently drops them."""
+        self.ensure_one()
+        import json
+        try:
+            preset = json.loads(self.preset_json or '{}')
+        except ValueError:
+            preset = {}
+        lang_ar = 'ar_001' if self.env['res.lang']._lang_get('ar_001') else None
+        return {
+            'preset_domain': preset.get('domain') or [],
+            'preset_fields': preset.get('fields') or [],
+            'description_ar': (self.with_context(lang=lang_ar).description or '') if lang_ar else '',
+        }

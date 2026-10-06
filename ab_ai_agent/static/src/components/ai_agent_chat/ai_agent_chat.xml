@@ -195,6 +195,15 @@
                                                  provenance="msg.provenance"/>
                             </div>
 
+                            <div t-if="!msg.collapsed and msg.navChoices and msg.navChoices.length"
+                                 class="o_ai_answer__choices" role="group" t-att-aria-label="labels.whichOne">
+                                <button t-foreach="msg.navChoices" t-as="choice" t-key="choice_index"
+                                        class="o_ai_answer__choice" type="button"
+                                        t-on-click="(ev) => this.pickNavChoice(choice, ev)">
+                                    <i class="fa fa-mouse-pointer" aria-hidden="true"/>
+                                    <span t-esc="choice.label"/>
+                                </button>
+                            </div>
                             <footer t-if="!msg.collapsed" class="o_ai_answer__foot">
                                 <button t-if="msg.pendingAction"
                                         class="o_ai_answer__cta"

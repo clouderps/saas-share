@@ -186,6 +186,8 @@ msgid "Active"
 msgstr "نشط"
 
 #. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__agent_id
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__agent_id
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__agent_id
@@ -511,6 +513,8 @@ msgid ""
 msgstr ""
 
 #. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
 #: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_form
 msgid "Behaviour"
 msgstr "السلوك"
@@ -692,6 +696,7 @@ msgstr "طيّ الإجابة"
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_run__company_id
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__company_id
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__company_id
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_knowledge_digest__company_id
 msgid "Company"
 msgstr "الشركة "
 
@@ -780,6 +785,7 @@ msgstr "تم بلوغ سقف التكلفة"
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__create_uid
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__create_uid
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__create_uid
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_knowledge_digest__create_uid
 msgid "Created by"
 msgstr "أنشئ بواسطة"
 
@@ -793,6 +799,7 @@ msgstr "أنشئ بواسطة"
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__create_date
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__create_date
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__create_date
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_knowledge_digest__create_date
 msgid "Created on"
 msgstr "أنشئ في"
 
@@ -900,6 +907,7 @@ msgstr "نوع الإرسال"
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__display_name
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__display_name
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__display_name
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_knowledge_digest__display_name
 msgid "Display Name"
 msgstr "اسم العرض "
 
@@ -1467,6 +1475,7 @@ msgstr "لم أتمكن من فهم ذلك. حاول مرة أخرى مع الا
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__id
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__id
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__id
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_knowledge_digest__id
 msgid "ID"
 msgstr "المُعرف"
 
@@ -1557,6 +1566,7 @@ msgstr "وقت آخر تشغيل"
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__write_uid
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__write_uid
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__write_uid
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_knowledge_digest__write_uid
 msgid "Last Updated by"
 msgstr "آخر تحديث بواسطة"
 
@@ -1570,6 +1580,7 @@ msgstr "آخر تحديث بواسطة"
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__write_date
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_log__write_date
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_price_book__write_date
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_knowledge_digest__write_date
 msgid "Last Updated on"
 msgstr "آخر تحديث في"
 
@@ -1630,6 +1641,7 @@ msgstr "استمع"
 #. module: ab_ai_agent
 #. odoo-javascript
 #: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.js:0
 msgid "Listening…"
 msgstr "أستمع…"
 
@@ -1788,6 +1800,7 @@ msgstr "محادثة جديدة"
 #. module: ab_ai_agent
 #. odoo-javascript
 #: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
 msgid "New chat"
 msgstr "محادثة جديدة"
 
@@ -2014,11 +2027,15 @@ msgid "Performance (30 days)"
 msgstr "الأداء (٣٠ يوماً)"
 
 #. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
 #: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_form
 msgid "Permissions"
 msgstr "الصلاحيات"
 
 #. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__persona
 #: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_search
 msgid "Persona"
@@ -2402,6 +2419,9 @@ msgid "Schema"
 msgstr "المخطط"
 
 #. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.js:0
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__scope
 msgid "Scope"
 msgstr "النطاق "
@@ -2472,6 +2492,9 @@ msgid "Skill launcher"
 msgstr "مشغل المهارات"
 
 #. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.js:0
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__skill_ids
 #: model:ir.ui.menu,name:ab_ai_agent.menu_ai_agent_skills
 #: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_form
@@ -2893,6 +2916,9 @@ msgstr ""
 "ينفّذ."
 
 #. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.js:0
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_topic__tool_ids
 #: model:ir.ui.menu,name:ab_ai_agent.menu_ai_agent_tools
 msgid "Tools"
@@ -3262,7 +3288,9 @@ msgstr ""
 #. module: ab_ai_agent
 #: model:ai.agent.topic,instructions:ab_ai_agent.topic_navigation
 msgid ""
-"When the user wants to **see** something — not just a number, but the actual view in Odoo — call one of:\n"
+"**\"Open / show / go to\" means `navigate`, first.** Whenever the user asks to open, show, take them to, or go to something — \"open invoice INV/2026/0012\", \"open contact Abdalmola\", \"show unpaid invoices\", \"go to employees\", \"افتح فاتورة INV/2026/0012\", \"افتح العميل عبدالمولى\", \"وريني الفواتير غير المدفوعة\", \"روح للموظفين\", \"ودّني على الموظفين\" — call `navigate`: kind=\"record\" with target + the number/name exactly as said; kind=\"list\" with a preset; kind=\"menu\" with the screen name in English. The screen opens on its own (the assistant's pointer moves there), so never ask \"shall I open it?\" — just say in one short line what is opening. If it returns choices, ask which one by name. If found is false, say plainly nothing matched — never open a different record instead. If it says not available, tell them they do not have access to it.\n"
+"\n"
+"When the user wants to **see** something navigate cannot reach — not just a number, but the actual view in Odoo — call one of:\n"
 "- `open_action` for built-in reports: P&L (xmlid `account.action_account_pl_report`), Balance Sheet (`account.action_account_balance_report`), or any module action.\n"
 "- `open_record` to land on a specific record's form view (\"open SO 42\", \"show invoice INV/2026/00045\").\n"
 "- `open_list` for filtered list views (\"show overdue invoices\" → model=account.move with the matching domain).\n"
@@ -3310,6 +3338,7 @@ msgid ""
 "**Never guess where something lives.** Odoo menu layouts differ per install and per user's access. Always call a tool first:\n"
 "\n"
 "- `list_my_apps` — when the user asks what they can do, what they have access to, or where to begin (\"what can I do here?\", \"ما الذي يمكنني فعله؟\", \"I'm new\"). Answer ONLY from what it returns. If an app is not in the result the user cannot open it, so do not mention it.\n"
+"- `navigate` — when they ask to be TAKEN somewhere (\"go to employees\", \"روح للفواتير\", \"open contact X\"): it opens the screen or record directly.\n"
 "- `find_menu` — for every how-do-I / where-is question (\"where do I create a credit note?\", \"وين أسوي مرتجع؟\", \"how do I add an employee?\"). Give the returned `path` verbatim, then call `open_action` with the match's `action_xmlid` so the answer carries a working button.\n"
 "- `explain_screen` — when they ask what a screen, document type, field or status means. Use the real `key_fields` and `lifecycle` it returns rather than describing Odoo in general.\n"
 "\n"
@@ -3515,6 +3544,7 @@ msgstr "الذروة"
 #. module: ab_ai_agent
 #. odoo-python
 #: code:addons/ab_ai_agent/services/tool_dispatcher.py:0
+#: code:addons/ab_ai_agent/services/navigate.py:0
 msgid "Sales orders"
 msgstr "أوامر البيع"
 
@@ -3939,3 +3969,1262 @@ msgid ""
 msgstr ""
 "باقة الذكاء الاصطناعي تسمح بـ %s وكيل نشط فقط. قم بأرشفة وكيل أو ترقية "
 "الباقة."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+#: model:ir.actions.client,name:ab_ai_agent.action_ai_agent_console
+#: model:ir.ui.menu,name:ab_ai_agent.menu_ai_agent_console
+msgid "Agent Console"
+msgstr "منصة الوكيل"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "Agent configuration"
+msgstr "إعدادات الوكيل"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "Agent identity"
+msgstr "هوية الوكيل"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.js:0
+msgid "Agent saved."
+msgstr "تم حفظ الوكيل."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.js:0
+msgid "All companies"
+msgstr "جميع الشركات"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.js:0
+msgid "All internal users"
+msgstr "جميع المستخدمين الداخليين"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "Avg. cost"
+msgstr "متوسط التكلفة"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "Companies"
+msgstr "الشركات"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "Cost limit / run (USD)"
+msgstr "حد التكلفة لكل تشغيل (دولار)"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "Discard"
+msgstr "تجاهل"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.js:0
+msgid "Discard unsaved changes to this agent?"
+msgstr "هل تريد تجاهل التغييرات غير المحفوظة على هذا الوكيل؟"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.js:0
+msgid "Exposed on the public website widget."
+msgstr "يظهر في أداة الموقع الإلكتروني العامة."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "Identity & behaviour"
+msgstr "الهوية والسلوك"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "Language"
+msgstr "اللغة"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "Last 30 days"
+msgstr "آخر 30 يومًا"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "Last run:"
+msgstr "آخر تشغيل:"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "Max steps"
+msgstr "الحد الأقصى للخطوات"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.js:0
+msgid "May propose changes; each one still needs confirmation."
+msgstr "يمكنه اقتراح تغييرات، وكل تغيير يحتاج إلى تأكيد."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.js:0
+msgid "May search the web."
+msgstr "يمكنه البحث في الويب."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "Model tier"
+msgstr "فئة النموذج"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "Needs a record"
+msgstr "يتطلب سجلًا"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.js:0
+msgid "Never"
+msgstr "أبدًا"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "No agent is available to you."
+msgstr "لا يتوفر لك أي وكيل."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "No tools available."
+msgstr "لا توجد أدوات متاحة."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/controllers/agent_chat.py:0
+#: code:addons/ab_ai_agent/models/ai_agent_console.py:0
+msgid "Only AI agent designers can change agents."
+msgstr "يمكن لمصممي وكلاء الذكاء الاصطناعي فقط تعديل الوكلاء."
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_form
+msgid "Open Console"
+msgstr "فتح المنصة"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "Open agent form"
+msgstr "فتح نموذج الوكيل"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "Performance"
+msgstr "الأداء"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.js:0
+msgid "Personal data"
+msgstr "البيانات الشخصية"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "Primary surface"
+msgstr "الواجهة الأساسية"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "Prompt & tools"
+msgstr "التعليمات والأدوات"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "Read only"
+msgstr "للقراءة فقط"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.js:0
+msgid "Ready"
+msgstr "جاهز"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "Response style"
+msgstr "أسلوب الرد"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "Runs"
+msgstr "مرات التشغيل"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "Save changes"
+msgstr "حفظ التغييرات"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.js:0
+msgid "Skip PII redaction for this agent."
+msgstr "تخطي إخفاء البيانات الشخصية لهذا الوكيل."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.js:0
+msgid "Speaking…"
+msgstr "يتحدث…"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "Success rate"
+msgstr "نسبة النجاح"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.js:0
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "System prompt"
+msgstr "تعليمات النظام"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.js:0
+msgid "The agent could not be loaded."
+msgstr "تعذّر تحميل الوكيل."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.js:0
+msgid "The agent could not be saved."
+msgstr "تعذّر حفظ الوكيل."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent_console.py:0
+msgid "The system prompt cannot be empty."
+msgstr "لا يمكن أن تكون تعليمات النظام فارغة."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.js:0
+msgid "Thinking…"
+msgstr "يفكر…"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "This agent has no skills yet."
+msgstr "لا توجد مهارات لهذا الوكيل بعد."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent_console.py:0
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.js:0
+msgid "This agent is not available to you."
+msgstr "هذا الوكيل غير متاح لك."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid ""
+"Topic instructions, business context and the user's screen are added after "
+"this prompt on every run."
+msgstr ""
+"تُضاف تعليمات المواضيع وسياق العمل وشاشة المستخدم بعد هذه التعليمات في كل "
+"تشغيل."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "Total cost"
+msgstr "إجمالي التكلفة"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "User groups"
+msgstr "مجموعات المستخدمين"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.js:0
+msgid "Web grounding"
+msgstr "البحث في الويب"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.js:0
+msgid "Write actions"
+msgstr "إجراءات الكتابة"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "active"
+msgstr "مفعّلة"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "· System agent"
+msgstr "· وكيل نظام"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "· via topic"
+msgstr "· عبر موضوع"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "· writes data"
+msgstr "· يعدّل البيانات"
+
+#. module: ab_ai_agent
+#: model:ir.model,name:ab_ai_agent.model_ai_agent_knowledge_digest
+msgid "AI Agent ERP Knowledge Digest"
+msgstr "ملخص معرفة النظام للمساعد الذكي"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_knowledge_digest__built_at
+msgid "Built At"
+msgstr "وقت البناء"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_knowledge_digest__content
+msgid "Content"
+msgstr "المحتوى"
+
+#. module: ab_ai_agent
+#: model:ir.actions.server,name:ab_ai_agent.ir_cron_knowledge_digest_ir_actions_server
+msgid "Ghaima AI: rebuild ERP knowledge digest"
+msgstr "غيمة AI: إعادة بناء ملخص معرفة النظام"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_knowledge_digest__lang
+msgid "Lang"
+msgstr "اللغة"
+
+#. module: ab_ai_agent
+#: model:ir.model.constraint,message:ab_ai_agent.constraint_ai_agent_knowledge_digest_company_lang_unique
+msgid "One digest per company and language."
+msgstr "ملخص واحد لكل شركة ولغة."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/tool_dispatcher.py:0
+msgid ""
+"Only accounting managers can post through the assistant. Open %s and post it"
+" from the form."
+msgstr ""
+"الترحيل عبر المساعد متاح لمديري الحسابات فقط. افتح %s ورحّله من النموذج."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/agent_actions.py:0
+msgid "The record was not left as a draft; nothing was saved."
+msgstr "لم يبقَ السجل كمسودة، ولم يُحفظ أي شيء."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/agent_actions.py:0
+msgid "default"
+msgstr "افتراضي"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__ghaima_base_instruction
+msgid "Ghaima Base Instructions"
+msgstr "تعليمات غيمة الأساسية"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent__ghaima_base_instruction
+msgid ""
+"Set by Ghaima and applied before every agent prompt. Locked: changes only "
+"ship with a module update."
+msgstr ""
+"تحددها غيمة وتُطبَّق قبل تعليمات كل وكيل. مقفلة: لا تتغير إلا بتحديث الوحدة."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_form
+msgid "Ghaima base instructions (locked)"
+msgstr "تعليمات غيمة الأساسية (مقفلة)"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_form
+msgid ""
+"— applied before this prompt for every agent; set by Ghaima, cannot be "
+"edited here."
+msgstr ""
+"— تُطبَّق قبل هذه التعليمات لكل وكيل؛ تحددها غيمة ولا يمكن تعديلها هنا."
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_form
+msgid "Refresh website knowledge"
+msgstr "تحديث معرفة الموقع"
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_form
+msgid "Show Ghaima base instructions"
+msgstr "عرض تعليمات غيمة الأساسية"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent_ghaima.py:0
+msgid "Only administrators can refresh the website knowledge."
+msgstr "يمكن للمسؤولين فقط تحديث معرفة الموقع."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent_ghaima.py:0
+msgid "Website knowledge refreshed from ghaima.sa."
+msgstr "تم تحديث معرفة الموقع من ghaima.sa."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent_ghaima.py:0
+msgid ""
+"Could not reach ghaima.sa; the built-in website knowledge is still used."
+msgstr "تعذّر الوصول إلى ghaima.sa؛ ما زالت معرفة الموقع المضمّنة مستخدمة."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid ""
+"Set by Ghaima and applied before this prompt for every agent. It cannot be "
+"edited."
+msgstr "تحددها غيمة وتُطبَّق قبل هذه التعليمات لكل وكيل، ولا يمكن تعديلها."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/services/ai_navigator_service.js:0
+msgid "Opening %s"
+msgstr "جارٍ فتح %s"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/services/ai_navigator_service.js:0
+msgid "Opening"
+msgstr "جارٍ الفتح"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/services/ai_navigator_service.js:0
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
+msgid "That screen could not be opened."
+msgstr "تعذّر فتح هذه الشاشة."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js:0
+msgid "Which one?"
+msgstr "أيّها تقصد؟"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_res_users__ai_cursor_animation
+msgid "Show the assistant pointer"
+msgstr "إظهار مؤشر المساعد"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_res_users__ai_cursor_animation
+msgid ""
+"When Ghaima AI opens a screen for you, a pointer moves to it first. Off: the"
+" screen opens straight away."
+msgstr ""
+"عندما يفتح لك مساعد غيمة شاشةً، يتحرّك المؤشر إليها أولًا. عند الإيقاف: "
+"تُفتح الشاشة مباشرةً."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/navigate.py:0
+msgid "Unpaid invoices"
+msgstr "الفواتير غير المدفوعة"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/navigate.py:0
+msgid "Overdue invoices"
+msgstr "الفواتير المتأخرة"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/navigate.py:0
+msgid "Draft invoices"
+msgstr "الفواتير المسودة"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/navigate.py:0
+msgid "Customer invoices"
+msgstr "فواتير العملاء"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/navigate.py:0
+msgid "Unpaid bills"
+msgstr "فواتير الموردين غير المدفوعة"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/navigate.py:0
+msgid "Vendor bills"
+msgstr "فواتير الموردين"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/navigate.py:0
+msgid "Customers"
+msgstr "العملاء"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/navigate.py:0
+msgid "Vendors"
+msgstr "الموردون"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/navigate.py:0
+msgid "Contacts"
+msgstr "جهات الاتصال"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/navigate.py:0
+msgid "Employees"
+msgstr "الموظفون"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/navigate.py:0
+msgid "Quotations"
+msgstr "عروض الأسعار"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/navigate.py:0
+msgid "My quotations"
+msgstr "عروض أسعاري"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/navigate.py:0
+msgid "Purchase orders"
+msgstr "أوامر الشراء"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/navigate.py:0
+msgid "Products"
+msgstr "المنتجات"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/services/navigate.py:0
+msgid "Leave requests to approve"
+msgstr "طلبات الإجازة بانتظار الاعتماد"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.xml:0
+msgid "(optional)"
+msgstr "(اختياري)"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent_skill.py:0
+msgid "A shared skill with the code '%(code)s' already exists."
+msgstr "توجد مهارة مشتركة بالرمز '%(code)s' بالفعل."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.xml:0
+msgid "About a model"
+msgstr "عن نموذج"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.xml:0
+msgid "Add"
+msgstr "إضافة"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.js:0
+msgid "Add a skill"
+msgstr "إضافة مهارة"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.js:0
+msgid "Add a tool"
+msgstr "إضافة أداة"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.js:0
+msgid "Add a topic"
+msgstr "إضافة موضوع"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "Add skill"
+msgstr "إضافة مهارة"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "Add tool"
+msgstr "إضافة أداة"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "Add topic"
+msgstr "إضافة موضوع"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.js:0
+msgid "Added. The assistant can use it now."
+msgstr "تمت الإضافة. يستطيع المساعد استخدامها الآن."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.js:0
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent__use_all_capabilities
+msgid "All capabilities"
+msgstr "كل الإمكانات"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid ""
+"All capabilities: every tool is on, including ones added later. Each person "
+"only reaches the data their own access rights allow, and changes still need "
+"their confirmation."
+msgstr ""
+"كل الإمكانات: جميع الأدوات مفعّلة، بما فيها ما يُضاف لاحقاً. لا يصل كل شخص "
+"إلا إلى البيانات التي تسمح بها صلاحياته، وتبقى التغييرات بحاجة إلى تأكيده."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.js:0
+msgid "All fields of one record"
+msgstr "جميع حقول سجل واحد"
+
+#. module: ab_ai_agent
+#: model:ai.agent.topic,name:ab_ai_agent.topic_generic_data
+msgid "Any Business Data"
+msgstr "أي بيانات عمل"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.xml:0
+msgid "Any model"
+msgstr "أي نموذج"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_tool__preset_json
+msgid ""
+"Builder preset: {\"model\", \"op\", \"domain\", \"fields\", \"limit\"}. When"
+" set, the dispatcher runs the matching generic data tool with this preset; "
+"the model cannot widen the fixed filter."
+msgstr ""
+"إعداد المُنشئ: {\"model\", \"op\", \"domain\", \"fields\", \"limit\"}. عند "
+"تعبئته يشغّل المُوزّع أداة البيانات العامة المطابقة بهذا الإعداد، ولا يستطيع"
+" النموذج توسيع الفلتر الثابت."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent_builder.py:0
+msgid "Built-in items are protected. Archive them instead."
+msgstr "العناصر المدمجة محمية. يمكنك أرشفتها بدلاً من حذفها."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent_builder.py:0
+msgid ""
+"Built-in items are protected. Only items added from the console can be "
+"changed here."
+msgstr ""
+"العناصر المدمجة محمية. لا يمكن هنا تعديل إلا العناصر المضافة من لوحة التحكم."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.xml:0
+msgid "Cancel"
+msgstr "إلغاء"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.xml:0
+msgid "Condition"
+msgstr "الشرط"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__context_model
+msgid "Context Model"
+msgstr "نموذج السياق"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.js:0
+msgid "Count records"
+msgstr "عدّ السجلات"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.js:0
+msgid "Create a record"
+msgstr "إنشاء سجل"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_skill__is_custom
+msgid ""
+"Created from the Agent Console builder (editable / removable there). Module-"
+"shipped skills are protected."
+msgstr ""
+"أُنشئت من مُنشئ لوحة تحكم الوكيل (قابلة للتعديل والحذف هناك). المهارات "
+"المرفقة مع الوحدات محمية."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_tool__is_custom
+msgid ""
+"Created from the Agent Console builder. Module-shipped tools are protected."
+msgstr "أُنشئت من مُنشئ لوحة تحكم الوكيل. الأدوات المرفقة مع الوحدات محمية."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_topic__is_custom
+msgid ""
+"Created from the Agent Console builder. Module-shipped topics are protected."
+msgstr "أُنشئ من مُنشئ لوحة تحكم الوكيل. المواضيع المرفقة مع الوحدات محمية."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.xml:0
+msgid "Description (Arabic)"
+msgstr "الوصف (بالعربية)"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.xml:0
+msgid ""
+"Description (English) — the assistant reads this to decide when to use the "
+"tool"
+msgstr "الوصف (بالإنجليزية) — يقرؤه المساعد ليقرر متى يستخدم الأداة"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "Edit"
+msgstr "تعديل"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.js:0
+msgid "Edit skill"
+msgstr "تعديل المهارة"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.js:0
+msgid "Edit tool"
+msgstr "تعديل الأداة"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.js:0
+msgid "Edit topic"
+msgstr "تعديل الموضوع"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent__use_all_capabilities
+msgid ""
+"Every active tool, topic and skill — including ones installed later — is "
+"available to this agent, with no per-agent setup. Security is unchanged: "
+"each tool still runs as the current user (access rights + record rules), "
+"tool groups still apply and data changes still need the user's confirmation."
+msgstr ""
+"كل أداة وموضوع ومهارة نشطة — بما فيها ما يُثبَّت لاحقاً — متاحة لهذا الوكيل "
+"دون أي إعداد. الأمان لا يتغير: كل أداة تعمل بصلاحيات المستخدم الحالي (حقوق "
+"الوصول وقواعد السجلات)، وتبقى قيود المجموعات سارية، وتحتاج تغييرات البيانات "
+"إلى تأكيد المستخدم."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.js:0
+msgid ""
+"Every tool, skill and topic, including ones added later. Still limited to "
+"each user's own access rights."
+msgstr ""
+"كل الأدوات والمهارات والمواضيع، بما فيها ما يُضاف لاحقاً، مع بقاء كل مستخدم "
+"ضمن صلاحياته."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.xml:0
+msgid "Field"
+msgstr "الحقل"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.xml:0
+msgid "Fields to show"
+msgstr "الحقول المعروضة"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.xml:0
+msgid "Field…"
+msgstr "الحقل…"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.js:0
+msgid "Find records"
+msgstr "البحث عن سجلات"
+
+#. module: ab_ai_agent
+#: model:ai.agent.topic,description:ab_ai_agent.topic_generic_data
+msgid "Find, count, read and open records of any app the user can access."
+msgstr ""
+"البحث عن سجلات أي تطبيق يملك المستخدم صلاحيته، وعدّها وقراءتها وفتحها."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.xml:0
+msgid "Fixed filter"
+msgstr "فلتر ثابت"
+
+#. module: ab_ai_agent
+#: model:ir.model,name:ab_ai_agent.model_ai_agent_builder_protect
+msgid "Ghaima AI — protect shipped AI records"
+msgstr "غيمة AI — حماية سجلات الذكاء الاصطناعي المدمجة"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent_builder.py:0
+msgid "Give the skill a name."
+msgstr "أدخل اسماً للمهارة."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent_builder.py:0
+msgid "Give the topic a name."
+msgstr "أدخل اسماً للموضوع."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.js:0
+msgid "How many match"
+msgstr "كم سجلاً يطابق"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.xml:0
+msgid "Insert:"
+msgstr "إدراج:"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.xml:0
+msgid "Instructions — when and how the assistant should use these tools"
+msgstr "التعليمات — متى وكيف يستخدم المساعد هذه الأدوات"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__is_custom
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__is_custom
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_topic__is_custom
+msgid "Is Custom"
+msgstr "مخصص"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.js:0
+msgid "List matching records"
+msgstr "عرض السجلات المطابقة"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.js:0
+msgid "Loading…"
+msgstr "جارٍ التحميل…"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.xml:0
+msgid "Name and description"
+msgstr "الاسم والوصف"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.xml:0
+msgid "Needs an open record (shown on record pages)"
+msgstr "تحتاج سجلاً مفتوحاً (تظهر في صفحات السجلات)"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.js:0
+msgid "No model you can use matches"
+msgstr "لا يوجد نموذج متاح لك يطابق البحث"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_skill__is_global
+msgid "Offered by every agent, not only the owner."
+msgstr "يقدّمها كل وكيل، وليس المالك فقط."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.xml:0
+msgid "On which records?"
+msgstr "على أي سجلات؟"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/controllers/agent_chat.py:0
+#: code:addons/ab_ai_agent/models/ai_agent_builder.py:0
+msgid "Only AI agent designers can add or change tools, skills and topics."
+msgstr ""
+"لا يستطيع إضافة الأدوات والمهارات والمواضيع أو تعديلها إلا مصممو وكلاء "
+"الذكاء الاصطناعي."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.xml:0
+msgid ""
+"Only models you can read are listed. The assistant always works with the "
+"access rights of the person chatting."
+msgstr ""
+"تظهر فقط النماذج التي تملك صلاحية قراءتها. يعمل المساعد دائماً بصلاحيات "
+"الشخص الذي يحادثه."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.js:0
+msgid "Open the list"
+msgstr "فتح القائمة"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.xml:0
+msgid "Operation"
+msgstr "العملية"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_skill__agent_id
+msgid "Owning agent. Empty for a shared (global) skill."
+msgstr "الوكيل المالك. يُترك فارغاً للمهارة المشتركة."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent_builder.py:0
+msgid "Pick a model and an operation."
+msgstr "اختر نموذجاً وعملية."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent_builder.py:0
+msgid "Pick an operation."
+msgstr "اختر عملية."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__preset_json
+msgid "Preset Json"
+msgstr "إعداد JSON"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__preset_model
+msgid "Preset Model"
+msgstr "نموذج الإعداد"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__preset_op
+msgid "Preset Op"
+msgstr "عملية الإعداد"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.xml:0
+msgid "Prompt the assistant receives"
+msgstr "الطلب الذي يستلمه المساعد"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.js:0
+msgid "Proposed, the user confirms"
+msgstr "مقترح، ويؤكده المستخدم"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.js:0
+msgid "Record details"
+msgstr "تفاصيل السجل"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.js:0
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "Remove"
+msgstr "حذف"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.js:0
+msgid "Remove \"%s\"? The assistant will stop using it."
+msgstr "حذف \"%s\"؟ سيتوقف المساعد عن استخدامه."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.xml:0
+msgid "Remove filter"
+msgstr "إزالة الفلتر"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.js:0
+msgid "Removed."
+msgstr "تم الحذف."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.xml:0
+msgid "Save"
+msgstr "حفظ"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.js:0
+msgid "Saved."
+msgstr "تم الحفظ."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.xml:0
+msgid "Search tools"
+msgstr "البحث في الأدوات"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.xml:0
+msgid "Search: invoices, employees, sale.order…"
+msgstr "ابحث: الفواتير، الموظفون، sale.order…"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.xml:0
+msgid "Share with every agent"
+msgstr "مشاركة مع كل الوكلاء"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_skill__is_global
+msgid "Shared with every agent"
+msgstr "مشتركة مع كل الوكلاء"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.xml:0
+msgid "Short description"
+msgstr "وصف مختصر"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent_skill.py:0
+msgid "Skill '%(name)s' needs an agent or must be shared with every agent."
+msgstr "المهارة '%(name)s' تحتاج إلى وكيل أو يجب مشاركتها مع كل الوكلاء."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.js:0
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.js:0
+msgid "Something went wrong. Try again."
+msgstr "حدث خطأ. حاول مرة أخرى."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.js:0
+msgid "Take the user to the screen"
+msgstr "نقل المستخدم إلى الشاشة"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_skill__context_model
+msgid ""
+"Technical model this skill is about (optional). Passed to the prompt as "
+"{model} when no record is open."
+msgstr ""
+"النموذج التقني الذي تخصه هذه المهارة (اختياري). يُمرَّر إلى الطلب كـ {model}"
+" عند عدم وجود سجل مفتوح."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.xml:0
+msgid "The assistant can narrow this filter, never widen it."
+msgstr "يستطيع المساعد تضييق هذا الفلتر، ولا يستطيع توسيعه أبداً."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent_builder.py:0
+msgid "The assistant cannot use this model: %s"
+msgstr "لا يستطيع المساعد استخدام هذا النموذج: %s"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent_builder.py:0
+msgid "The prompt template cannot be empty."
+msgstr "لا يمكن أن يكون قالب الطلب فارغاً."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent_builder.py:0
+msgid ""
+"The prompt template has an unbalanced { or }. Use {{ and }} for literal "
+"braces."
+msgstr "في قالب الطلب قوس { أو } غير مكتمل. استخدم {{ و }} لكتابة القوس نفسه."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent_builder.py:0
+msgid "This agent no longer exists."
+msgstr "هذا الوكيل لم يعد موجوداً."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent_builder.py:0
+msgid "This item no longer exists."
+msgstr "هذا العنصر لم يعد موجوداً."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent_tool.py:0
+msgid "Tool '%(name)s' has a malformed preset."
+msgstr "إعداد الأداة '%(name)s' غير صالح."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent_tool.py:0
+msgid "Tool '%(name)s' has an unknown operation."
+msgstr "للأداة '%(name)s' عملية غير معروفة."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent_tool.py:0
+msgid "Tool '%(name)s': the assistant cannot use this model."
+msgstr "الأداة '%(name)s': لا يستطيع المساعد استخدام هذا النموذج."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent_builder.py:0
+msgid "Unknown item type."
+msgstr "نوع عنصر غير معروف."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent_builder.py:0
+msgid "Unknown placeholder(s): %(bad)s. Allowed: %(ok)s"
+msgstr "متغيرات غير معروفة: %(bad)s. المسموح: %(ok)s"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.js:0
+msgid "Update a record"
+msgstr "تعديل سجل"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.xml:0
+msgid "Value"
+msgstr "القيمة"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.xml:0
+msgid "What can it do?"
+msgstr "ماذا تفعل الأداة؟"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent_builder.py:0
+msgid "You cannot use this model."
+msgstr "لا يمكنك استخدام هذا النموذج."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent_builder.py:0
+msgid "You do not have access to this model."
+msgstr "ليست لديك صلاحية على هذا النموذج."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.js:0
+msgid "contains"
+msgstr "يحتوي على"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.js:0
+msgid "greater than"
+msgstr "أكبر من"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.js:0
+msgid "is"
+msgstr "يساوي"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.js:0
+msgid "is not"
+msgstr "لا يساوي"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.js:0
+msgid "less than"
+msgstr "أقل من"
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.xml:0
+msgid ""
+"{message} = what the user typed · {model} {id} {record_name} = the open "
+"record."
+msgstr ""
+"{message} = ما كتبه المستخدم · {model} {id} {record_name} = السجل المفتوح."
+
+#. module: ab_ai_agent
+#. odoo-javascript
+#: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
+msgid "· added in console"
+msgstr "· مضافة من لوحة التحكم"

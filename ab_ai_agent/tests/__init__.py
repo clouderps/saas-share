@@ -12,3 +12,8 @@ from . import test_native_tools
 from . import test_agent_actions
 from . import test_gateway_link
 from . import test_agent_limit
+from . import test_console
+from . import test_create_flows
+from . import test_ghaima_base
+from . import test_navigate
+from . import test_full_access_builder

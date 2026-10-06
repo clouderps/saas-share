@@ -27,8 +27,19 @@ from . import llm_adapter
 from . import meter as meter_svc
 from . import tool_dispatcher
 from . import citation as citation_svc
+from . import ghaima_base
 
 _logger = logging.getLogger(__name__)
+
+
+# Pluggable answer cache: ab_ai_agent_cache sets 'lookup' and 'store'.
+# lookup(env, agent, question, locale) -> envelope | None
+# store(env, agent, question, locale, envelope, tool_plan, tool_calls)
+_DEICTIC_RE = re.compile(
+    r'(\b(this|these|that|current|here|above)\b|هذا|هذه|هذي|هنا|الحالي|الحالية|الشاشة|الصفحة)',
+    re.IGNORECASE)
+
+ANSWER_CACHE = {'lookup': None, 'store': None}
 
 
 def run(env, *, agent, user_question, conversation=None, surface='chat',
@@ -100,6 +111,35 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
         on_event('done', run_id=agent_run.id, state='budget')
         return envelope['response'], agent_run, envelope
 
+    # ── 2c. Answer cache (ab_ai_agent_cache) ──────────────────
+    # A stand-alone question (no screen, record, skill or history) that
+    # was answered moments ago is answered again without an LLM hop.
+    # A screen alone does not make the question screen-bound: the FAB
+    # sends it on every message. Only deictic questions ("this order")
+    # skip the lookup. Storing still needs no screen, so a cached answer
+    # can never carry another page's facts.
+    _deictic = bool(_DEICTIC_RE.search(user_question or ''))
+    cacheable = not (history or skill or record_ref or (screen and _deictic))
+    storable = cacheable and not screen
+    lookup = ANSWER_CACHE.get('lookup')
+    if cacheable and lookup:
+        try:
+            cached = lookup(env, agent=agent, question=user_question, locale=locale)
+        except Exception:
+            _logger.info('answer cache lookup failed', exc_info=True)
+            cached = None
+        if cached:
+            latency_ms = int((time.perf_counter() - started_perf) * 1000)
+            cached.setdefault('provenance', {}).update(
+                {'routed_via': 'answer_cache', 'hops': 0, 'grounded': 'grounded'})
+            cached.setdefault('usage', {})['duration_ms'] = latency_ms
+            cached.update({'agent_id': agent.id, 'agent_code': agent.code})
+            agent_run.finalize(state='done', response=cached.get('response') or '',
+                               latency_ms=latency_ms, grounded='grounded')
+            agent_run.sudo().write({'routed_via': 'cache'})
+            on_event('done', run_id=agent_run.id, state='done', envelope=cached)
+            return cached.get('response') or '', agent_run, cached
+
     # ── 3. Build system prompt + tool schemas ─────────────────
     # Retrieve org knowledge ONCE here so it's both injected and
     # captured on the audit row (monitor) without a double RAG hit.
@@ -140,6 +180,7 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
                    f'## Current message\n{user_question}']
                   if history else [user_question])
     tool_calls_audit = []
+    tool_plan = []                      # (tool, args) in call order — answer cache
     forced_tool_retry_used = False
     cum_cost = 0.0
     cum_tokens = {'p': 0, 'c': 0, 'cached': 0}
@@ -279,6 +320,7 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
                     agent=agent, agent_run=agent_run,
                 )
                 tool_calls_audit.append(tool_outcome)
+                tool_plan.append({'tool': tool_record.code, 'args': args})
                 consumed_calls.append((tool_record.code, tool_outcome.get('ok'),
                                        tool_outcome))
                 pending_confirmation = _proposal_of(tool_outcome)
@@ -341,6 +383,7 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
                 agent=agent, agent_run=agent_run,
             )
             tool_calls_audit.append(tool_outcome)
+            tool_plan.append({'tool': tool_record.code, 'args': parsed.get('args') or {}})
 
             pending_confirmation = _proposal_of(tool_outcome)
             if pending_confirmation:
@@ -549,12 +592,28 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
                     pending_action = opened['action']
                 break
 
+    # ── 6c. Navigation directive (the in-app "AI cursor") ─────
+    # Only the LAST successful `navigate` call counts, and only its
+    # server-built directive/choices are passed on — the web client
+    # executes nothing else automatically.
+    navigate_directive, navigate_choices = None, None
+    for call in reversed(tool_calls_audit):
+        if call.get('tool') != 'navigate' or not call.get('ok'):
+            continue
+        res = call.get('result') or {}
+        if isinstance(res, dict):
+            navigate_directive = res.get('navigate') or None
+            navigate_choices = res.get('choices') or None
+        break
+
     # ── 7. Build the final envelope ───────────────────────────
     latency_ms = int((time.perf_counter() - started_perf) * 1000)
     envelope = {
         'response': rendered_text,
         'render': extracted_render,
         'action': pending_action,
+        'navigate': navigate_directive,
+        'navigate_choices': navigate_choices,
         'agent_id': agent.id,
         'agent_code': agent.code,
         'usage': {
@@ -613,6 +672,14 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
         'provider_used': final_provider,
         'routed_via': last_routed_via,
     })
+
+    store = ANSWER_CACHE.get('store')
+    if storable and store and not pending_confirmation:
+        try:
+            store(env, agent=agent, question=user_question, locale=locale,
+                  envelope=envelope, tool_plan=tool_plan, tool_calls=tool_calls_audit)
+        except Exception:
+            _logger.info('answer cache store failed', exc_info=True)
 
     # Live meter chip push.
     try:
@@ -692,7 +759,10 @@ def _compose_system_prompt(env, agent, *, locale='en', skill=None,
     # changes with every question. No two requests shared a prefix, so
     # nothing was ever cacheable. Ordering is the whole fix; not one
     # block was added or removed.
-    parts = [agent.system_prompt or '']
+    # Locked Ghaima base instruction + website reference open EVERY
+    # agent's prompt. Shipped as module files, no editable path; the
+    # agent's own (editable) prompt follows under its own header.
+    parts = ghaima_base.prefix_blocks(env) + [agent.system_prompt or '']
 
     # How to render reports (P&L, sales summary, etc.) as data_table.
     parts.append(_report_rendering_block())
@@ -701,10 +771,11 @@ def _compose_system_prompt(env, agent, *, locale='en', skill=None,
     parts.append(_chart_rendering_block())
 
     # Topic instructions.
-    if agent.topic_ids:
+    topics = agent._effective_topics()
+    if topics:
         topic_text = '\n\n'.join(
             f'### Topic: {t.name}\n{t.instructions or ""}'.strip()
-            for t in agent.topic_ids
+            for t in topics
         )
         parts.append(topic_text)
 
@@ -723,6 +794,14 @@ def _compose_system_prompt(env, agent, *, locale='en', skill=None,
     # Boundary for providers with explicit cache markers (Anthropic):
     # ab_ai_base splits here and caches only what comes before. Other
     # providers strip it (they cache by prefix on their own).
+    # What this ERP looks like (apps, journals, taxes, departments,
+    # required fields) — built nightly per company + language and
+    # byte-stable, so it rides in the cached prefix instead of costing a
+    # find_menu / fields round-trip per question.
+    digest = _knowledge_digest_block(env)
+    if digest:
+        parts.append(digest)
+
     parts.append(CACHE_BREAK)
 
     # Caller context — who is asking, from where. Stable per user, but
@@ -855,7 +934,44 @@ def _csv_everywhere_enabled(env):
             in ('1', 'true', 'yes')
 
 
+def _knowledge_digest_block(env):
+    Digest = env.get('ai.agent.knowledge.digest')
+    if Digest is None:
+        return ''
+    try:
+        return Digest.prompt_block(env)
+    except Exception:
+        _logger.info('knowledge digest unavailable', exc_info=True)
+        return ''
+
+
+# (db, uid, company, lang) → (monotonic time, text). The snapshot is ~14
+# read_groups run as the user; recomputing it for every message of a
+# conversation bought nothing a five-minute-old figure does not give.
+_SNAPSHOT_CACHE = {}
+SNAPSHOT_TTL = 300
+
+
 def _business_snapshot_block(env):
+    from odoo.modules import module as odoo_module
+    if odoo_module.current_test:               # tests change data between calls
+        return _business_snapshot_block_live(env)
+    key = (env.cr.dbname, env.uid, env.company.id, env.lang,
+           tuple(env.context.get('allowed_company_ids') or ()),
+           tuple(sorted((k, str(v)) for k, v in env.context.items() if 'branch' in k)),
+           str(getattr(env, 'branch_ids', '')))
+    hit = _SNAPSHOT_CACHE.get(key)
+    now = time.monotonic()
+    if hit and now - hit[0] < SNAPSHOT_TTL:
+        return hit[1]
+    text = _business_snapshot_block_live(env)
+    if len(_SNAPSHOT_CACHE) > 500:
+        _SNAPSHOT_CACHE.clear()
+    _SNAPSHOT_CACHE[key] = (now, text)
+    return text
+
+
+def _business_snapshot_block_live(env):
     """Pre-fetch comprehensive counts + open-item summaries so the
     LLM has business-wide context before its first tool call.
 
@@ -1322,7 +1438,13 @@ def _resolve_tools(env, agent):
     def allowed(t):
         if not t.is_invocable_by(env.user):
             return False
-        if t.code in ACTION_TOOLS and not actions_on:
+        if (t.code in ACTION_TOOLS or t.code in tool_dispatcher.PROPOSAL_TOOLS) and not actions_on:
+            return False
+        if t.preset_json and t.preset_op in ('create', 'update') \
+                and not (actions_on and agent.allow_write_actions):
+            # Console-made write presets only propose, but they are still
+            # writes: the kill switch, the plan and the agent's own
+            # write permission all apply.
             return False
         if t.is_write_action:
             # A user's own memory is theirs to write; everything else needs
@@ -1330,7 +1452,7 @@ def _resolve_tools(env, agent):
             # not write actions at dispatch — they only propose).
             return (t.category == 'memory' and memory_on) or agent.allow_write_actions
         return True
-    return agent.all_tool_ids.filtered(allowed)
+    return agent._effective_tools().filtered(allowed)
 
 
 ACTION_TOOLS = frozenset({'screen_button', 'act_on_record', 'create_record', 'update_record',
@@ -1338,9 +1460,10 @@ ACTION_TOOLS = frozenset({'screen_button', 'act_on_record', 'create_record', 'up
 
 # Tool routing: which tools a question can need. CORE is always offered;
 # a group joins when the question (Arabic or English) mentions its world.
-_CORE_TOOLS = frozenset({'explain_screen', 'open_record', 'open_list', 'open_action', 'find_menu',
+_CORE_TOOLS = frozenset({'navigate', 'explain_screen', 'open_record', 'open_list', 'open_action', 'find_menu',
                          'list_my_apps', 'date_reference', 'query_data', 'get_record',
-                         'search_records', 'recent_records', 'kb_search', 'kb_read'})
+                         'search_records', 'recent_records', 'kb_search', 'kb_read',
+                         'find_records', 'count_records', 'read_record'})
 _TOOL_GROUPS = (
     (ACTION_TOOLS | {'record_action'},
      ('أنشئ', 'انشئ', 'اعمل', 'سو', 'أضف', 'اضف', 'أكد', 'اكد', 'اعتمد', 'وافق', 'ارفض', 'أرسل', 'ارسل',
@@ -1428,9 +1551,73 @@ def _route_tools(env, tools, question, screen=None):
             matched = True
     if (screen or {}).get('res_id') or (screen or {}).get('view_type') == 'form':
         wanted |= ACTION_TOOLS          # "this" record: acting on it is likely
+    tools = _route_builder_tools(tools, q)
     if not matched:
         return tools
     return tools.filtered(lambda t: t.code in wanted or t.code not in _ALL_ROUTED)
+
+
+# Console-builder tools are cheap to add, so a full-access agent can end
+# up with dozens. Past this many, only the ones the question names (tool
+# name or model words, Arabic or English) are sent; the generic
+# search/count/get tools cover the rest at no prompt cost.
+_BUILDER_TOOLS_ALWAYS = 8
+
+
+_AR_FOLD = str.maketrans({'أ': 'ا', 'إ': 'ا', 'آ': 'ا', 'ى': 'ي', 'ة': 'ه', 'ؤ': 'و', 'ئ': 'ي'})
+_AR_TASHKEEL = None
+
+
+def _fold(text):
+    """Case/diacritic/alef-ya folding so Arabic and English words match."""
+    import re
+    global _AR_TASHKEEL
+    if _AR_TASHKEEL is None:
+        _AR_TASHKEEL = re.compile('[\u064B-\u065F\u0670]')
+    text = _AR_TASHKEEL.sub('', (text or '').lower()).replace('\u0640', '')
+    return text.translate(_AR_FOLD).replace('.', ' ').replace('_', ' ')
+
+
+def _tool_keywords(t):
+    """Words that name a builder tool, in English AND Arabic: its name and
+    description in both languages plus the model's labels."""
+    import re
+    words = set()
+    for lang in ('en_US', 'ar_001'):
+        tl = t.with_context(lang=lang)
+        texts = [tl.name, tl.description]
+        Model = t.env.get(t.preset_model) if t.preset_model else None
+        if Model is not None:
+            texts.append(Model.with_context(lang=lang)._description)
+        for txt in texts:
+            words.update(w for w in re.split(r'\W+', _fold(txt or '')) if len(w) >= 3)
+    words.update(w for w in re.split(r'\W+', _fold(t.preset_model or '')) if len(w) >= 3)
+    return words - _ROUTE_STOP
+
+
+# Generic verbs every builder tool's description shares; they say
+# nothing about which tool the question needs.
+_ROUTE_STOP = frozenset({'find', 'count', 'read', 'open', 'create', 'update', 'records', 'record',
+                         'the', 'and', 'for', 'with', 'list', 'show', 'user', 'can', 'from',
+                         'this', 'that', 'only', 'fields', 'filter', 'tool',
+                         'بحث', 'عدد', 'قراءه', 'فتح', 'انشاء', 'تحديث', 'سجلات', 'سجل',
+                         'التي', 'الذي', 'على', 'الى', 'هذا', 'هذه', 'عرض', 'قائمه'})
+
+
+def _route_builder_tools(tools, q):
+    custom = tools.filtered('preset_json')
+    if len(custom) <= _BUILDER_TOOLS_ALWAYS:
+        return tools
+    import re
+    qwords = {w for w in re.split(r'\W+', _fold(q)) if len(w) >= 3}
+    # Arabic attaches "ال" and clitics; compare stems both ways.
+    qwords |= {w[2:] for w in qwords if w.startswith('ال') and len(w) > 4}
+
+    def mentioned(t):
+        kws = _tool_keywords(t)
+        kws |= {w[2:] for w in kws if w.startswith('ال') and len(w) > 4}
+        return bool(kws & qwords)
+    return tools - custom.filtered(lambda t: not mentioned(t))
 
 
 def _find_tool(tools, code):

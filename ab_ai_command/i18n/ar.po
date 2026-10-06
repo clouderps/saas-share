@@ -15,6 +15,12 @@ msgstr ""
 
 #. module: ab_ai_command
 #. odoo-python
+#: code:addons/ab_ai_command/services/tools.py:0
+msgid "Create a draft: %s"
+msgstr "إنشاء مسودة: %s"
+
+#. module: ab_ai_command
+#. odoo-python
 #: code:addons/ab_ai_command/models/ai_command_mixin.py:0
 msgid "\"%s\" is not a number."
 msgstr "‏\"%s\" ليس رقماً."
@@ -452,3 +458,21 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:ab_ai_command.view_ai_agent_command_form
 msgid "e.g. Create Quotation"
 msgstr "مثال: إنشاء عرض سعر"
+
+#. module: ab_ai_command
+#. odoo-python
+#: code:addons/ab_ai_command/models/ai_command_mixin.py:0
+msgid "No %(field)s called \"%(text)s\"."
+msgstr "لا يوجد %(field)s باسم \"%(text)s\"."
+
+#. module: ab_ai_command
+#. odoo-python
+#: code:addons/ab_ai_command/models/ai_command_mixin.py:0
+msgid "Nothing given."
+msgstr "لم تُدخل أي قيمة."
+
+#. module: ab_ai_command
+#. odoo-python
+#: code:addons/ab_ai_command/models/ai_command_mixin.py:0
+msgid "Several matches for \"%(text)s\" in %(field)s. Which one?"
+msgstr "توجد عدة نتائج لـ \"%(text)s\" في %(field)s. أيها تقصد؟"

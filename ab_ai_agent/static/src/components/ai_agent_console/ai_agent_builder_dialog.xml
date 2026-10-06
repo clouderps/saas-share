@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="ab_ai_agent.AiAgentBuilderDialog">
+        <Dialog title="title" size="'lg'" contentClass="'o_ai_builder'">
+
+            <div t-if="state.error" class="alert alert-danger py-2" role="alert" t-esc="state.error"/>
+
+            <!-- ── Tool ─────────────────────────────────────────── -->
+            <t t-if="props.kind === 'tool'">
+                <ol class="o_ai_builder__steps list-unstyled m-0">
+                    <li class="o_ai_builder__step">
+                        <h3 class="o_ai_builder__steptitle"><span class="o_ai_builder__num">1</span> What can it do?</h3>
+                        <div class="o_ai_builder__ops" role="radiogroup" aria-label="Operation">
+                            <t t-foreach="ops" t-as="op" t-key="op.id">
+                                <button type="button" role="radio"
+                                        class="o_ai_builder__op"
+                                        t-att-class="{ 'is-active': state.op === op.id }"
+                                        t-att-aria-checked="state.op === op.id ? 'true' : 'false'"
+                                        t-att-disabled="isEdit"
+                                        t-on-click="() => this.setOp(op.id)">
+                                    <span class="o_ai_builder__oplabel" t-esc="op.label"/>
+                                    <span class="o_ai_builder__ophelp" t-esc="op.help"/>
+                                </button>
+                            </t>
+                        </div>
+                    </li>
+                    <li class="o_ai_builder__step">
+                        <h3 class="o_ai_builder__steptitle"><span class="o_ai_builder__num">2</span> On which records?</h3>
+                        <t t-if="isEdit">
+                            <p class="mb-0"><bdi t-esc="state.modelLabel"/></p>
+                        </t>
+                        <t t-else="">
+                            <label class="form-label" for="ai_builder_model">Model</label>
+                            <AutoComplete id="'ai_builder_model'" value="state.modelLabel"
+                                          sources="modelSources"
+                                          placeholder.translate="Search: invoices, employees, sale.order…"
+                                          onSelect="(o) => this.onModelSelect(o)"
+                                          autoSelect="true"/>
+                            <p class="form-text">Only models you can read are listed. The assistant always works with the access rights of the person chatting.</p>
+                        </t>
+                    </li>
+                    <li class="o_ai_builder__step" t-if="state.model and ['search', 'count', 'open'].includes(state.op)">
+                        <h3 class="o_ai_builder__steptitle"><span class="o_ai_builder__num">3</span> Fixed filter <small class="text-muted">(optional)</small></h3>
+                        <div class="o_ai_builder__filter">
+                            <select class="form-select" aria-label="Field" t-model="state.filterField">
+                                <option value="">Field…</option>
+                                <t t-foreach="state.fieldOptions" t-as="f" t-key="f.name">
+                                    <option t-att-value="f.name" t-esc="f.string"/>
+                                </t>
+                            </select>
+                            <select class="form-select" aria-label="Condition" t-model="state.filterOp">
+                                <t t-foreach="filterOps" t-as="fo" t-key="fo[0]">
+                                    <option t-att-value="fo[0]" t-esc="fo[1]"/>
+                                </t>
+                            </select>
+                            <input class="form-control" type="text" aria-label="Value" dir="auto"
+                                   t-model="state.filterValue" t-on-keydown="(ev) => ev.key === 'Enter' and this.addFilter()"/>
+                            <button type="button" class="btn btn-secondary" t-on-click="addFilter"
+                                    t-att-disabled="!state.filterField">Add</button>
+                        </div>
+                        <ul class="o_ai_builder__chips list-unstyled" t-if="state.domain.length">
+                            <t t-foreach="state.domain" t-as="leaf" t-key="leaf_index">
+                                <li class="o_ai_builder__chip">
+                                    <bdi><t t-esc="fieldLabel(leaf[0])"/> <t t-esc="leaf[1]"/> <t t-esc="leaf[2]"/></bdi>
+                                    <button type="button" class="btn btn-link p-0" t-on-click="() => this.removeFilter(leaf_index)"
+                                            aria-label="Remove filter"><i class="fa fa-times" aria-hidden="true"/></button>
+                                </li>
+                            </t>
+                        </ul>
+                        <p class="form-text">The assistant can narrow this filter, never widen it.</p>
+                    </li>
+                    <li class="o_ai_builder__step" t-if="state.model and ['search', 'read'].includes(state.op)">
+                        <h3 class="o_ai_builder__steptitle"><span class="o_ai_builder__num">4</span> Fields to show <small class="text-muted">(optional)</small></h3>
+                        <div class="o_ai_builder__fields">
+                            <t t-foreach="state.fieldOptions" t-as="f" t-key="f.name">
+                                <label class="o_ai_builder__fieldopt" t-att-class="{ 'is-active': state.fields.includes(f.name) }">
+                                    <input type="checkbox" class="form-check-input"
+                                           t-att-checked="state.fields.includes(f.name)"
+                                           t-on-change="() => this.toggleField(f.name)"/>
+                                    <span t-esc="f.string"/>
+                                </label>
+                            </t>
+                        </div>
+                    </li>
+                    <li class="o_ai_builder__step">
+                        <h3 class="o_ai_builder__steptitle"><span class="o_ai_builder__num">✓</span> Name and description</h3>
+                        <label class="form-label" for="ai_builder_name">Name</label>
+                        <input id="ai_builder_name" class="form-control" type="text" dir="auto" t-model="state.name"/>
+                        <label class="form-label mt-2" for="ai_builder_desc">Description (English) — the assistant reads this to decide when to use the tool</label>
+                        <textarea id="ai_builder_desc" class="form-control" rows="2" dir="ltr" t-model="state.description"/>
+                        <label class="form-label mt-2" for="ai_builder_desc_ar">Description (Arabic)</label>
+                        <textarea id="ai_builder_desc_ar" class="form-control" rows="2" dir="rtl" lang="ar" t-model="state.descriptionAr"/>
+                    </li>
+                </ol>
+            </t>
+
+            <!-- ── Skill ────────────────────────────────────────── -->
+            <t t-if="props.kind === 'skill'">
+                <div class="row g-3">
+                    <div class="col-12 col-md-8">
+                        <label class="form-label" for="ai_builder_sname">Name</label>
+                        <input id="ai_builder_sname" class="form-control" type="text" dir="auto" t-model="state.name"/>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <span class="form-label d-block">Icon</span>
+                        <div class="o_ai_builder__icons" role="radiogroup" aria-label="Icon">
+                            <t t-foreach="iconChoices" t-as="ic" t-key="ic">
+                                <button type="button" role="radio" class="o_ai_builder__icon"
+                                        t-att-class="{ 'is-active': state.icon === ic }"
+                                        t-att-aria-checked="state.icon === ic ? 'true' : 'false'"
+                                        t-att-aria-label="ic"
+                                        t-on-click="() => { state.icon = ic; }">
+                                    <i t-attf-class="fa {{ ic }}" aria-hidden="true"/>
+                                </button>
+                            </t>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label" for="ai_builder_sdesc">Short description</label>
+                        <input id="ai_builder_sdesc" class="form-control" type="text" dir="auto" t-model="state.description"/>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label" for="ai_builder_tpl">Prompt the assistant receives</label>
+                        <textarea id="ai_builder_tpl" class="form-control" rows="4" dir="auto" t-model="state.template"/>
+                        <div class="o_ai_builder__phs">
+                            <span class="form-text">Insert:</span>
+                            <t t-foreach="placeholders" t-as="ph" t-key="ph">
+                                <button type="button" class="btn btn-sm btn-light" t-on-click="() => this.insertPlaceholder(ph)"><bdi t-esc="ph"/></button>
+                            </t>
+                        </div>
+                        <p class="form-text">{message} = what the user typed · {model} {id} {record_name} = the open record.</p>
+                    </div>
+                    <div class="col-12" t-if="!isEdit">
+                        <label class="form-label" for="ai_builder_cmodel">About a model <small class="text-muted">(optional)</small></label>
+                        <AutoComplete id="'ai_builder_cmodel'" value="state.contextModel"
+                                      sources="modelSources"
+                                      placeholder.translate="Any model"
+                                      onSelect="(o) => this.onModelSelect(o, 'context')"/>
+                    </div>
+                    <div class="col-12" t-if="!isEdit">
+                        <div class="form-check">
+                            <input id="ai_builder_rec" class="form-check-input" type="checkbox" t-model="state.needsRecord"/>
+                            <label class="form-check-label" for="ai_builder_rec">Needs an open record (shown on record pages)</label>
+                        </div>
+                        <div class="form-check">
+                            <input id="ai_builder_shared" class="form-check-input" type="checkbox" t-model="state.shared"/>
+                            <label class="form-check-label" for="ai_builder_shared">Share with every agent</label>
+                        </div>
+                    </div>
+                </div>
+            </t>
+
+            <!-- ── Topic ────────────────────────────────────────── -->
+            <t t-if="props.kind === 'topic'">
+                <label class="form-label" for="ai_builder_tname">Name</label>
+                <input id="ai_builder_tname" class="form-control" type="text" dir="auto" t-model="state.name"/>
+                <label class="form-label mt-2" for="ai_builder_tdesc">Short description</label>
+                <input id="ai_builder_tdesc" class="form-control" type="text" dir="auto" t-model="state.description"/>
+                <label class="form-label mt-2" for="ai_builder_tins">Instructions — when and how the assistant should use these tools</label>
+                <textarea id="ai_builder_tins" class="form-control" rows="4" dir="auto" t-model="state.instructions"/>
+                <div class="d-flex align-items-center justify-content-between mt-3 gap-2">
+                    <span class="form-label m-0">Tools <bdi class="text-muted">(<t t-esc="state.toolIds.length"/>)</bdi></span>
+                    <input class="form-control form-control-sm o_ai_builder__toolsearch" type="search"
+                           aria-label="Search tools" dir="auto" t-model="state.toolQuery"
+                           placeholder.translate="Search tools"/>
+                </div>
+                <div class="o_ai_builder__toollist">
+                    <t t-foreach="topicTools" t-as="tool" t-key="tool.id">
+                        <label class="o_ai_builder__fieldopt" t-att-class="{ 'is-active': state.toolIds.includes(tool.id) }">
+                            <input type="checkbox" class="form-check-input"
+                                   t-att-checked="state.toolIds.includes(tool.id)"
+                                   t-on-change="() => this.toggleTool(tool.id)"/>
+                            <span t-esc="tool.name"/>
+                        </label>
+                    </t>
+                </div>
+            </t>
+
+            <t t-set-slot="footer">
+                <button type="button" class="btn btn-primary" t-on-click="save" t-att-disabled="!canSave">
+                    <i t-if="state.saving" class="fa fa-spinner fa-spin me-1" aria-hidden="true"/>
+                    <t t-if="isEdit">Save</t><t t-else="">Add</t>
+                </button>
+                <button type="button" class="btn btn-secondary" t-on-click="props.close">Cancel</button>
+            </t>
+        </Dialog>
+    </t>
+
+</templates>

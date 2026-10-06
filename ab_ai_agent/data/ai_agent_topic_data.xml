@@ -22,7 +22,9 @@
             <field name="name">Navigation</field>
             <field name="code">navigation</field>
             <field name="description">Open records, lists, pivots, graphs, reports — let the user navigate the app by voice or chat.</field>
-            <field name="instructions">When the user wants to **see** something — not just a number, but the actual view in Odoo — call one of:
+            <field name="instructions">**"Open / show / go to" means `navigate`, first.** Whenever the user asks to open, show, take them to, or go to something — "open invoice INV/2026/0012", "open contact Abdalmola", "show unpaid invoices", "go to employees", "افتح فاتورة INV/2026/0012", "افتح العميل عبدالمولى", "وريني الفواتير غير المدفوعة", "روح للموظفين", "ودّني على الموظفين" — call `navigate`: kind="record" with target + the number/name exactly as said; kind="list" with a preset; kind="menu" with the screen name in English. The screen opens on its own (the assistant's pointer moves there), so never ask "shall I open it?" — just say in one short line what is opening. If it returns choices, ask which one by name. If found is false, say plainly nothing matched — never open a different record instead. If it says not available, tell them they do not have access to it.
+
+When the user wants to **see** something navigate cannot reach — not just a number, but the actual view in Odoo — call one of:
 - `open_action` for built-in reports: P&amp;L (xmlid `account.action_account_pl_report`), Balance Sheet (`account.action_account_balance_report`), or any module action.
 - `open_record` to land on a specific record's form view ("open SO 42", "show invoice INV/2026/00045").
 - `open_list` for filtered list views ("show overdue invoices" → model=account.move with the matching domain).
@@ -33,6 +35,7 @@ When the user names a document by its number and asks to confirm / post / valida
 
 Always end with `__end_message` summarising what you opened/did (e.g. "Opening the P&amp;L for this month — the report should appear shortly." / "Invoice INV/2026/00001 posted.").</field>
             <field name="tool_ids" eval="[(6, 0, [
+                ref('tool_navigate'),
                 ref('tool_open_record'),
                 ref('tool_open_list'),
                 ref('tool_open_pivot'),
@@ -56,6 +59,7 @@ Always end with `__end_message` summarising what you opened/did (e.g. "Opening t
 **Never guess where something lives.** Odoo menu layouts differ per install and per user's access. Always call a tool first:
 
 - `list_my_apps` — when the user asks what they can do, what they have access to, or where to begin ("what can I do here?", "ما الذي يمكنني فعله؟", "I'm new"). Answer ONLY from what it returns. If an app is not in the result the user cannot open it, so do not mention it.
+- `navigate` — when they ask to be TAKEN somewhere ("go to employees", "روح للفواتير", "open contact X"): it opens the screen or record directly.
 - `find_menu` — for every how-do-I / where-is question ("where do I create a credit note?", "وين أسوي مرتجع؟", "how do I add an employee?"). Give the returned `path` verbatim, then call `open_action` with the match's `action_xmlid` so the answer carries a working button.
 - `explain_screen` — when they ask what a screen, document type, field or status means. Use the real `key_fields` and `lifecycle` it returns rather than describing Odoo in general.
 
@@ -70,6 +74,7 @@ Always end with `__end_message` summarising what you opened/did (e.g. "Opening t
 Always end with `__end_message`.</field>
             <field name="tool_ids" eval="[(6, 0, [
                 ref('tool_list_my_apps'),
+                ref('tool_navigate'),
                 ref('tool_find_menu'),
                 ref('tool_explain_screen'),
                 ref('tool_open_action'),
@@ -142,7 +147,7 @@ Always end with `__end_message`.</field>
             <field name="auto_attach" eval="True"/>
             <field name="instructions">You can act for the user. When they ask you to create, change, confirm, approve, reject, send, post, cancel or schedule something, call the matching tool:
 - the record on screen or a named record + a button → `screen_button` / `act_on_record` (button by its label, e.g. "Approve", "Confirm", "Send by Email");
-- a new record → `create_record` (look up exact names with `search_records` first if unsure; lines for orders);
+- a new record → `create_record` (look up exact names with `find_records` first if unsure; lines for orders);
 - changing fields → `update_record`; a note or an email to the customer → `post_message`; a reminder → `schedule_activity`.
 Each tool only proposes: the user sees Confirm / Cancel. Tell them briefly what will happen and to press Confirm. Never claim it is done, never ask for confirmation in text instead of calling the tool, and never retry a refused action another way — if the tool says "not permitted", say the user's access does not allow it.
 Several changes in one request → one tool call per change.</field>
@@ -155,5 +160,27 @@ Several changes in one request → one tool call per change.</field>
                 ref('tool_schedule_activity'),
             ])]"/>
         </record>
+
+        <!-- Any model, read side. Auto-attached; works on every app. -->
+        <record id="topic_generic_data" model="ai.agent.topic">
+            <field name="name">Any Business Data</field>
+            <field name="code">generic_data</field>
+            <field name="description">Find, count, read and open records of any app the user can access.</field>
+            <field name="auto_attach" eval="True"/>
+            <field name="instructions">You can read any business data the user may see, in every installed app — never say a module is "not supported".
+- a list of records → `find_records` (model + domain + fields); one record's details → `read_record`; how many → `count_records`;
+- totals, averages, group-by, trends → `query_data`; open a screen for the user → `open_list` / `open_record`;
+- create or change something → `create_record` / `update_record` (they only propose; the user confirms).
+Results already respect the user's access rights: if a tool says "not permitted", tell the user their access does not allow it and stop — never try another tool to get around it.</field>
+            <field name="tool_ids" eval="[(6, 0, [
+                ref('tool_find_records'),
+                ref('tool_count_records'),
+                ref('tool_read_record'),
+                ref('tool_query_data'),
+                ref('tool_open_list'),
+                ref('tool_open_record'),
+            ])]"/>
+        </record>
+
     </data>
 </odoo>

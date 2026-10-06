@@ -1,0 +1,133 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* ab_ai_agent_cache
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-06 16:13+0000\n"
+"PO-Revision-Date: 2026-10-06 16:13+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ar\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: ab_ai_agent_cache
+#: model:ir.model,name:ab_ai_agent_cache.model_ai_agent_answer_cache
+msgid "AI Agent Answer Cache"
+msgstr "ذاكرة إجابات المساعد الذكي"
+
+#. module: ab_ai_agent_cache
+#: model:ir.model.fields,field_description:ab_ai_agent_cache.field_ai_agent_answer_cache__agent_id
+msgid "Agent"
+msgstr "المساعد"
+
+#. module: ab_ai_agent_cache
+#: model:ir.model.fields,field_description:ab_ai_agent_cache.field_ai_agent_answer_cache__company_id
+msgid "Company"
+msgstr "الشركة"
+
+#. module: ab_ai_agent_cache
+#: model:ir.model.fields,field_description:ab_ai_agent_cache.field_ai_agent_answer_cache__create_uid
+msgid "Created by"
+msgstr "أنشئ بواسطة"
+
+#. module: ab_ai_agent_cache
+#: model:ir.model.fields,field_description:ab_ai_agent_cache.field_ai_agent_answer_cache__create_date
+msgid "Created on"
+msgstr "أنشئ في"
+
+#. module: ab_ai_agent_cache
+#: model:ir.model.fields.selection,name:ab_ai_agent_cache.selection__ai_agent_answer_cache__kind__data
+msgid "Data (tool plan replayed)"
+msgstr "بيانات (إعادة تشغيل خطة الأدوات)"
+
+#. module: ab_ai_agent_cache
+#: model:ir.model.fields,field_description:ab_ai_agent_cache.field_ai_agent_answer_cache__display_name
+msgid "Display Name"
+msgstr "الاسم المعروض"
+
+#. module: ab_ai_agent_cache
+#: model:ir.model.fields,field_description:ab_ai_agent_cache.field_ai_agent_answer_cache__envelope_json
+msgid "Envelope Json"
+msgstr "بيانات الإجابة (JSON)"
+
+#. module: ab_ai_agent_cache
+#: model:ir.model.fields,field_description:ab_ai_agent_cache.field_ai_agent_answer_cache__expires_at
+msgid "Expires At"
+msgstr "ينتهي في"
+
+#. module: ab_ai_agent_cache
+#: model:ir.model.fields,field_description:ab_ai_agent_cache.field_ai_agent_answer_cache__hit_count
+msgid "Hit Count"
+msgstr "عدد مرات الاستخدام"
+
+#. module: ab_ai_agent_cache
+#: model:ir.model.fields,field_description:ab_ai_agent_cache.field_ai_agent_answer_cache__id
+msgid "ID"
+msgstr "المعرف"
+
+#. module: ab_ai_agent_cache
+#: model:ir.model.fields,field_description:ab_ai_agent_cache.field_ai_agent_answer_cache__key
+msgid "Key"
+msgstr "المفتاح"
+
+#. module: ab_ai_agent_cache
+#: model:ir.model.fields,field_description:ab_ai_agent_cache.field_ai_agent_answer_cache__kind
+msgid "Kind"
+msgstr "النوع"
+
+#. module: ab_ai_agent_cache
+#: model:ir.model.fields,field_description:ab_ai_agent_cache.field_ai_agent_answer_cache__lang
+msgid "Lang"
+msgstr "اللغة"
+
+#. module: ab_ai_agent_cache
+#: model:ir.model.fields,field_description:ab_ai_agent_cache.field_ai_agent_answer_cache__last_hit
+msgid "Last Hit"
+msgstr "آخر استخدام"
+
+#. module: ab_ai_agent_cache
+#: model:ir.model.fields,field_description:ab_ai_agent_cache.field_ai_agent_answer_cache__write_uid
+msgid "Last Updated by"
+msgstr "آخر تحديث بواسطة"
+
+#. module: ab_ai_agent_cache
+#: model:ir.model.fields,field_description:ab_ai_agent_cache.field_ai_agent_answer_cache__write_date
+msgid "Last Updated on"
+msgstr "آخر تحديث في"
+
+#. module: ab_ai_agent_cache
+#: model:ir.model.fields,field_description:ab_ai_agent_cache.field_ai_agent_answer_cache__models_touched
+msgid "Models Touched"
+msgstr "النماذج المستخدمة"
+
+#. module: ab_ai_agent_cache
+#: model:ir.model.fields.selection,name:ab_ai_agent_cache.selection__ai_agent_answer_cache__kind__howto
+msgid "Navigation / how-to (answer reused)"
+msgstr "تنقل / إرشاد (إعادة استخدام الإجابة)"
+
+#. module: ab_ai_agent_cache
+#: model:ir.model.constraint,message:ab_ai_agent_cache.constraint_ai_agent_answer_cache_key_unique
+msgid "One cached answer per key."
+msgstr "إجابة محفوظة واحدة لكل مفتاح."
+
+#. module: ab_ai_agent_cache
+#: model:ir.model.fields,field_description:ab_ai_agent_cache.field_ai_agent_answer_cache__plan_json
+msgid "Plan Json"
+msgstr "خطة الأدوات (JSON)"
+
+#. module: ab_ai_agent_cache
+#: model:ir.model.fields,field_description:ab_ai_agent_cache.field_ai_agent_answer_cache__question
+msgid "Question"
+msgstr "السؤال"
+
+#. module: ab_ai_agent_cache
+#. odoo-python
+#: code:addons/ab_ai_agent_cache/services/answer_cache.py:0
+msgid "Results"
+msgstr "النتائج"

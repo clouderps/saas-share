@@ -35,6 +35,16 @@
             <field name="allow_end_message" eval="True"/>
         </record>
 
+        <record id="tool_navigate" model="ai.agent.tool">
+            <field name="name">Go to (record, list or screen)</field>
+            <field name="code">navigate</field>
+            <field name="category">navigation</field>
+            <field name="description">Take the user straight to what they asked to open, show or go to — in Arabic or English ("open invoice INV/2026/0012", "افتح العميل عبدالمولى", "show unpaid invoices", "وريني الفواتير غير المدفوعة", "go to employees", "روح للموظفين"). kind="record" finds ONE record by its number or name (target = what it is: invoice, bill, contact, customer, employee, sale order, product…; query = the number or name exactly as the user said it). kind="list" opens a named list (preset). kind="menu" opens a screen by its menu name (query in English). The screen opens by itself — do not ask for confirmation. found=false means nothing matched: say so. choices means several match: ask which one, naming them.</field>
+            <field name="schema">{"type": "object", "properties": {"kind": {"type": "string", "enum": ["record", "list", "menu"]}, "target": {"type": "string", "description": "For kind=record: the kind of record in the user's words (invoice, bill, contact, customer, vendor, employee, sale order, purchase order, product, payment, transfer, فاتورة, عميل, موظف…)"}, "query": {"type": "string", "description": "For record: the number or name as said ('INV/2026/0012', 'Abdalmola'). For menu: the screen name in English ('employees', 'credit notes')."}, "preset": {"type": "string", "enum": ["unpaid_invoices", "overdue_invoices", "draft_invoices", "customer_invoices", "unpaid_bills", "vendor_bills", "customers", "vendors", "contacts", "employees", "quotations", "sale_orders", "my_quotations", "purchase_orders", "products", "pending_leaves"], "description": "For kind=list only."}}, "required": ["kind"]}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="allow_end_message" eval="True"/>
+        </record>
+
         <record id="tool_open_list" model="ai.agent.tool">
             <field name="name">Open List View</field>
             <field name="code">open_list</field>
@@ -269,6 +279,38 @@
             <field name="category">retrieval</field>
             <field name="description">Explain what a screen or document type is for, using the model's real fields, lifecycle states and this user's own permissions — not guesswork. Use when the user asks what something means, what a field is for, or what happens next ("what is this screen?", "شنو معنى هذي الشاشة؟", "what does Posted mean?"). The permissions block describes THIS user: when write is false, explain who can change it instead of telling them to edit.</field>
             <field name="schema">{"type": "object", "properties": {"screen": {"type": "string", "description": "The screen in the user's own words ('the invoices list', 'customer form') OR a technical model name. The tool resolves either."}}, "required": ["screen"]}</field>
+            <field name="dispatch_kind">python</field>
+        </record>
+
+
+        <!-- ── Generic data tools: any model the user can read ──────── -->
+        <record id="tool_find_records" model="ai.agent.tool">
+            <field name="name">Find records (any model the user can read)</field>
+            <field name="code">find_records</field>
+            <field name="category">retrieval</field>
+            <field name="sequence">5</field>
+            <field name="description">List records of ANY business model the user can read: "show open quotations of Acme", "employees in Sales", "products without a barcode". model = technical model (sale.order, hr.employee, product.product…) or the user's words; domain = Odoo filter on real fields, e.g. [["state","=","sale"]]; fields = which columns (optional); limit ≤ 50; order like "date_order desc". Only what the user may see comes back. For totals / group-by use query_data; for one record's full details use read_record.</field>
+            <field name="schema">{"type": "object", "properties": {"model": {"type": "string", "description": "Technical model or the user's words; empty = the screen's model"}, "query": {"type": "string", "description": "Free text matched on the record name"}, "domain": {"type": "array", "items": {"type": "array", "items": {"type": "string"}}, "description": "Odoo domain, e.g. [[\"state\",\"=\",\"sale\"]]"}, "fields": {"type": "array", "items": {"type": "string"}}, "limit": {"type": "integer"}, "order": {"type": "string"}}, "required": []}</field>
+            <field name="dispatch_kind">python</field>
+        </record>
+
+        <record id="tool_count_records" model="ai.agent.tool">
+            <field name="name">Count records (any model the user can read)</field>
+            <field name="code">count_records</field>
+            <field name="category">retrieval</field>
+            <field name="sequence">5</field>
+            <field name="description">How many records of any business model match a filter, counting only what the user may see: "how many draft invoices", "how many employees on leave". model + optional domain.</field>
+            <field name="schema">{"type": "object", "properties": {"model": {"type": "string"}, "domain": {"type": "array", "items": {"type": "array", "items": {"type": "string"}}}}, "required": []}</field>
+            <field name="dispatch_kind">python</field>
+        </record>
+
+        <record id="tool_read_record" model="ai.agent.tool">
+            <field name="name">Record details (any model the user can read)</field>
+            <field name="code">read_record</field>
+            <field name="category">retrieval</field>
+            <field name="sequence">5</field>
+            <field name="description">All readable fields of ONE record of any business model: "details of SO00045", "what is Ahmed's job title", "show this invoice's fields". record = id, number or name (empty = the record on screen); fields = optional subset.</field>
+            <field name="schema">{"type": "object", "properties": {"model": {"type": "string"}, "record": {"type": "string", "description": "Record id, number or name; empty = the record on screen"}, "fields": {"type": "array", "items": {"type": "string"}}}, "required": []}</field>
             <field name="dispatch_kind">python</field>
         </record>
 

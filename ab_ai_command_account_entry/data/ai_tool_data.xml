@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+
+        <record id="tool_create_journal_entry" model="ai.agent.tool">
+            <field name="name">Create a draft journal entry</field>
+            <field name="code">create_journal_entry</field>
+            <field name="category">write</field>
+            <field name="description">Draft a manual journal entry (قيد / قيد يومية) from what the user says, e.g. "paid rent 5000 from the bank" → lines [{account: "Rent", debit: 5000}, {account: "Bank", credit: 5000}]. account = code, code prefix, account name, or a bank/cash journal name. Debits must equal credits. date defaults to today, journal to the general journal. Only PROPOSES: the user gets Confirm / Cancel; the entry is created as a DRAFT and is never posted. If it returns need_info, ask the listed questions in ONE message.</field>
+            <field name="schema">{"type": "object", "properties": {"lines": {"type": "array", "items": {"type": "object", "properties": {"account": {"type": "string"}, "debit": {"type": "number"}, "credit": {"type": "number"}, "partner": {"type": "string"}, "label": {"type": "string"}}, "required": ["account"]}}, "date": {"type": "string", "description": "YYYY-MM-DD or the user's words"}, "journal": {"type": "string"}, "ref": {"type": "string"}}, "required": ["lines"]}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="is_write_action" eval="False"/>
+            <field name="allow_end_message" eval="True"/>
+            <field name="group_ids" eval="[(6, 0, [ref('account.group_account_user')])]"/>
+        </record>
+
+        <record id="topic_journal_entry" model="ai.agent.topic">
+            <field name="name">Create Draft Journal Entry</field>
+            <field name="code">journal_entry</field>
+            <field name="description">Turn "paid rent 5000 from bank" into a balanced draft journal entry.</field>
+            <field name="auto_attach" eval="True"/>
+            <field name="instructions">When the user asks for a journal entry (قيد، قيد يومية، سجل قيد) or describes a money movement that is not an invoice or bill ("paid rent 5000 from the bank", "دفعنا ايجار ٥٠٠٠ من البنك"), call `create_journal_entry` straight away. Expand the sentence into balanced lines yourself: the expense/asset received is the debit, the bank/cash/liability it came from is the credit. Do not ask for the date or journal — defaults apply. Ask only when the tool returns need_info, and then ask everything in ONE message. The entry is a DRAFT; say so and never claim it is posted.</field>
+            <field name="tool_ids" eval="[(6, 0, [ref('tool_create_journal_entry')])]"/>
+        </record>
+
+        <function model="ai.agent" name="_heal_core_topics"/>
+
+    </data>
+</odoo>

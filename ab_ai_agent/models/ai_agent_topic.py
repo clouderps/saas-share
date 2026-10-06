@@ -39,6 +39,11 @@ class AIAgentTopic(models.Model):
         help='Free-form guidance the LLM receives when this topic is '
              'active. Reference tools by their JSON name.')
 
+    is_custom = fields.Boolean(
+        default=False, readonly=True, copy=False,
+        help='Created from the Agent Console builder. Module-shipped topics '
+             'are protected.')
+
     tool_ids = fields.Many2many(
         'ai.agent.tool', 'ai_agent_topic_tool_rel', 'topic_id', 'tool_id',
         string='Tools')

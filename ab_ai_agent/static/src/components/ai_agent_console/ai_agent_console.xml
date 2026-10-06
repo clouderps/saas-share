@@ -1,0 +1,392 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="ab_ai_agent.AiAgentConsole">
+        <div class="o_ai_console"
+             t-att-class="{
+                'has-config': state.showConfig,
+                'has-agent': state.showAgent,
+             }">
+
+            <!-- ── Header ──────────────────────────────────────── -->
+            <header class="o_ai_console__header">
+                <div class="o_ai_console__brand">
+                    <span class="o_ai_console__mark" aria-hidden="true"><i class="fa fa-cube"/></span>
+                    <div class="o_ai_console__brandtext">
+                        <h1 class="o_ai_console__title">Agent Console</h1>
+                        <span class="o_ai_console__status" t-att-data-status="state.status" role="status">
+                            <span class="o_ai_console__dot" aria-hidden="true"/>
+                            <t t-esc="labels.status[state.status] or labels.status.idle"/>
+                        </span>
+                    </div>
+                </div>
+
+                <label class="o_ai_console__picker">
+                    <span class="visually-hidden">Agent</span>
+                    <i class="fa fa-user-circle-o" aria-hidden="true"/>
+                    <select class="form-select o_ai_console__select" t-on-change="onAgentChange"
+                            t-att-disabled="!agents.length">
+                        <t t-foreach="agents" t-as="a" t-key="a.id">
+                            <option t-att-value="a.id" t-att-selected="state.agent and a.id === state.agent.id"
+                                    t-esc="a.name"/>
+                        </t>
+                    </select>
+                </label>
+
+                <div class="o_ai_console__actions">
+                    <button type="button" class="o_ai_console__btn"
+                            t-att-aria-pressed="state.showConfig ? 'true' : 'false'"
+                            t-on-click="() => this.togglePanel('config')"
+                            title="Prompt &amp; tools" aria-label="Prompt &amp; tools">
+                        <i class="fa fa-sliders" aria-hidden="true"/>
+                        <span class="o_ai_console__btnlabel">Prompt &amp; tools</span>
+                    </button>
+                    <button type="button" class="o_ai_console__btn"
+                            t-att-aria-pressed="state.showAgent ? 'true' : 'false'"
+                            t-on-click="() => this.togglePanel('agent')"
+                            title="Identity &amp; behaviour" aria-label="Identity &amp; behaviour">
+                        <i class="fa fa-id-card-o" aria-hidden="true"/>
+                        <span class="o_ai_console__btnlabel">Identity &amp; behaviour</span>
+                    </button>
+                    <button type="button" class="o_ai_console__btn o_ai_console__btn--primary"
+                            t-on-click="newChat" t-att-disabled="!state.agentCode"
+                            title="New chat" aria-label="New chat">
+                        <i class="fa fa-plus" aria-hidden="true"/>
+                        <span class="o_ai_console__btnlabel">New chat</span>
+                    </button>
+                </div>
+            </header>
+
+            <div class="o_ai_console__body">
+                <div class="o_ai_console__scrim" t-on-click="closePanels" aria-hidden="true"/>
+
+                <!-- ── Start panel: prompt / tools / skills / scope ── -->
+                <aside class="o_ai_console__panel o_ai_console__panel--start"
+                       t-if="state.showConfig" aria-label="Agent configuration">
+                    <nav class="o_ai_console__tabs" role="tablist">
+                        <t t-foreach="tabs" t-as="tab" t-key="tab.id">
+                            <button type="button" role="tab" class="o_ai_console__tab"
+                                    t-att-aria-selected="state.tab === tab.id ? 'true' : 'false'"
+                                    t-on-click="() => this.setTab(tab.id)">
+                                <i t-attf-class="fa {{ tab.icon }}" aria-hidden="true"/>
+                                <span t-esc="tab.label"/>
+                            </button>
+                        </t>
+                    </nav>
+
+                    <div class="o_ai_console__panelbody" t-if="state.agent">
+                        <!-- System prompt -->
+                        <section t-if="state.tab === 'prompt'" class="o_ai_console__section">
+                            <div class="o_ai_console__sectionhead">
+                                <h2>System prompt</h2>
+                                <span t-if="!canEdit" class="o_ai_console__badge">
+                                    <i class="fa fa-lock" aria-hidden="true"/> Read only
+                                </span>
+                            </div>
+                            <details class="o_ai_console__locked mb-3">
+                                <summary><i class="fa fa-lock me-1" aria-hidden="true"/>Ghaima base instructions (locked)</summary>
+                                <p class="o_ai_console__hint">Set by Ghaima and applied before this prompt for every agent. It cannot be edited.</p>
+                                <pre class="o_ai_console__prompt" dir="auto" style="white-space: pre-wrap;" t-esc="state.agent.ghaima_base_instruction"/>
+                            </details>
+                            <textarea class="o_ai_console__prompt"
+                                      t-att-value="value('system_prompt')"
+                                      t-att-readonly="!canEdit"
+                                      t-on-input="(ev) => this.onInput('system_prompt', ev)"
+                                      aria-label="System prompt"
+                                      dir="auto" spellcheck="false"/>
+                            <p class="o_ai_console__hint">
+                                Topic instructions, business context and the user's screen are added after this prompt on every run.
+                            </p>
+                        </section>
+
+                        <!-- Tools -->
+                        <section t-if="state.tab === 'tools'" class="o_ai_console__section">
+                            <div class="o_ai_console__sectionhead">
+                                <h2>Tools</h2>
+                                <span class="o_ai_console__badge"><bdi t-esc="enabledToolCount"/> active</span>
+                                <button t-if="canEdit" type="button" class="o_ai_console__btn o_ai_console__add"
+                                        t-on-click="() => this.openBuilder('tool')">
+                                    <i class="fa fa-plus" aria-hidden="true"/> Add tool
+                                </button>
+                            </div>
+                            <p t-if="fullAccess" class="o_ai_console__notice">
+                                <i class="fa fa-unlock-alt" aria-hidden="true"/> All capabilities: every tool is on, including ones added later. Each person only reaches the data their own access rights allow, and changes still need their confirmation.
+                            </p>
+                            <ul class="o_ai_console__list">
+                                <t t-foreach="state.agent.tools" t-as="tool" t-key="tool.id">
+                                    <li class="o_ai_console__row">
+                                        <div class="o_ai_console__rowtext">
+                                            <span class="o_ai_console__rowtitle" t-esc="tool.name"/>
+                                            <span class="o_ai_console__rowmeta">
+                                                <t t-esc="tool.category"/>
+                                                <t t-if="tool.via_topic"> · via topic</t>
+                                                <t t-if="tool.is_write_action"> · writes data</t>
+                                                <t t-if="tool.is_custom"> · added in console</t>
+                                            </span>
+                                        </div>
+                                        <span t-if="canEdit and tool.is_custom" class="o_ai_console__rowactions">
+                                            <button type="button" class="btn btn-link btn-sm" t-on-click="() => this.openBuilder('tool', tool)"
+                                                    t-att-aria-label="'Edit ' + tool.name" title="Edit"><i class="fa fa-pencil" aria-hidden="true"/></button>
+                                            <button type="button" class="btn btn-link btn-sm text-danger" t-on-click="() => this.removeItem('tool', tool)"
+                                                    t-att-aria-label="'Remove ' + tool.name" title="Remove"><i class="fa fa-trash-o" aria-hidden="true"/></button>
+                                        </span>
+                                        <div class="form-check form-switch o_ai_console__switch">
+                                            <input class="form-check-input" type="checkbox" role="switch"
+                                                   t-att-id="'ai_tool_' + tool.id"
+                                                   t-att-checked="toolEnabled(tool)"
+                                                   t-att-disabled="!canEdit or tool.via_topic or fullAccess"
+                                                   t-on-change="() => this.onToolToggle(tool)"/>
+                                            <label class="visually-hidden" t-att-for="'ai_tool_' + tool.id" t-esc="tool.name"/>
+                                        </div>
+                                    </li>
+                                </t>
+                            </ul>
+                            <p t-if="!state.agent.tools.length" class="o_ai_console__empty">No tools available.</p>
+                        </section>
+
+                        <!-- Skills -->
+                        <section t-if="state.tab === 'skills'" class="o_ai_console__section">
+                            <div class="o_ai_console__sectionhead">
+                                <h2>Skills</h2>
+                                <button t-if="canEdit" type="button" class="o_ai_console__btn o_ai_console__add"
+                                        t-on-click="() => this.openBuilder('skill')">
+                                    <i class="fa fa-plus" aria-hidden="true"/> Add skill
+                                </button>
+                            </div>
+                            <ul class="o_ai_console__list">
+                                <t t-foreach="state.agent.skills" t-as="skill" t-key="skill.id">
+                                    <li class="o_ai_console__row o_ai_console__row--skill" t-att-data-accent="skill.accent">
+                                        <span class="o_ai_console__skillicon" aria-hidden="true">
+                                            <i t-attf-class="fa {{ skill.icon.startsWith('fa-') ? skill.icon : 'fa-' + skill.icon }}"/>
+                                        </span>
+                                        <div class="o_ai_console__rowtext">
+                                            <span class="o_ai_console__rowtitle" t-esc="skill.name"/>
+                                            <span class="o_ai_console__rowmeta" t-esc="skill.description"/>
+                                            <span t-if="skill.requires_record_context" class="o_ai_console__rowmeta">
+                                                <i class="fa fa-file-o" aria-hidden="true"/> Needs a record
+                                            </span>
+                                        </div>
+                                        <span t-if="canEdit and skill.is_custom" class="o_ai_console__rowactions">
+                                            <button type="button" class="btn btn-link btn-sm" t-on-click="() => this.openBuilder('skill', skill)"
+                                                    t-att-aria-label="'Edit ' + skill.name" title="Edit"><i class="fa fa-pencil" aria-hidden="true"/></button>
+                                            <button type="button" class="btn btn-link btn-sm text-danger" t-on-click="() => this.removeItem('skill', skill)"
+                                                    t-att-aria-label="'Remove ' + skill.name" title="Remove"><i class="fa fa-trash-o" aria-hidden="true"/></button>
+                                        </span>
+                                    </li>
+                                </t>
+                            </ul>
+                            <p t-if="!state.agent.skills.length" class="o_ai_console__empty">This agent has no skills yet.</p>
+                        </section>
+
+                        <!-- Scope -->
+                        <section t-if="state.tab === 'scope'" class="o_ai_console__section">
+                            <div class="o_ai_console__sectionhead">
+                                <h2>Scope</h2>
+                                <button t-if="canEdit" type="button" class="o_ai_console__btn o_ai_console__add"
+                                        t-on-click="() => this.openBuilder('topic')">
+                                    <i class="fa fa-plus" aria-hidden="true"/> Add topic
+                                </button>
+                            </div>
+                            <dl class="o_ai_console__dl">
+                                <dt>Primary surface</dt>
+                                <dd t-esc="state.agent.scope.surface or '—'"/>
+                                <dt>Topics</dt>
+                                <dd>
+                                    <t t-foreach="state.agent.scope.topics" t-as="topic" t-key="topic.id">
+                                        <span class="o_ai_console__tag" t-att-class="{ 'opacity-50': !topic.attached }">
+                                            <t t-esc="topic.name"/>
+                                            <t t-if="canEdit and topic.is_custom">
+                                                <button type="button" class="btn btn-link btn-sm p-0 ms-1" t-on-click="() => this.openBuilder('topic', topic)"
+                                                        t-att-aria-label="'Edit ' + topic.name" title="Edit"><i class="fa fa-pencil" aria-hidden="true"/></button>
+                                                <button type="button" class="btn btn-link btn-sm p-0 ms-1 text-danger" t-on-click="() => this.removeItem('topic', topic)"
+                                                        t-att-aria-label="'Remove ' + topic.name" title="Remove"><i class="fa fa-times" aria-hidden="true"/></button>
+                                            </t>
+                                        </span>
+                                    </t>
+                                    <t t-if="!state.agent.scope.topics.length">—</t>
+                                </dd>
+                                <dt>Companies</dt>
+                                <dd t-esc="scopeCompanies"/>
+                                <dt>User groups</dt>
+                                <dd t-esc="scopeGroups"/>
+                            </dl>
+                        </section>
+                    </div>
+
+                    <footer class="o_ai_console__panelfoot" t-if="canEdit and dirty">
+                        <button type="button" class="o_ai_console__btn" t-on-click="discard">Discard</button>
+                        <button type="button" class="o_ai_console__btn o_ai_console__btn--primary"
+                                t-on-click="save" t-att-disabled="state.saving">
+                            <i t-if="state.saving" class="fa fa-spinner fa-spin" aria-hidden="true"/>
+                            Save changes
+                        </button>
+                    </footer>
+                </aside>
+
+                <!-- ── Center: the shared chat engine ─────────────── -->
+                <main class="o_ai_console__chat">
+                    <div t-if="state.loading and !state.agent" class="o_ai_console__placeholder">
+                        <i class="fa fa-spinner fa-spin" aria-hidden="true"/>
+                    </div>
+                    <div t-elif="!agents.length" class="o_ai_console__placeholder">
+                        <p>No agent is available to you.</p>
+                    </div>
+                    <t t-else="">
+                            <AiAgentChat t-key="state.chatKey" agentCode="state.agentCode"
+                                         surface="'chat'"
+                                         hideSidebar="true"
+                                         initialMessage="state.chatKey === 1 ? params.initial_message : undefined"
+                                         recordModel="params.record_model"
+                                         recordId="params.record_id"
+                                         conversationId="state.conversationId"
+                                         enableVoice="!!params.enable_voice"/>
+                    </t>
+                    <footer class="o_ai_console__meter" t-if="showCost">
+                        <AiAgentTokenMeter/>
+                    </footer>
+                </main>
+
+                <!-- ── End panel: identity, behaviour, KPIs ───────── -->
+                <aside class="o_ai_console__panel o_ai_console__panel--end"
+                       t-if="state.showAgent and state.agent" aria-label="Agent identity">
+                    <div class="o_ai_console__panelbody">
+                        <section class="o_ai_console__identity">
+                            <span class="o_ai_console__avatar" aria-hidden="true">
+                                <img t-if="state.agent.avatar_url" t-att-src="state.agent.avatar_url" alt=""/>
+                                <t t-else="" t-esc="initials"/>
+                            </span>
+                            <div class="o_ai_console__rowtext">
+                                <span class="o_ai_console__agentname" t-esc="state.agent.name"/>
+                                <span class="o_ai_console__rowmeta">
+                                    <t t-esc="state.agent.persona_label"/>
+                                    <t t-if="state.agent.is_system"> · System agent</t>
+                                </span>
+                            </div>
+                            <button type="button" class="o_ai_console__iconbtn" t-if="canEdit"
+                                    t-on-click="openForm" title="Open agent form" aria-label="Open agent form">
+                                <i class="fa fa-external-link" aria-hidden="true"/>
+                            </button>
+                        </section>
+                        <p t-if="state.agent.description" class="o_ai_console__desc" t-esc="state.agent.description"/>
+
+                        <section class="o_ai_console__section">
+                            <div class="o_ai_console__sectionhead"><h2>Behaviour</h2></div>
+                            <div class="o_ai_console__field">
+                                <label for="ai_c_persona">Persona</label>
+                                <select id="ai_c_persona" class="form-select o_ai_console__input" t-att-disabled="!canEdit"
+                                        t-on-change="(ev) => this.onInput('persona', ev)">
+                                    <t t-foreach="state.agent.options.persona" t-as="opt" t-key="opt[0]">
+                                        <option t-att-value="opt[0]" t-att-selected="opt[0] === value('persona')" t-esc="opt[1]"/>
+                                    </t>
+                                </select>
+                            </div>
+                            <div class="o_ai_console__field">
+                                <label for="ai_c_style">Response style</label>
+                                <select id="ai_c_style" class="form-select o_ai_console__input" t-att-disabled="!canEdit"
+                                        t-on-change="(ev) => this.onInput('response_style', ev)">
+                                    <t t-foreach="state.agent.options.response_style" t-as="opt" t-key="opt[0]">
+                                        <option t-att-value="opt[0]" t-att-selected="opt[0] === value('response_style')" t-esc="opt[1]"/>
+                                    </t>
+                                </select>
+                            </div>
+                            <div class="o_ai_console__field">
+                                <label for="ai_c_model">Model tier</label>
+                                <select id="ai_c_model" class="form-select o_ai_console__input" t-att-disabled="!canEdit"
+                                        t-on-change="(ev) => this.onInput('model_class', ev)">
+                                    <t t-foreach="state.agent.options.model_class" t-as="opt" t-key="opt[0]">
+                                        <option t-att-value="opt[0]" t-att-selected="opt[0] === value('model_class')" t-esc="opt[1]"/>
+                                    </t>
+                                </select>
+                            </div>
+                            <div class="o_ai_console__field">
+                                <label for="ai_c_locale">Language</label>
+                                <select id="ai_c_locale" class="form-select o_ai_console__input" t-att-disabled="!canEdit"
+                                        t-on-change="(ev) => this.onInput('locale', ev)">
+                                    <t t-foreach="state.agent.options.locale" t-as="opt" t-key="opt[0]">
+                                        <option t-att-value="opt[0]" t-att-selected="opt[0] === value('locale')" t-esc="opt[1]"/>
+                                    </t>
+                                </select>
+                            </div>
+                            <div class="o_ai_console__fieldrow">
+                                <div class="o_ai_console__field">
+                                    <label for="ai_c_hops">Max steps</label>
+                                    <input id="ai_c_hops" type="number" min="1" max="20" step="1" dir="ltr"
+                                           class="o_ai_console__input" t-att-value="value('max_hops')"
+                                           t-att-readonly="!canEdit"
+                                           t-on-change="(ev) => this.onNumber('max_hops', ev)"/>
+                                </div>
+                                <div class="o_ai_console__field" t-if="showCost">
+                                    <label for="ai_c_cost">Cost limit / run (USD)</label>
+                                    <input id="ai_c_cost" type="number" min="0" step="0.01" dir="ltr"
+                                           class="o_ai_console__input" t-att-value="value('max_cost_usd')"
+                                           t-att-readonly="!canEdit"
+                                           t-on-change="(ev) => this.onNumber('max_cost_usd', ev)"/>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="o_ai_console__section">
+                            <div class="o_ai_console__sectionhead"><h2>Permissions</h2></div>
+                            <ul class="o_ai_console__list">
+                                <t t-foreach="permissionRows" t-as="perm" t-key="perm.field">
+                                    <li class="o_ai_console__row">
+                                        <div class="o_ai_console__rowtext">
+                                            <label class="o_ai_console__rowtitle" t-att-for="'ai_p_' + perm.field" t-esc="perm.label"/>
+                                            <span class="o_ai_console__rowmeta" t-esc="perm.help"/>
+                                        </div>
+                                        <div class="form-check form-switch o_ai_console__switch">
+                                            <input class="form-check-input" type="checkbox" role="switch"
+                                                   t-att-id="'ai_p_' + perm.field"
+                                                   t-att-checked="value(perm.field)"
+                                                   t-att-disabled="!canEdit"
+                                                   t-on-change="() => this.onToggle(perm.field)"/>
+                                        </div>
+                                    </li>
+                                </t>
+                            </ul>
+                        </section>
+
+                        <section class="o_ai_console__section">
+                            <div class="o_ai_console__sectionhead">
+                                <h2>Performance</h2>
+                                <span class="o_ai_console__badge">Last 30 days</span>
+                            </div>
+                            <div class="o_ai_console__kpis">
+                                <div class="o_ai_console__kpi">
+                                    <span class="o_ai_console__kpilabel">Runs</span>
+                                    <bdi class="o_ai_console__kpivalue" t-esc="fmtInt(state.agent.kpis.runs)"/>
+                                </div>
+                                <div class="o_ai_console__kpi">
+                                    <span class="o_ai_console__kpilabel">Success rate</span>
+                                    <bdi class="o_ai_console__kpivalue" dir="ltr"><t t-esc="state.agent.kpis.success_rate"/>%</bdi>
+                                </div>
+                                <t t-if="showCost"><div class="o_ai_console__kpi">
+                                    <span class="o_ai_console__kpilabel">Avg. cost</span>
+                                    <bdi class="o_ai_console__kpivalue" dir="ltr" t-esc="fmtUsd(state.agent.kpis.avg_cost_usd)"/>
+                                </div>
+                                <div class="o_ai_console__kpi">
+                                    <span class="o_ai_console__kpilabel">Total cost</span>
+                                    <bdi class="o_ai_console__kpivalue" dir="ltr" t-esc="fmtUsd(state.agent.kpis.total_cost_usd, 2)"/>
+                                </div></t>
+                            </div>
+                            <p class="o_ai_console__hint">
+                                <i class="fa fa-clock-o" aria-hidden="true"/>
+                                Last run: <bdi t-esc="lastRun"/>
+                            </p>
+                        </section>
+                    </div>
+                    <footer class="o_ai_console__panelfoot" t-if="canEdit and dirty">
+                        <button type="button" class="o_ai_console__btn" t-on-click="discard">Discard</button>
+                        <button type="button" class="o_ai_console__btn o_ai_console__btn--primary"
+                                t-on-click="save" t-att-disabled="state.saving">
+                            Save changes
+                        </button>
+                    </footer>
+                </aside>
+            </div>
+
+            <div t-if="state.error" class="o_ai_console__error" role="alert" t-esc="state.error"/>
+        </div>
+    </t>
+
+</templates>

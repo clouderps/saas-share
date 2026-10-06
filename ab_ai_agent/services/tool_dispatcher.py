@@ -24,6 +24,12 @@ _logger = logging.getLogger(__name__)
 _REGISTRY: dict = {}
 
 
+# Confirm-first tools contributed by bridge modules (journal entry,
+# settings…). Like the core ACTION_TOOLS they only propose; the
+# ``ab_ai_agent.actions_enabled`` switch hides them all at once.
+PROPOSAL_TOOLS = set()
+
+
 def register(code: str, fn):
     """Register a Python callable under a stable tool code.
 
@@ -108,6 +114,10 @@ def dispatch(env, tool_record, arguments, *, agent=None, agent_run=None):
 
 
 def _dispatch_python(env, tool, arguments, agent=None):
+    if tool.preset_json:
+        # Console-builder tool: a preset over the generic data tools.
+        from .generic_data import run_preset
+        return run_preset(env, tool, agent=agent, **arguments)
     fn = get(tool.code)
     if not fn:
         raise UserError(
@@ -1156,6 +1166,14 @@ def _builtin_record_action(env, agent=None, reference=None, action=None,
         except Exception as e:
             return {'error': f'{label}: not permitted ({type(e).__name__}).',
                     'action': descriptor}
+        # Posting books the entry: only accounting managers may ask the
+        # assistant to do it (users with lower rights post from the form,
+        # where Odoo's own checks and the full document are in front of them).
+        if method == 'action_post' and model in ('account.move', 'account.payment') \
+                and not env.user.has_group('account.group_account_manager'):
+            return {'error': env._('Only accounting managers can post through the '
+                                   'assistant. Open %s and post it from the form.', label),
+                    'action': descriptor}
         verb_key = {'action_confirm': 'confirm', 'button_confirm': 'confirm',
                     'action_post': 'post', 'button_validate': 'validate'}[method]
         if not _ai_confirmed:
@@ -1365,6 +1383,9 @@ register('query_data', _builtin_query_data)
 from .agent_actions import TOOLS as _ACTION_TOOLS  # noqa: E402
 for _code, _fn in _ACTION_TOOLS.items():
     register(_code, _fn)
+from .generic_data import TOOLS as _GENERIC_TOOLS  # noqa: E402
+for _code, _fn in _GENERIC_TOOLS.items():
+    register(_code, _fn)
 register('data_analysis', _builtin_data_analysis)
 register('recent_records', _builtin_recent_records)
 register('open_record', _builtin_open_record)
@@ -1374,6 +1395,8 @@ register('open_graph', _builtin_open_graph)
 register('open_action', _builtin_open_action)
 register('list_my_apps', _builtin_list_my_apps)
 register('find_menu', _builtin_find_menu)
+from .navigate import navigate as _builtin_navigate  # noqa: E402
+register('navigate', _builtin_navigate)
 register('explain_screen', _builtin_explain_screen)
 register('hr_attendance_missing_today', _builtin_hr_attendance_missing_today)
 register('hr_leave_pending', _builtin_hr_leave_pending)

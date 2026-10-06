@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+        <record id="tool_update_settings" model="ai.agent.tool">
+            <field name="name">Change settings (after confirmation)</field>
+            <field name="code">update_settings</field>
+            <field name="category">write</field>
+            <field name="description">Change one or more whitelisted settings, e.g. "turn on multi-currency", "فعّل الإكراميات في نقطة البيع". Call with no arguments to list the options this user may change (code, current value, choices). settings = {code: value}; booleans take true/false, selections take a choice label, taxes take the tax name. Only PROPOSES: the user sees old → new and must press Confirm. Only administrators can apply settings.</field>
+            <field name="schema">{"type": "object", "properties": {"settings": {"type": "object", "description": "{option code: new value}, e.g. {\"multi_currency\": true}"}}}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="is_write_action" eval="False"/>
+            <field name="allow_end_message" eval="True"/>
+            <field name="group_ids" eval="[(6, 0, [ref('base.group_system')])]"/>
+        </record>
+
+        <record id="topic_configure_settings" model="ai.agent.topic">
+            <field name="name">Configure Settings</field>
+            <field name="code">configure_settings</field>
+            <field name="description">Turn whitelisted settings on or off after the user confirms.</field>
+            <field name="auto_attach" eval="True"/>
+            <field name="instructions">When the user asks to enable, disable or change a setting (فعّل، عطّل، اضبط الإعدادات), call `update_settings`. If you do not know the option code, call it with no arguments first to list what is allowed, then call it again with settings = {code: value}. Never claim a change is applied before the user confirms. If the option is not in the list, say it is not something the assistant can change and offer to open Settings instead.</field>
+            <field name="tool_ids" eval="[(6, 0, [ref('tool_update_settings')])]"/>
+        </record>
+
+        <function model="ai.agent" name="_heal_core_topics"/>
+    </data>
+</odoo>

@@ -1,6 +1,6 @@
 {
     'name': 'AI Agent Runtime',
-    'version': '18.0.1.14.0',
+    'version': '18.0.1.18.0',
     'category': 'AI/Agents',
     'summary': 'Cross-instance AI agent runtime — personas, tools, RAG, metering. '
                'Gateway-independent: works on tenants and central DBCLOUD alike.',
@@ -58,6 +58,10 @@ agents, accounting agents) layer on top via data XML + Python tools.
             'ab_ai_agent/static/src/scss/ai_agent.scss',
             'ab_ai_agent/static/src/services/ai_agent_service.js',
             'ab_ai_agent/static/src/services/screen_context_service.js',
+            'ab_ai_agent/static/src/services/ai_navigator_service.js',
+            'ab_ai_agent/static/src/components/ai_cursor/ai_cursor.scss',
+            'ab_ai_agent/static/src/components/ai_cursor/ai_cursor.js',
+            'ab_ai_agent/static/src/components/ai_cursor/ai_cursor.xml',
             'ab_ai_agent/static/src/voice/voice.js',
             'ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.js',
             'ab_ai_agent/static/src/components/ai_agent_chat/ai_agent_chat.xml',
@@ -69,6 +73,13 @@ agents, accounting agents) layer on top via data XML + Python tools.
             'ab_ai_agent/static/src/components/ai_agent_token_meter/ai_agent_token_meter.xml',
             'ab_ai_agent/static/src/components/ai_agent_run_trace/ai_agent_run_trace.js',
             'ab_ai_agent/static/src/components/ai_agent_run_trace/ai_agent_run_trace.xml',
+            # Full-page Agent Console — wraps <AiAgentChat/>, never forks it.
+            # SCSS after ai_agent.scss so its token re-mapping wins.
+            'ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.scss',
+            'ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.js',
+            'ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.xml',
+            'ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.js',
+            'ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml',
             # Chatter patch — drops "Ask AI" into every mail.thread form
             'ab_ai_agent/static/src/web/chatter_patch.js',
             'ab_ai_agent/static/src/web/chatter_patch.xml',

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="option_multi_currency" model="ai.agent.setting.option">
+            <field name="code">multi_currency</field>
+            <field name="name">Multi-currency</field>
+            <field name="field_name">group_multi_currency</field>
+            <field name="sequence">10</field>
+        </record>
+        <record id="option_analytic" model="ai.agent.setting.option">
+            <field name="code">analytic_accounting</field>
+            <field name="name">Analytic accounting</field>
+            <field name="field_name">group_analytic_accounting</field>
+            <field name="sequence">20</field>
+        </record>
+        <record id="option_sale_tax" model="ai.agent.setting.option">
+            <field name="code">default_sale_tax</field>
+            <field name="name">Default sales tax</field>
+            <field name="field_name">sale_tax_id</field>
+            <field name="sequence">30</field>
+        </record>
+        <record id="option_purchase_tax" model="ai.agent.setting.option">
+            <field name="code">default_purchase_tax</field>
+            <field name="name">Default purchase tax</field>
+            <field name="field_name">purchase_tax_id</field>
+            <field name="sequence">35</field>
+        </record>
+        <record id="option_lock_date" model="ai.agent.setting.option">
+            <field name="code">lock_date</field>
+            <field name="name">Lock date for all users</field>
+            <field name="field_name">fiscalyear_lock_date</field>
+            <field name="sequence">40</field>
+        </record>
+        <record id="option_pos_tips" model="ai.agent.setting.option">
+            <field name="code">pos_tips</field>
+            <field name="name">Tips in Point of Sale</field>
+            <field name="field_name">pos_iface_tipproduct</field>
+            <field name="sequence">50</field>
+        </record>
+        <record id="option_pos_restaurant" model="ai.agent.setting.option">
+            <field name="code">pos_restaurant</field>
+            <field name="name">Restaurant mode (floors and tables) in Point of Sale</field>
+            <field name="field_name">pos_module_pos_restaurant</field>
+            <field name="sequence">60</field>
+            <field name="warning">Turning restaurant mode off deletes the floor plans and tables of this point of sale.</field>
+        </record>
+        <record id="option_attendance_mode" model="ai.agent.setting.option">
+            <field name="code">attendance_mode</field>
+            <field name="name">Attendance kiosk mode</field>
+            <field name="field_name">attendance_kiosk_mode</field>
+            <field name="sequence">70</field>
+        </record>
+        <record id="option_attendance_systray" model="ai.agent.setting.option">
+            <field name="code">attendance_systray</field>
+            <field name="name">Check in / out from the top bar</field>
+            <field name="field_name">attendance_from_systray</field>
+            <field name="sequence">75</field>
+        </record>
+    </data>
+</odoo>

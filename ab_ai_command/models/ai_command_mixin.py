@@ -52,7 +52,8 @@ class AICommandMixin(models.AbstractModel):
         """``{field: {aliases: [...], resolver: str, required: bool}}``.
 
         Resolvers: ``partner`` | ``date`` | ``product_lines`` | ``text``
-        | ``number``. Anything else falls back to ``text``.
+        | ``number`` | ``many2one`` (name → record of the field's comodel;
+        ``fallback_text`` names a char field to use when nothing matches). Anything else falls back to ``text``.
         """
         return {}
 
@@ -268,6 +269,21 @@ class AICommandMixin(models.AbstractModel):
                         'proposed': problem['result'].get('proposed') or {},
                     })
 
+            elif kind == 'many2one':
+                record, options, note = self._ai_command_resolve_m2o(field, raw)
+                if record:
+                    values[field] = record.id
+                elif not options and rule.get('fallback_text') \
+                        and not (pairs or {}).get(rule['fallback_text']):
+                    # "job: Cashier" with no such job position still
+                    # lands somewhere useful: the free-text title.
+                    values[rule['fallback_text']] = raw
+                else:
+                    questions.append({
+                        'field': field, 'kind': 'many2one', 'query': raw,
+                        'message': note, 'options': options,
+                    })
+
             elif kind == 'number':
                 try:
                     values[field] = float(str(raw).replace(',', '.'))
@@ -290,6 +306,34 @@ class AICommandMixin(models.AbstractModel):
                         'options': [],
                     })
         return values, questions
+
+    @api.model
+    def _ai_command_resolve_m2o(self, field, raw):
+        """Text → one record of the field's comodel, as the user.
+
+        Exact name first, then name_search. Returns ``(record, options,
+        note)``; several hits are a choice for the user, never a pick.
+        """
+        comodel = self._fields[field].comodel_name
+        Co = self.env[comodel]
+        text = str(raw or '').strip()
+        if not text:
+            return None, [], _('Nothing given.')
+        rec_name = Co._rec_name or 'name'
+        found = Co.browse()
+        if rec_name in Co._fields and Co._fields[rec_name].store:
+            found = Co.search([(rec_name, '=ilike', text)], limit=2)
+        if len(found) == 1:
+            return found, [], ''
+        hits = Co.name_search(text, limit=resolvers.MAX_ALTERNATIVES)
+        if len(hits) == 1:
+            return Co.browse(hits[0][0]), [], ''
+        label = self._fields[field].get_description(self.env).get('string') or field
+        if hits:
+            return None, [{'id': h[0], 'name': h[1]} for h in hits], \
+                _('Several matches for "%(text)s" in %(field)s. Which one?',
+                  text=text, field=label)
+        return None, [], _('No %(field)s called "%(text)s".', field=label, text=text)
 
     # ── Creation ───────────────────────────────────────────────
 

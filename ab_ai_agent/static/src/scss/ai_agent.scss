@@ -17,9 +17,9 @@
     --ai-ghaima-navy:   var(--ghaima-navy,   #0D00A2);
     --ai-ghaima-cyan:   var(--ghaima-cyan,   #5DD8CA);
     --ai-ghaima-bg:     var(--ghaima-bg,     #F7F8FC);
-    --ai-ghaima-ink:    var(--ghaima-ink,    #1A1F36);
-    --ai-ghaima-muted:  var(--ghaima-muted,  #6B7280);
-    --ai-ghaima-line:   var(--ghaima-line,   #E5E7EB);
+    --ai-ghaima-ink:    var(--ghaima-text-primary, #1A1F36);
+    --ai-ghaima-muted:  var(--ghaima-text-muted, #6B7280);
+    --ai-ghaima-line:   var(--ghaima-border, #E5E7EB);
     --ai-ghaima-gold:   #B98800;
     --ai-ghaima-rose:   #B91C1C;
     --ai-ghaima-green:  #047857;
@@ -56,8 +56,8 @@
 
     // Editorial surfaces: a warm page, a tinted card header and a brand
     // rail down the leading edge.
-    --ai-surface:       #FFFFFF;
-    --ai-surface-sunk:  #FAFAFC;
+    --ai-surface:       var(--ghaima-bg-card, #FFFFFF);
+    --ai-surface-sunk:  var(--ghaima-bg-sunken, #FAFAFC);
     --ai-header-tint:   rgba(0, 95, 246, 0.045);
     --ai-rail:          4px;
 }
@@ -1693,4 +1693,27 @@
 
     &:hover { background: var(--ai-ghaima-bg); color: var(--ai-ghaima-ink); }
     .is-open > & { background: var(--ai-ghaima-ink); color: #fff; }
+}
+
+// Pick list for an ambiguous "open X" — each chip opens one match.
+.o_ai_answer__choices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-block: 8px 0;
+}
+.o_ai_answer__choice {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 28px;
+    padding-block: 4px;
+    padding-inline: 10px;
+    border: 1px solid var(--ai-ghaima-blue);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ai-ghaima-blue);
+    font-size: .8125rem;
+    &:hover { background: var(--ai-ghaima-blue); color: #fff; }
+    &:focus-visible { outline: 2px solid var(--ai-ghaima-blue); outline-offset: 2px; }
 }

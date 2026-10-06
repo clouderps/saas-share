@@ -14,6 +14,7 @@ from __future__ import annotations
 import logging
 
 from odoo import api, fields, models, _
+from odoo.tools.sql import create_index
 
 _logger = logging.getLogger(__name__)
 
@@ -108,6 +109,13 @@ class AIUsageLocalLog(models.Model):
     est_cost_billable = fields.Float(
         digits=(10, 4), default=0.0,
         help='What the tenant pays. 0 when cache_hit or simulation.')
+
+    def init(self):
+        # Budget checks and the live meter aggregate by
+        # (company_id, timestamp range) on every run; the single-column
+        # indexes made that a bitmap-AND at best.
+        create_index(self.env.cr, 'ai_usage_local_log_company_ts_idx',
+                     self._table, ['company_id', 'timestamp'])
 
     # ── Timing ─────────────────────────────────────────────────
     timestamp = fields.Datetime(

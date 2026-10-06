@@ -29,9 +29,29 @@ class HrEmployee(models.Model):
                 'aliases': ['phone', 'mobile', 'جوال', 'هاتف'],
                 'resolver': 'text',
             },
-            'job_title': {
-                'aliases': ['job', 'title', 'position', 'role', 'وظيفة',
+            'job_id': {
+                'aliases': ['job', 'position', 'job position', 'وظيفة', 'الوظيفة',
                             'المسمى الوظيفي'],
+                'resolver': 'many2one', 'fallback_text': 'job_title',
+            },
+            'job_title': {
+                'aliases': ['title', 'job title', 'role', 'المسمى'],
+                'resolver': 'text',
+            },
+            'department_id': {
+                'aliases': ['department', 'dept', 'قسم', 'القسم', 'الإدارة', 'ادارة'],
+                'resolver': 'many2one',
+            },
+            'parent_id': {
+                'aliases': ['manager', 'reports to', 'مدير', 'المدير', 'المدير المباشر'],
+                'resolver': 'many2one',
+            },
+            'work_location_id': {
+                'aliases': ['location', 'work location', 'موقع', 'موقع العمل', 'مكان العمل'],
+                'resolver': 'many2one',
+            },
+            'private_phone': {
+                'aliases': ['private phone', 'personal phone', 'جوال شخصي', 'الجوال الشخصي'],
                 'resolver': 'text',
             },
         }

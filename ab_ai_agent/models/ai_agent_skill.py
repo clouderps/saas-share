@@ -13,6 +13,7 @@ or a multi-tool plan. The agent's run loop decides the path.
 from __future__ import annotations
 
 from odoo import api, fields, models, _
+from odoo.exceptions import ValidationError
 
 
 SURFACE_SELECTION = [
@@ -49,7 +50,18 @@ class AIAgentSkill(models.Model):
              'design tokens, no hex codes in templates.')
 
     agent_id = fields.Many2one(
-        'ai.agent', required=True, ondelete='cascade', index=True)
+        'ai.agent', ondelete='cascade', index=True,
+        help='Owning agent. Empty for a shared (global) skill.')
+    is_global = fields.Boolean(
+        string='Shared with every agent', default=False, index=True,
+        help='Offered by every agent, not only the owner.')
+    is_custom = fields.Boolean(
+        default=False, readonly=True, copy=False,
+        help='Created from the Agent Console builder (editable / removable '
+             'there). Module-shipped skills are protected.')
+    context_model = fields.Char(
+        help='Technical model this skill is about (optional). Passed to the '
+             'prompt as {model} when no record is open.')
     surfaces = fields.Selection(
         SURFACE_SELECTION, default='chat',
         help='Where this skill appears. Chatter skills require '
@@ -86,6 +98,20 @@ class AIAgentSkill(models.Model):
         ('unique_code_per_agent', 'UNIQUE(agent_id, code)',
          'Skill code must be unique within an agent.'),
     ]
+
+    @api.constrains('agent_id', 'is_global', 'code')
+    def _check_owner(self):
+        for skill in self:
+            if not skill.agent_id and not skill.is_global:
+                raise ValidationError(_(
+                    "Skill '%(name)s' needs an agent or must be shared with every agent.",
+                    name=skill.name))
+            if skill.is_global and self.search_count([
+                    ('id', '!=', skill.id), ('is_global', '=', True),
+                    ('agent_id', '=', False), ('code', '=', skill.code)]):
+                raise ValidationError(_(
+                    "A shared skill with the code '%(code)s' already exists.",
+                    code=skill.code))
 
     def render_prompt(self, context):
         """Apply str.format to user_prompt_template with the given

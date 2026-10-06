@@ -78,6 +78,7 @@
                 <group string="Ghaima AI" name="ghaima_ai">
                     <field name="ai_proactive_mode" readonly="0" widget="radio"/>
                     <field name="ai_voice_autoplay" readonly="0"/>
+                    <field name="ai_cursor_animation" readonly="0"/>
                 </group>
             </xpath>
         </field>

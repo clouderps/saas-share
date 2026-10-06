@@ -99,6 +99,14 @@ class AIAgent(models.Model):
         default=False,
         help='Allow the agent to use provider web-search tools (OpenAI '
              'web_search_preview / Gemini google_search). Adds cost.')
+    use_all_capabilities = fields.Boolean(
+        string='All capabilities',
+        default=False,
+        help='Every active tool, topic and skill — including ones installed '
+             'later — is available to this agent, with no per-agent setup. '
+             'Security is unchanged: each tool still runs as the current '
+             'user (access rights + record rules), tool groups still apply '
+             'and data changes still need the user\'s confirmation.')
     is_system = fields.Boolean(
         default=False, readonly=True,
         help='System agents cannot be deleted from the UI — only ops '
@@ -165,13 +173,40 @@ class AIAgent(models.Model):
 
     # ── Compute ────────────────────────────────────────────────
 
-    @api.depends('topic_ids.tool_ids', 'tool_ids')
+    @api.depends('topic_ids.tool_ids', 'tool_ids', 'use_all_capabilities')
     def _compute_all_tool_ids(self):
         for agent in self:
-            tools = agent.tool_ids
-            for topic in agent.topic_ids:
-                tools |= topic.tool_ids
-            agent.all_tool_ids = tools
+            agent.all_tool_ids = agent._effective_tools()
+
+    # Effective capability sets. Searched, not linked: a full-access agent
+    # picks up any tool / topic / skill a module (or the console builder)
+    # adds later, with no heal call and no M2M drift. The searches run as
+    # the caller, so the records are only what ai.agent.* ACLs expose.
+
+    def _effective_tools(self):
+        self.ensure_one()
+        if self.use_all_capabilities:
+            return self.env['ai.agent.tool'].search([('active', '=', True)])
+        tools = self.tool_ids
+        for topic in self.topic_ids:
+            tools |= topic.tool_ids
+        return tools.filtered('active')
+
+    def _effective_topics(self):
+        self.ensure_one()
+        if self.use_all_capabilities:
+            return self.env['ai.agent.topic'].search([('active', '=', True)])
+        return self.topic_ids.filtered('active')
+
+    def _effective_skills(self):
+        """Own skills + shared (global) skills; every active skill for a
+        full-access agent."""
+        self.ensure_one()
+        Skill = self.env['ai.agent.skill']
+        if self.use_all_capabilities:
+            return Skill.search([('active', '=', True)])
+        return Skill.search([('active', '=', True), '|',
+                             ('agent_id', '=', self.id), ('is_global', '=', True)])
 
     @api.model
     def _heal_core_topics(self):
@@ -357,7 +392,7 @@ class AIAgent(models.Model):
                    AVG(cost_usd) FILTER (WHERE state = 'done') AS avg_cost,
                    SUM(cost_usd) AS total_cost
               FROM ai_agent_run
-             WHERE create_date > (NOW() AT TIME ZONE 'UTC') - INTERVAL '30 days'
+             WHERE started_at > (NOW() AT TIME ZONE 'UTC') - INTERVAL '30 days'
                AND agent_id IS NOT NULL
           GROUP BY agent_id
         """)

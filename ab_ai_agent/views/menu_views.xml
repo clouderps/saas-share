@@ -24,6 +24,18 @@
               sequence="10"
               groups="group_ai_agent_designer"/>
 
+    <record id="action_ai_agent_console" model="ir.actions.client">
+        <field name="name">Agent Console</field>
+        <field name="tag">ab_ai_agent.console</field>
+    </record>
+
+    <menuitem id="menu_ai_agent_console"
+              name="Agent Console"
+              parent="menu_ai_agents_section"
+              action="action_ai_agent_console"
+              sequence="5"
+              groups="group_ai_agent_designer"/>
+
     <menuitem id="menu_ai_agent_list"
               name="All Agents"
               parent="menu_ai_agents_section"

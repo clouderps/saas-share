@@ -78,10 +78,15 @@ class TestPromptPrefix(TransactionCase):
     def test_persona_still_opens_the_prompt(self):
         """Reordering must not have displaced the persona from the top —
         it sets the tone for everything after it."""
+        from odoo.addons.ab_ai_agent.services import ghaima_base
         prompt = self._prompt('hello')
-        self.assertTrue(
-            prompt.lstrip().startswith((self.agent.system_prompt or '')[:40].lstrip()),
-            'the agent persona must remain the first thing the model reads')
+        self.assertTrue(prompt.startswith(ghaima_base.base_instruction()),
+                        'the locked Ghaima base must open the prompt')
+        persona = (self.agent.system_prompt or '')[:40].strip()
+        self.assertGreater(prompt.find(persona), prompt.find(ghaima_base.AGENT_HEADER),
+                           'the agent persona must follow the locked base')
+        self.assertLess(prompt.find(persona), prompt.find('## Tool'),
+                        'the agent persona must precede the generic blocks')
 
     def test_nothing_was_dropped_in_the_reorder(self):
         """Reordering is not deletion — every block still has to be

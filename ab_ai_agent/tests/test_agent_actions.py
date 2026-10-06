@@ -42,10 +42,13 @@ class TestAgentActions(TransactionCase):
         self.assertEqual(so.create_uid, self.user)                           # ran as the user
 
     def test_values_are_validated(self):
-        for values in ({'company_id': 1}, {'nope': 1}, {'partner_id': 'No Such Partner Xyz'},
+        for values in ({'company_id': 999999}, {'nope': 1}, {'partner_id': 'No Such Partner Xyz'},
                        {'state': 'teleported'}):
             res = aa.create_record(self.env_u, model='sale.order', values=values)
-            self.assertIn('error', res, values)
+            # unknown names are a question (need_info), invalid fields an error;
+            # either way nothing is proposed
+            self.assertFalse(res.get('requires_confirmation'), values)
+            self.assertTrue('error' in res or res.get('status') == 'need_info', res)
 
     def test_update_post_and_schedule(self):
         so = self.env['sale.order'].create({'partner_id': self.partner.id})

@@ -26,9 +26,23 @@ from odoo.exceptions import AccessError, UserError
 _logger = logging.getLogger(__name__)
 
 FORBIDDEN_FIELDS = {'id', 'create_uid', 'create_date', 'write_uid', 'write_date',
-                    'company_id', 'message_ids', 'activity_ids', 'access_token',
+                    'message_ids', 'activity_ids', 'access_token',
                     'password', 'groups_id'}
 LINE_FIELDS = ('order_line', 'invoice_line_ids', 'move_ids_without_package')
+
+# Fields the assistant may never set on financial / payroll documents:
+# a draft is the whole safety model, so state and anything that makes a
+# record look already-posted stays out of reach whatever the model sends.
+DRAFT_GUARD = {
+    # auto_post* would let Odoo's autopost cron post the draft as superuser.
+    'account.move': {'state', 'posted_before', 'name', 'payment_state',
+                     'auto_post', 'auto_post_until', 'auto_post_origin_id', 'checked'},
+    'account.payment': {'state'},
+    'hr.payslip': {'state'},
+}
+INVOICE_TYPES = ('out_invoice', 'out_refund', 'in_invoice', 'in_refund')
+# Required in the schema but filled by create() itself (resource.mixin…).
+AUTO_FILLED = {'resource_id'}
 
 
 # ── Resolution helpers ─────────────────────────────────────────────────
@@ -80,6 +94,38 @@ def _m2o(env, comodel, value):
     return (rec.id, None) if rec else (None, err)
 
 
+def _own_company(env, company_id):
+    return company_id in env.user.company_ids.ids
+
+
+def _invoice_tax(env, tax, move_type):
+    """Tax named on an invoice line, restricted to the document's side.
+
+    A KSA chart has a sale AND a purchase "VAT 15%"; a customer invoice
+    must never pick the purchase one (VAT return / ZATCA mismatch).
+    """
+    use = 'purchase' if move_type in ('in_invoice', 'in_refund') else 'sale'
+    dom = [('type_tax_use', '=', use), ('active', '=', True),
+           ('company_id', 'in', env.companies.ids)]
+    Tax = env['account.tax']
+    if isinstance(tax, int) or (isinstance(tax, str) and tax.isdigit()):
+        rec = Tax.search(dom + [('id', '=', int(tax))], limit=1)
+        return (rec.id, None) if rec else (None, f'no {use} tax {tax}')
+    text = str(tax).strip()
+    hits = Tax.search(dom + [('name', 'ilike', text)])
+    if not hits:
+        num = text.replace('%', '').replace('٪', '').strip()
+        try:
+            hits = Tax.search(dom + [('amount', '=', float(num)), ('amount_type', '=', 'percent')])
+        except ValueError:
+            pass
+    if len(hits) == 1:
+        return hits.id, None
+    if not hits:
+        return None, f'no {use} tax matches "{text}"'
+    return None, 'which one? ' + ', '.join(hits.mapped('display_name')[:8])
+
+
 def _values(env, Model, values):
     """Validated vals + human preview lines, or (None, error)."""
     if isinstance(values, str):
@@ -94,8 +140,9 @@ def _values(env, Model, values):
     info = Model.fields_get(attributes=['type', 'string', 'readonly', 'store',
                                         'relation', 'selection'])
     vals, preview = {}, []
+    guarded = DRAFT_GUARD.get(Model._name, set())
     for key, raw in values.items():
-        if key in FORBIDDEN_FIELDS or key not in info:
+        if key in FORBIDDEN_FIELDS or key in guarded or key not in info:
             return None, None, f'field "{key}" cannot be set here'
         meta = info[key]
         if not meta.get('store') or meta['type'] in ('one2many', 'many2many', 'binary'):
@@ -105,6 +152,8 @@ def _values(env, Model, values):
             val, err = _m2o(env, meta['relation'], raw)
             if err:
                 return None, None, f'{meta["string"]}: {err}'
+            if key == 'company_id' and not _own_company(env, val):
+                return None, None, f'{meta["string"]}: not one of your companies'
             shown = env[meta['relation']].browse(val).display_name
         elif t == 'selection':
             keys = dict(meta.get('selection') or [])
@@ -135,7 +184,7 @@ def _values(env, Model, values):
     return vals, preview, None
 
 
-def _lines(env, Model, lines):
+def _lines(env, Model, lines, move_type=None):
     """[{product, quantity, price}] → (line field, one2many commands, preview, error)."""
     field = next((f for f in LINE_FIELDS if f in Model._fields), None)
     if not lines:
@@ -160,6 +209,12 @@ def _lines(env, Model, lines):
                 vals['price_unit'] = float(ln['price'])
             except (TypeError, ValueError):
                 return None, [], [], 'price must be a number'
+        tax = (ln or {}).get('tax')
+        if tax not in (None, '', False) and Model._name == 'account.move':
+            tax_id, err = _invoice_tax(env, tax, move_type)
+            if err:
+                return None, [], [], f'tax: {err}'
+            vals['tax_ids'] = [(6, 0, [tax_id])]
         cmds.append((0, 0, vals))
         preview.append(f'• {prod.display_name} × {qty:g}'
                        + (f' @ {vals["price_unit"]:g}' if 'price_unit' in vals else ''))
@@ -210,6 +265,10 @@ def act_on_record(env, agent=None, model=None, record=None, button=None,
     model, Model = _model(env, model)
     if Model is None:
         return {'error': 'unknown kind of record'}
+    from .generic_data import model_blocked
+    blocked = model_blocked(env, model, write=True)
+    if blocked:
+        return {'error': 'not permitted', 'note': blocked}
     rec, err = _record(env, Model, record or _kw.get('record_id') or _kw.get('id'))
     if err:
         return {'error': err}
@@ -218,31 +277,210 @@ def act_on_record(env, agent=None, model=None, record=None, button=None,
                                   _ai_confirmed=_ai_confirmed)
 
 
+def _spec_values(env, Model, values):
+    """Resolve the fields a command spec knows (``ai.command.mixin``).
+
+    Chat and slash commands then read names the same way: a customer is
+    looked up among customers, "next Sunday" / "3/8/26" parse as dates,
+    "Sales" finds the one department. Returns ``(vals, preview,
+    remaining, spec, questions)``; ``remaining`` goes through the generic
+    validator.
+    """
+    if not hasattr(Model, '_ai_command_spec') or not isinstance(values, dict):
+        return {}, [], values, {}, []
+    ctx = {}
+    if Model._name == 'account.move' and values.get('move_type') in INVOICE_TYPES:
+        ctx['ai_command_move_type'] = values['move_type']
+    Model = Model.with_context(**ctx)
+    spec = Model._ai_command_spec() or {}
+    handled = {f: raw for f, raw in values.items()
+               if f in spec and spec[f].get('resolver') in ('partner', 'date', 'many2one')
+               and raw not in (None, '', False) and not isinstance(raw, int)}
+    if not handled:
+        return {}, [], values, spec, []
+    resolved, questions = Model._ai_command_resolve(handled)
+    questions = [q for q in questions if q.get('kind') not in ('missing', 'confirm')]
+    # A partner that exists but was never sold to / bought from is still
+    # the one the user named: the chat path accepts the single readable
+    # match rather than asking "is this a customer?".
+    for q in list(questions):
+        if q.get('kind') == 'partner' and not q.get('options') and q['field'] in handled:
+            pid, err = _m2o(env, 'res.partner', handled[q['field']])
+            if not err:
+                resolved[q['field']] = pid
+                questions.remove(q)
+    meta = Model.fields_get(list(resolved))
+    vals, preview = {}, []
+    for f, v in resolved.items():
+        vals[f] = v
+        fmeta = meta.get(f) or {}
+        if fmeta.get('type') == 'many2one' and isinstance(v, int):
+            shown = env[fmeta['relation']].browse(v).display_name
+        else:
+            shown = str(v)
+        preview.append(f'{fmeta.get("string") or f}: {shown}')
+    remaining = {f: raw for f, raw in values.items() if f not in handled}
+    return vals, preview, remaining, spec, questions
+
+
+def _required_missing(env, Model, vals, spec=None, line_field=None):
+    """Required fields still empty after the user's values and Odoo's
+    defaults — asked BEFORE a card is shown, never discovered as a NOT
+    NULL error after the user pressed Confirm. Returns ``(missing,
+    defaults)``."""
+    info = Model.fields_get(attributes=['type', 'string', 'required', 'selection', 'relation'])
+    inherits_links = set(Model._inherits.values())
+    candidates = []
+    for name, meta in info.items():
+        field = Model._fields.get(name)
+        if not field or not meta.get('required') or name in inherits_links:
+            continue
+        if field.compute and not field.inherited:
+            continue                       # stored compute fills it
+        if field.related and not field.inherited:
+            continue
+        if field.type in ('one2many', 'many2many', 'boolean') or name in FORBIDDEN_FIELDS \
+                or name in AUTO_FILLED:
+            continue
+        candidates.append(name)
+    for name, rule in (spec or {}).items():
+        if rule.get('required') and name in info and name not in candidates \
+                and rule.get('resolver') != 'product_lines':
+            candidates.append(name)
+    if Model._name == 'account.move' and vals.get('move_type') in INVOICE_TYPES \
+            and 'partner_id' not in candidates:
+        candidates.append('partner_id')
+    try:
+        defaults = Model.default_get(list(info)) if info else {}
+    except Exception:
+        _logger.info('default_get failed on %s', Model._name, exc_info=True)
+        defaults = {}
+    missing = []
+    for name in candidates:
+        if name == line_field or vals.get(name) not in (None, False, '') \
+                or defaults.get(name) not in (None, False, ''):
+            continue
+        meta = info[name]
+        item = {'field': name, 'label': meta.get('string') or name, 'type': meta.get('type')}
+        if meta.get('selection'):
+            item['selection'] = [lbl for _k, lbl in meta['selection']]
+        missing.append(item)
+    return missing, {k: v for k, v in defaults.items() if k in info}
+
+
+def _default_preview(env, Model, vals, defaults, limit=4):
+    """The defaults the user will get, shown on the card and marked."""
+    out = []
+    info = Model.fields_get(list(defaults), attributes=['type', 'string', 'relation',
+                                                        'required', 'selection'])
+    keyish = {'journal_id', 'company_id', 'currency_id', 'move_type', 'date', 'invoice_date',
+              'department_id', 'user_id', 'pricelist_id', 'resource_calendar_id'}
+    for name, value in defaults.items():
+        meta = info.get(name) or {}
+        if name in vals or value in (None, False, '') or meta.get('type') in (
+                'one2many', 'many2many', 'boolean', 'binary', 'html', 'text'):
+            continue
+        if name == 'state' or not (name in keyish or (
+                meta.get('required') and meta.get('type') == 'many2one')):
+            continue
+        if meta.get('type') == 'many2one':
+            rid = value[0] if isinstance(value, (list, tuple)) else value
+            shown = env[meta['relation']].browse(rid).display_name
+        elif meta.get('type') == 'selection':
+            shown = dict(meta.get('selection') or []).get(value, value)
+        else:
+            shown = value
+        out.append(f'{meta.get("string") or name}: {shown} ({env._("default")})')
+        if len(out) >= limit:
+            break
+    return out
+
+
+def record_url(rec):
+    """Shareable link to a record in the Odoo 18 web client."""
+    return f'/odoo/{rec._name}/{rec.id}'
+
+
 def create_record(env, agent=None, model=None, values=None, lines=None,
                   _ai_confirmed=False, **_kw):
-    """Create a record (quotation, RFQ, lead, task, leave request, contact…)."""
+    """Create a record (quotation, RFQ, lead, task, leave request, contact…).
+
+    Before anything is proposed: values the command spec knows are
+    resolved like a slash command would; Odoo's defaults are merged; the
+    required fields still empty come back as ONE ``need_info`` question
+    instead of a card that would fail after Confirm.
+    """
     model, Model = _model(env, model)
     if Model is None:
         return {'error': 'unknown kind of record'}
+    from .generic_data import model_blocked
+    blocked = model_blocked(env, model, write=True)
+    if blocked:
+        return {'error': 'not permitted', 'note': blocked}
     if not Model.has_access('create'):
         return {'error': 'not permitted', 'note': 'The user cannot create these records.'}
-    vals, preview, err = _values(env, Model, values or {})
+    if isinstance(values, str):
+        import json
+        try:
+            values = json.loads(values or '{}')
+        except ValueError:
+            return {'error': 'values must be a JSON object of field: value'}
+    values = values or {}
+    guarded = DRAFT_GUARD.get(Model._name, set()) & set(values if isinstance(values, dict) else ())
+    if guarded:
+        return {'error': f'field "{sorted(guarded)[0]}" cannot be set here',
+                'note': 'Documents are created as drafts; the user posts them.'}
+    spec_vals, spec_preview, rest, spec, questions = _spec_values(env, Model, values)
+    if questions:
+        return {'status': 'need_info', 'questions': questions,
+                'note': ('Nothing was proposed. Ask the user ONE short question covering '
+                         'every item, offering the options verbatim. Never pick for them.')}
+    # Spec-resolved values skip _values(); hold them to the same rules.
+    guarded_all = DRAFT_GUARD.get(Model._name, set())
+    for key, val in spec_vals.items():
+        if key in FORBIDDEN_FIELDS or key in guarded_all:
+            return {'error': f'field "{key}" cannot be set here'}
+        if key == 'company_id' and not _own_company(env, val):
+            return {'error': 'company: not one of your companies'}
+    vals, preview, err = _values(env, Model, rest or {})
     if err:
         return {'error': err}
-    line_field, cmds, line_preview, err = _lines(env, Model, lines)
+    vals.update(spec_vals)
+    preview = spec_preview + preview
+    line_field, cmds, line_preview, err = _lines(env, Model, lines, move_type=vals.get('move_type'))
     if err:
         return {'error': err}
+    missing, defaults = _required_missing(env, Model, vals, spec, line_field)
+    if missing:
+        return {'status': 'need_info', 'missing': missing,
+                'note': ('Nothing was proposed. Ask the user for ALL of these in ONE short '
+                         'question, using the labels, then call create_record again with '
+                         'the same values plus the answers.')}
     if line_field:
         vals[line_field] = cmds
     title = env['ir.model']._get(model).name or model
+    if Model._name == 'account.move' and vals.get('move_type'):
+        # "Journal Entry" is the model's name; the user asked for an invoice.
+        title = dict(Model._fields['move_type']._description_selection(env)).get(
+            vals['move_type'], title)
     if not _ai_confirmed:
-        return _propose(env, 'create_record', {'model': model, 'values': values or {},
+        return _propose(env, 'create_record', {'model': model, 'values': values,
                                                'lines': lines or []},
-                        None, env._('Create %(what)s?', what=title), preview + line_preview)
+                        None, env._('Create %(what)s?', what=title),
+                        preview + line_preview + _default_preview(env, Model, vals, defaults))
+
     def do():
-        rec = Model.create(vals)
-        return {'message': env._('%(what)s created: %(name)s', what=title, name=rec.display_name),
-                'done': True, 'action': _form_action(rec)}
+        with env.cr.savepoint():
+            rec = Model.create(vals)
+            if Model._name in DRAFT_GUARD and 'state' in rec._fields \
+                    and rec.state not in ('draft', False) \
+                    or ('auto_post' in rec._fields and rec.auto_post not in ('no', False)):
+                # Raising inside the savepoint undoes the create.
+                raise UserError(env._('The record was not left as a draft; nothing was saved.'))
+        url = record_url(rec)
+        return {'message': env._('%(what)s created: %(name)s', what=title, name=rec.display_name)
+                + f'\n{url}',
+                'done': True, 'url': url, 'action': _form_action(rec)}
     return _run(do, title)
 
 
@@ -252,6 +490,10 @@ def update_record(env, agent=None, model=None, record=None, values=None,
     model, Model = _model(env, model)
     if Model is None:
         return {'error': 'unknown kind of record'}
+    from .generic_data import model_blocked
+    blocked = model_blocked(env, model, write=True)
+    if blocked:
+        return {'error': 'not permitted', 'note': blocked}
     rec, err = _record(env, Model, record or _kw.get('record_id'))
     if err:
         return {'error': err}

@@ -7,6 +7,7 @@
             <list string="Skills">
                 <field name="sequence" widget="handle"/>
                 <field name="agent_id"/>
+                <field name="is_global"/>
                 <field name="name"/>
                 <field name="code"/>
                 <field name="icon"/>

@@ -25,6 +25,10 @@ class ResUsers(models.Model):
     ai_voice_autoplay = fields.Boolean(
         string='Read answers aloud',
         help='Speak every answer automatically. Off: press Listen on an answer.')
+    ai_cursor_animation = fields.Boolean(
+        string='Show the assistant pointer', default=True,
+        help='When Ghaima AI opens a screen for you, a pointer moves to it first. '
+             'Off: the screen opens straight away.')
 
     ai_briefing_text = fields.Text(readonly=True, copy=False)
     ai_briefing_date = fields.Date(readonly=True, copy=False)
@@ -95,6 +99,7 @@ class ResUsers(models.Model):
             'stt': icp.get_param('ab_ai_agent.stt_provider', 'browser'),
             'tts': icp.get_param('ab_ai_agent.tts_provider', 'browser'),
             'autoplay': bool(self.ai_voice_autoplay),
+            'cursor': bool(self.ai_cursor_animation),
             'conversation': flag('ab_ai_agent.voice_conversation', 'False'),
             'voice_confirm': flag('ab_ai_agent.voice_confirm', 'False'),
             'briefing': (self._ai_briefing() if flag('ab_ai_agent.daily_briefing', 'False')
@@ -103,8 +108,8 @@ class ResUsers(models.Model):
 
     @property
     def SELF_READABLE_FIELDS(self):
-        return super().SELF_READABLE_FIELDS + ['ai_proactive_mode', 'ai_voice_autoplay']
+        return super().SELF_READABLE_FIELDS + ['ai_proactive_mode', 'ai_voice_autoplay', 'ai_cursor_animation']
 
     @property
     def SELF_WRITEABLE_FIELDS(self):
-        return super().SELF_WRITEABLE_FIELDS + ['ai_proactive_mode', 'ai_voice_autoplay']
+        return super().SELF_WRITEABLE_FIELDS + ['ai_proactive_mode', 'ai_voice_autoplay', 'ai_cursor_animation']

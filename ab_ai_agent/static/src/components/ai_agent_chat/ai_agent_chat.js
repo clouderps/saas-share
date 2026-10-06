@@ -15,6 +15,7 @@ import { AiAgentRunTrace } from "../ai_agent_run_trace/ai_agent_run_trace";
 // to re-implement data_table / kpi_grid / callout inline, so chart
 // blocks rendered as nothing here while working everywhere else.
 import { AiResponse } from "@ab_ai_ui/ai_response/ai_response";
+import { isSafeEnvelopeAction } from "../../services/ai_navigator_service";
 
 /**
  * <AiAgentChat/> — the universal chat surface.
@@ -107,6 +108,11 @@ export class AiAgentChat extends Component {
             this.actionService = useService("action");
         } catch (e) {
             this.actionService = null;
+        }
+        try {
+            this.aiNavigator = useService("aiNavigator");
+        } catch {
+            this.aiNavigator = null;    // public website surface: no web client
         }
 
         // Read sound preference from localStorage so it survives reloads.
@@ -956,6 +962,8 @@ export class AiAgentChat extends Component {
             sources: _t("Sources used"),
             collapse: _t("Collapse answer"),
             open: _t("Open"),
+            cannotOpen: _t("That screen could not be opened."),
+            whichOne: _t("Which one?"),
             refine: _t("Refine"),
             helpful: _t("Helpful"),
             unhelpful: _t("Not helpful"),
@@ -1053,9 +1061,20 @@ export class AiAgentChat extends Component {
         this._send(text);
     }
 
+    /** A tapped pick-list chip ("which Abdalmola?"). */
+    pickNavChoice(choice, ev) {
+        if (this.aiNavigator) {
+            this.aiNavigator.go(choice, ev && ev.currentTarget);
+        }
+    }
+
     /** Quick navigation actions emitted by the runtime via env action. */
     async runEnvelopeAction(action) {
         if (!action || !this.actionService) return;
+        if (!isSafeEnvelopeAction(action)) {
+            this.notification.add(this.labels.cannotOpen, { type: "warning" });
+            return;
+        }
         try {
             await this.actionService.doAction(action);
         } catch (e) {
@@ -1179,6 +1198,22 @@ export class AiAgentChat extends Component {
                 // stored on the message for click-through; rendered as
                 // an action button by the template
                 this.state.messages[this.state.messages.length - 1].pendingAction = envelope.action;
+            }
+            // "Open invoice X" / "go to employees": the server resolved the
+            // target as this user; open it now (read-only, no confirm) with
+            // the AI pointer gliding from this answer to the destination.
+            const last = this.state.messages[this.state.messages.length - 1];
+            if (envelope.navigate_choices && envelope.navigate_choices.length && this.aiNavigator) {
+                last.navChoices = envelope.navigate_choices
+                    .map((c) => this.aiNavigator.sanitizeDirective(c)).filter(Boolean);
+            }
+            if (envelope.navigate && this.aiNavigator) {
+                // Wait for OWL to render the new answer, then glide from the
+                // newest settled answer (not :last-of-type, which matches per wrapper).
+                await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+                const answers = this.streamRef.el?.querySelectorAll(".o_ai_answer:not(.is-pending)");
+                const origin = (answers && answers[answers.length - 1]) || this.textareaRef.el;
+                this.aiNavigator.go(envelope.navigate, origin);
             }
         } catch (e) {
             this.state.messages.push({
