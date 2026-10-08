@@ -110,7 +110,7 @@ class IrAttachment(models.Model):
     # MIGRATION — Odoo's cloud_storage_migration, S3-native: that module reads
     # the bytes from the local filestore, but tenant files already live on S3
     # (ab_s3_attachment), so each one is a server-side copy, no download.
-    def _s3_cloud_migration_candidates(self, limit=None):
+    def _s3_cloud_migration_candidates(self, limit=None, older_than=None):
         """Odoo's own rules: record/chatter files only. Field binaries
         (images), models whose code reads the bytes (mail.thread.main.attachment
         = invoices/ZATCA, documents) and website/asset files stay S3-backed
@@ -120,9 +120,11 @@ class IrAttachment(models.Model):
             """SELECT id FROM ir_attachment
                 WHERE type = 'binary' AND url IS NULL AND store_fname IS NOT NULL
                   AND res_field IS NULL AND res_model IS NOT NULL AND res_id > 0
-                  AND res_model NOT IN %s
+                  AND res_model NOT IN %s %s
                 ORDER BY id %s""",
-            excluded, SQL('LIMIT %s', limit) if limit else SQL()))
+            excluded,
+            SQL('AND create_date < %s', older_than) if older_than else SQL(),
+            SQL('LIMIT %s', limit) if limit else SQL()))
         return self.browse(r[0] for r in self.env.cr.fetchall())
 
     def _s3_migrate_to_cloud_storage(self):
@@ -163,3 +165,21 @@ class IrAttachment(models.Model):
             self._file_delete(fname)
             done += 1
         return {'migrated': done, 'failed': failed}
+
+    def _cron_s3_convert_to_cloud_storage(self):
+        """Hourly: files the SERVER created (incoming e-mail attachments,
+        generated documents...) are always plain binaries - Odoo's direct
+        cloud upload only covers browser uploads. Convert the safe set (same
+        rules as above) once they are old enough that the code which just
+        created them is done reading their bytes."""
+        if not self._cloud_storage_s3_active():
+            return
+        from datetime import timedelta
+        from odoo import fields
+        hours = int(self.env['ir.config_parameter'].sudo().get_param(
+            'cloud_storage_s3_convert_after_hours', '24') or 24)
+        cands = self.sudo()._s3_cloud_migration_candidates(
+            limit=500, older_than=fields.Datetime.now() - timedelta(hours=hours))
+        if cands:
+            res = cands._s3_migrate_to_cloud_storage()
+            _logger.info('cloud storage: converted %s', res)

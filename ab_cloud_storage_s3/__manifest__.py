@@ -13,13 +13,14 @@ region, keys) and objects go under the tenant's own prefix
 (``entity_<id>/cloud_storage/...``). Existing attachments are untouched.
 """,
     'category': 'Technical Settings',
-    'version': '18.0.1.0.0',
+    'version': '18.0.1.1.0',
     'author': 'Ghaima Tech',
     'license': 'LGPL-3',
     'depends': ['cloud_storage'],
     'external_dependencies': {'python': ['boto3']},
     'data': [
         'views/settings.xml',
+        'data/ir_cron.xml',
     ],
     'uninstall_hook': 'uninstall_hook',
     'installable': True,

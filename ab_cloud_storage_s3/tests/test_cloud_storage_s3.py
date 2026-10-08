@@ -106,3 +106,26 @@ class TestCloudStorageS3(TransactionCase):
         self.assertTrue(copies[0]['Key'].startswith(f'entity_7/cloud_storage/{chatter.id}/'))
         self.assertEqual(copies[0]['ContentType'], 'application/pdf')
         self.assertEqual(image.type, 'binary')
+
+    def test_cron_converts_only_old_enough_safe_files(self):
+        ICP = self.env['ir.config_parameter'].sudo()
+        ICP.set_param('ir_attachment.location', 's3')
+        partner = self.env['res.partner'].create({'name': 'P'})
+        Att = self.env['ir.attachment']
+        def row(age_hours, **vals):
+            att = Att.create({'name': 'x', 'type': 'url', 'url': 'about:blank', **vals})
+            self.env.cr.execute("UPDATE ir_attachment SET type='binary', url=NULL, store_fname='ab/abcd', "
+                                "create_date = now() at time zone 'utc' - %s * interval '1 hour' WHERE id=%s",
+                                (age_hours, att.id))
+            att.invalidate_recordset()
+            return att
+        old = row(30, res_model='res.partner', res_id=partner.id)
+        fresh = row(1, res_model='res.partner', res_id=partner.id)
+        image = row(30, res_model='res.partner', res_id=partner.id, res_field='image_1920')
+        copies = []
+        with patch.object(s3mod, 's3_client', lambda settings: type('C', (), {
+                'copy_object': lambda self, **kw: copies.append(kw)})()):
+            Att._cron_s3_convert_to_cloud_storage()
+        self.assertEqual(old.type, 'cloud_storage')
+        self.assertEqual(fresh.type, 'binary')   # code that created it may still read it
+        self.assertEqual(image.type, 'binary')   # field binaries never become links
