@@ -29,8 +29,9 @@ msgstr "إنشاء طلب شراء"
 #. module: ab_ai_command_purchase
 #: model:ai.agent.command,description:ab_ai_command_purchase.command_create_rfq:0
 msgid ""
-"Draft a request for quotation. Nothing is confirmed — you review it first."
-msgstr "إنشاء مسودة طلب عرض سعر. لا يتم تأكيد أي شيء — أنت من يراجعه أولاً."
+"Draft a purchase order (request for quotation) to a vendor. Nothing is "
+"confirmed — you review it first."
+msgstr "إنشاء مسودة أمر شراء (طلب عرض سعر) لمورد. لا يتم تأكيد أي شيء — أنت من يراجعه أولاً."
 
 #. module: ab_ai_command_purchase
 #: model:ir.model,name:ab_ai_command_purchase.model_purchase_order:0

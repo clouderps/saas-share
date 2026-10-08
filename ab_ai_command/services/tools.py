@@ -53,6 +53,60 @@ def _dry_run(env, record, pairs, create_missing):
     return box.get('result') or {'status': 'error'}
 
 
+def _closest_command(env, Command, guess):
+    """A command the user may run whose code or verb is close to ``guess``.
+
+    Models paraphrase codes ("create_leave_request" for create_leave,
+    "create_purchase_order" for create_rfq). Prefix containment first, then
+    difflib; a miss returns an empty recordset and the palette goes back.
+    """
+    import difflib
+    from .parser import normalise_key
+    g = normalise_key(guess)
+    palette = Command.palette_for_user(env.user)
+    keys = {}
+    for c in palette:
+        for k in (c.get('code'), c.get('verb')):
+            if k:
+                keys[normalise_key(k)] = c.get('code')
+    hits = {code for k, code in keys.items() if g.startswith(k) or k.startswith(g)}
+    if len(hits) != 1:
+        close = difflib.get_close_matches(g, list(keys), n=2, cutoff=0.85)
+        hits = {keys[k] for k in close}
+    if len(hits) != 1:
+        return Command.browse()
+    return Command.search([('code', '=', hits.pop())], limit=1)
+
+
+def _canonical_pairs(env, record, pairs):
+    """Map the model's field keys onto the command spec.
+
+    The resolver only reads keys that ARE spec fields; ``leave_type`` or
+    ``date_from`` sent by the model were dropped silently and the user was
+    asked again for values they had already given. Aliases (``type``,
+    ``from``, Arabic labels…) resolve here; unknown keys are kept as-is.
+    """
+    Target = env.get(record.sudo().target_model)
+    if Target is None or not pairs:
+        return pairs
+    from .parser import normalise_key
+    spec = Target._ai_command_spec()
+    amap = Target._ai_command_alias_map()
+    # Exact spec keys first, so an alias never overrides a value the model
+    # gave under the field's own name.
+    out = {k: v for k, v in pairs.items() if k in spec}
+    for key, value in pairs.items():
+        if key in spec:
+            continue
+        field = amap.get(normalise_key(str(key)))
+        if not field:
+            # "date_from" → "from", "leave_type" → "type": try the last word.
+            tail = normalise_key(str(key)).split(' ')
+            field = next((amap[w] for w in (tail[-1], tail[0]) if w in amap), key)
+        out.setdefault(field, value)
+    return out
+
+
 def _builtin_run_command(env, agent=None, command=None, fields=None,
                          text=None, create_missing=None, _ai_confirmed=False, **_kw):
     """Create a draft document from a command.
@@ -73,6 +127,8 @@ def _builtin_run_command(env, agent=None, command=None, fields=None,
         record = Command.search([('code', '=', command)], limit=1)
         if not record:
             record = Command.search([('verb', '=', command)], limit=1)
+        if not record:
+            record = _closest_command(env, Command, command)
 
     if not record and text:
         parsed, record = Command.parse_text(text)
@@ -87,10 +143,14 @@ def _builtin_run_command(env, agent=None, command=None, fields=None,
         palette = Command.palette_for_user(env.user)
         return {
             'error': 'no such command',
-            'available': [c['verb'] for c in palette],
-            'note': ('Tell the user which commands they can run, using the '
-                     'list above. Do not invent one.'),
+            'available': [{'code': c.get('code'), 'name': c.get('name'),
+                           'description': c.get('description')} for c in palette],
+            'note': ('If one of these commands does what the user asked, call '
+                     'run_command again with its code now. Only if none fits, '
+                     'tell the user which commands exist. Never invent a code.'),
         }
+
+    pairs = _canonical_pairs(env, record, pairs)
 
     if isinstance(create_missing, list):
         create_missing = {f: True for f in create_missing}
@@ -104,7 +164,13 @@ def _builtin_run_command(env, agent=None, command=None, fields=None,
                 preview['note'] = _NEEDS_INPUT_NOTE
             return preview
         from odoo.addons.ab_ai_agent.services.agent_actions import _propose
-        details = [f'{k}: {v}' for k, v in (preview.get('values') or {}).items()]
+        shown = preview.get('preview') or {}
+        if shown.get('header') or shown.get('lines'):
+            details = [f'{label}: {value}' for label, value in shown.get('header') or []]
+            details += [f'{qty} × {name}' + (f' = {total}' if total else '')
+                        for name, qty, total in shown.get('lines') or []]
+        else:
+            details = [f'{k}: {v}' for k, v in (preview.get('values') or {}).items()]
         return _propose(env, 'run_command',
                         {'command': record.sudo().code, 'fields': pairs,
                          'create_missing': create_missing or None},

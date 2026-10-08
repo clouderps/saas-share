@@ -1,0 +1,42 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* ab_ai_command_hr_leave
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-08 19:30+0000\n"
+"PO-Revision-Date: 2026-10-08 19:30+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ar_001\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: ab_ai_command_hr_leave
+#: model:ai.agent.command,name:ab_ai_command_hr_leave.command_create_leave
+msgid "Request Time Off"
+msgstr "طلب إجازة"
+
+#. module: ab_ai_command_hr_leave
+#: model:ai.agent.command,description:ab_ai_command_hr_leave.command_create_leave
+msgid ""
+"Request time off for yourself (leave / vacation / sick day). It goes to your "
+"manager for approval like any other request."
+msgstr "اطلب إجازة لنفسك (إجازة سنوية / مرضية / يوم راحة). يُرسل الطلب إلى مديرك للموافقة مثل أي طلب آخر."
+
+#. module: ab_ai_command_hr_leave
+#: model:ai.agent.command,example:ab_ai_command_hr_leave.command_create_leave
+msgid "/create leave type: Annual Leave; from: next Sunday; to: next Tuesday"
+msgstr "/create leave النوع: إجازة سنوية؛ من: الأحد القادم؛ إلى: الثلاثاء القادم"
+
+#. module: ab_ai_command_hr_leave
+#. odoo-python
+#: code:addons/ab_ai_command_hr_leave/models/hr_leave.py:0
+msgid ""
+"Your user is not linked to an employee, so time off cannot be requested for "
+"you. Ask HR to link it."
+msgstr "مستخدمك غير مرتبط بموظف، لذلك لا يمكن طلب إجازة لك. اطلب من الموارد البشرية ربطه."

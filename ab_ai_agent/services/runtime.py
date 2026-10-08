@@ -328,7 +328,7 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
                     final_text = _confirmation_text(pending_confirmation, locale)
                     break
                 # __end_message early termination — Odoo 19 native pattern.
-                if tool_outcome.get('ok') and tool_outcome.get('end_message'):
+                if _ends_run(tool_outcome):
                     final_text = tool_outcome['end_message']
                     break
             if final_text:
@@ -345,7 +345,7 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
                 transcript.append(
                     'Tool result for `%s`: %s' % (
                         code,
-                        _truncate(json.dumps(outcome.get('result'), default=str), 4000),
+                        _truncate(json.dumps(_tool_feedback(outcome), default=str), 4000),
                     )
                 )
             transcript.append(
@@ -391,14 +391,14 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
                 break
 
             # __end_message early termination — Odoo 19 native pattern.
-            if tool_outcome.get('ok') and tool_outcome.get('end_message'):
+            if _ends_run(tool_outcome):
                 final_text = tool_outcome['end_message']
                 break
 
             transcript.append(
                 'Tool result for `%s`: %s' % (
                     tool_record.code,
-                    _truncate(json.dumps(tool_outcome.get('result'), default=str), 4000),
+                    _truncate(json.dumps(_tool_feedback(tool_outcome), default=str), 4000),
                 )
             )
             transcript.append(
@@ -693,6 +693,38 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
 
 
 # ───────────────────────── helpers ──────────────────────────
+
+def _tool_feedback(outcome):
+    """What the model reads back from a call.
+
+    A failed call has no ``result``; sending ``null`` left the model to
+    guess, and it answered "there is no data" for a permission refusal, a
+    PII block or a validation error. The kind and message go back instead.
+    """
+    if outcome.get('ok'):
+        return outcome.get('result')
+    return {'error': outcome.get('error') or 'failed',
+            'message': outcome.get('message') or ''}
+
+
+def _ends_run(tool_outcome):
+    """True when the model's pre-written ``__end_message`` may close the run.
+
+    Only for a call that actually did its job. A tool that needs input,
+    refused or failed still answers ``ok`` at the dispatch level (the
+    problem is in its result), and the model's message — written before
+    it saw that result — would tell the user something that did not
+    happen ("press Confirm" with no button).
+    """
+    if not (tool_outcome.get('ok') and tool_outcome.get('end_message')):
+        return False
+    result = tool_outcome.get('result')
+    if isinstance(result, dict) and (
+            result.get('error')
+            or result.get('status') in ('needs_input', 'error', 'blocked')):
+        return False
+    return True
+
 
 def _proposal_of(tool_outcome):
     """The confirmation payload when a tool PROPOSED a change, else None."""

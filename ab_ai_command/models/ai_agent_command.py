@@ -26,6 +26,10 @@ from ..services import parser
 _logger = logging.getLogger(__name__)
 
 
+class _TrialRollback(Exception):
+    """Unwinds the dry-run trial create; never escapes run()."""
+
+
 class AIAgentCommand(models.Model):
     _name = 'ai.agent.command'
     _description = 'AI Command'
@@ -205,12 +209,41 @@ class AIAgentCommand(models.Model):
             }
 
         if dry_run:
+            # Try the create too (the only caller, tools._dry_run, rolls the
+            # whole thing back): allocation, overlap and other constraints
+            # then refuse BEFORE the user is shown a Confirm button, not
+            # after they press it.
+            preview = None
+            try:
+                with self.env.cr.savepoint():
+                    trial = model._ai_command_create(values)
+                    trial.flush_recordset()
+                    # Read back now, before the rollback: the Confirm card
+                    # shows matched names and computed lines, not raw ids.
+                    preview = trial._ai_command_preview()
+                    raise _TrialRollback()
+            except _TrialRollback:
+                pass
+            except (AccessError, UserError) as e:
+                self.env.invalidate_all()
+                return {'status': 'blocked', 'message': str(e)}
+            except Exception:
+                _logger.info('command %s trial create failed', self.sudo().code,
+                             exc_info=True)
+            self.env.invalidate_all()
             return {'status': 'dry_run', 'command': self.sudo().code,
                     'values': {k: str(v) for k, v in values.items()},
+                    'preview': preview,
                     'questions': questions}
 
         try:
-            record = model._ai_command_create(values)
+            # Savepoint: a constraint that fires after the INSERT (leave
+            # allocation, overlap…) is caught below and reported as
+            # "blocked" — without the rollback the half-made record stayed
+            # in the transaction and was committed with the reply.
+            with self.env.cr.savepoint():
+                record = model._ai_command_create(values)
+                record.flush_recordset()
         except (AccessError, UserError) as e:
             # These carry a message written for a user — pass it through.
             return {'status': 'blocked', 'message': str(e)}

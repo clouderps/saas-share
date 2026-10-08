@@ -468,6 +468,12 @@ msgstr "لا يوجد %(field)s باسم \"%(text)s\"."
 #. module: ab_ai_command
 #. odoo-python
 #: code:addons/ab_ai_command/models/ai_command_mixin.py:0
+msgid "No %(field)s called \"%(text)s\". Which one?"
+msgstr "لا يوجد %(field)s باسم \"%(text)s\". أيّها تقصد؟"
+
+#. module: ab_ai_command
+#. odoo-python
+#: code:addons/ab_ai_command/models/ai_command_mixin.py:0
 msgid "Nothing given."
 msgstr "لم تُدخل أي قيمة."
 

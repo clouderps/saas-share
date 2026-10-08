@@ -114,3 +114,34 @@ class TestGeminiContextCache(TransactionCase):
         self._call(calls)
         self.assertFalse([c for c in calls if c[0].endswith('/cachedContents')])
         self.assertNotIn(self.svc_mod.CACHE_BREAK, calls[0][1]['systemInstruction']['parts'][0]['text'])
+
+
+class TestToolArgumentsAndEndMessage(TransactionCase):
+    """Live findings 2026-10-08: object args arrive as JSON strings from
+    Gemini, and a pre-written __end_message must not close a failed call."""
+
+    def test_json_string_object_args_are_parsed(self):
+        from odoo.addons.ab_ai_agent.services.tool_dispatcher import _coerce_json_args
+        tool = MagicMock(schema='{"type": "object", "properties": {"fields": {"type": "object"},'
+                                ' "ids": {"type": "array"}, "text": {"type": "string"}}}')
+        out = _coerce_json_args(tool, {'fields': '{"name": "A"}', 'ids': '[1, 2]',
+                                       'text': '{"keep": "as text"}'})
+        self.assertEqual(out['fields'], {'name': 'A'})
+        self.assertEqual(out['ids'], [1, 2])
+        self.assertEqual(out['text'], '{"keep": "as text"}')
+        self.assertEqual(_coerce_json_args(tool, {'fields': 'not json'})['fields'], 'not json')
+        self.assertIsNone(_coerce_json_args(tool, {'fields': '  '})['fields'])
+
+    def test_end_message_only_closes_a_call_that_worked(self):
+        from odoo.addons.ab_ai_agent.services.runtime import _ends_run
+        self.assertTrue(_ends_run({'ok': True, 'end_message': 'done', 'result': {'rows': []}}))
+        for result in ({'status': 'needs_input'}, {'status': 'blocked'}, {'error': 'x'}):
+            self.assertFalse(_ends_run({'ok': True, 'end_message': 'press Confirm',
+                                        'result': result}))
+        self.assertFalse(_ends_run({'ok': False, 'end_message': 'x'}))
+
+    def test_failed_call_tells_the_model_why(self):
+        from odoo.addons.ab_ai_agent.services.runtime import _tool_feedback
+        self.assertEqual(_tool_feedback({'ok': True, 'result': {'n': 1}}), {'n': 1})
+        fb = _tool_feedback({'ok': False, 'error': 'pii_blocked', 'message': 'off'})
+        self.assertEqual(fb, {'error': 'pii_blocked', 'message': 'off'})

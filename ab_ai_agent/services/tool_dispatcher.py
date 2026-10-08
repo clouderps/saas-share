@@ -72,7 +72,10 @@ def dispatch(env, tool_record, arguments, *, agent=None, agent_run=None):
     # ── PII gate ───────────────────────────────────────────────
     if tool_record.requires_pii and (not agent or not agent.allow_pii):
         return _error('pii_blocked', tool_record, time.perf_counter() - started,
-                      'This tool needs PII access; agent.allow_pii is False.')
+                      'This tool reads personal data and the assistant is not allowed '
+                      'to (the "Allow Pii" setting is off on this agent). Tell the user '
+                      'exactly that, and that an administrator can turn it on in '
+                      'AI > Agents > All Agents. Do NOT say there is no data.')
 
     # ── Write-action gate ──────────────────────────────────────
     if tool_record.is_write_action and (not agent or not agent.allow_write_actions):
@@ -88,6 +91,7 @@ def dispatch(env, tool_record, arguments, *, agent=None, agent_run=None):
     # able to pass them and skip the confirmation step.
     arguments = {k: v for k, v in arguments.items()
                  if not str(k).startswith('_ai_')}
+    arguments = _coerce_json_args(tool_record, arguments)
 
     # ── Dispatch ───────────────────────────────────────────────
     try:
@@ -111,6 +115,36 @@ def dispatch(env, tool_record, arguments, *, agent=None, agent_run=None):
         'duration_ms': duration_ms,
         'end_message': end_message,
     }
+
+
+def _coerce_json_args(tool_record, arguments):
+    """Turn JSON-string values back into the objects/arrays the schema declares.
+
+    Gemini rejects a free-form OBJECT parameter, so ``_gemini_schema`` sends
+    it as a JSON string; without this every create/update/command tool got
+    ``fields='{"name": ...}'`` and failed on ``dict(fields)``.
+    """
+    try:
+        props = (json.loads(tool_record.schema or '{}') or {}).get('properties') or {}
+    except (ValueError, TypeError):
+        return arguments
+    for key, spec in props.items():
+        value = arguments.get(key)
+        if not isinstance(value, str) or not isinstance(spec, dict):
+            continue
+        if spec.get('type') not in ('object', 'array'):
+            continue
+        text = value.strip()
+        if not text:
+            arguments[key] = None
+            continue
+        try:
+            parsed = json.loads(text)
+        except ValueError:
+            continue    # the tool reports the bad value itself
+        if isinstance(parsed, (dict, list)):
+            arguments[key] = parsed
+    return arguments
 
 
 def _dispatch_python(env, tool, arguments, agent=None):

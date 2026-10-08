@@ -8,7 +8,7 @@
             <field name="target_model">purchase.order</field>
             <field name="icon">fa-shopping-basket</field>
             <field name="sequence">20</field>
-            <field name="description">Draft a request for quotation. Nothing is confirmed — you review it first.</field>
+            <field name="description">Draft a purchase order (request for quotation) to a vendor. Nothing is confirmed — you review it first.</field>
             <field name="example">/create rfq vendor: Al Faisal Supplies; items: 20x flour, 5x sugar</field>
             <field name="group_ids" eval="[(6, 0, [ref('purchase.group_purchase_user')])]"/>
         </record>

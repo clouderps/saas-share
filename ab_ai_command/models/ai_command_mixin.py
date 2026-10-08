@@ -35,6 +35,7 @@ import logging
 
 from odoo import _, api, models
 from odoo.exceptions import AccessError, UserError, ValidationError
+from odoo.tools.misc import format_date
 
 from ..services import resolvers
 
@@ -270,7 +271,8 @@ class AICommandMixin(models.AbstractModel):
                     })
 
             elif kind == 'many2one':
-                record, options, note = self._ai_command_resolve_m2o(field, raw)
+                record, options, note = self._ai_command_resolve_m2o(
+                    field, raw, offer_all=not rule.get('fallback_text'))
                 if record:
                     values[field] = record.id
                 elif not options and rule.get('fallback_text') \
@@ -308,7 +310,7 @@ class AICommandMixin(models.AbstractModel):
         return values, questions
 
     @api.model
-    def _ai_command_resolve_m2o(self, field, raw):
+    def _ai_command_resolve_m2o(self, field, raw, offer_all=False):
         """Text → one record of the field's comodel, as the user.
 
         Exact name first, then name_search. Returns ``(record, options,
@@ -326,6 +328,12 @@ class AICommandMixin(models.AbstractModel):
         if len(found) == 1:
             return found, [], ''
         hits = Co.name_search(text, limit=resolvers.MAX_ALTERNATIVES)
+        if not hits and self.env.lang != 'en_US':
+            # The assistant often passes the English name ("Paid Time Off")
+            # while the user works in Arabic; translated names only match
+            # in their own language.
+            hits = Co.with_context(lang='en_US').name_search(
+                text, limit=resolvers.MAX_ALTERNATIVES)
         if len(hits) == 1:
             return Co.browse(hits[0][0]), [], ''
         label = self._fields[field].get_description(self.env).get('string') or field
@@ -333,6 +341,12 @@ class AICommandMixin(models.AbstractModel):
             return None, [{'id': h[0], 'name': h[1]} for h in hits], \
                 _('Several matches for "%(text)s" in %(field)s. Which one?',
                   text=text, field=label)
+        # A short list (leave types, journals, UoMs…) is offered whole, so
+        # the assistant can ask "which one?" instead of a dead end.
+        if offer_all and Co.search_count([]) <= 25:
+            every = Co.search([], limit=25)
+            return None, [{'id': r.id, 'name': r.display_name} for r in every], \
+                _('No %(field)s called "%(text)s". Which one?', field=label, text=text)
         return None, [], _('No %(field)s called "%(text)s".', field=label, text=text)
 
     # ── Creation ───────────────────────────────────────────────
@@ -391,10 +405,14 @@ class AICommandMixin(models.AbstractModel):
             if field not in self._fields:
                 continue
             value = self[field]
-            if hasattr(value, 'display_name'):
+            if meta.get(field, {}).get('type') == 'selection':
+                shown = dict(self._fields[field]._description_selection(self.env)).get(value, value)
+            elif hasattr(value, 'display_name'):
                 shown = value.display_name if value else ''
             elif hasattr(value, 'strftime'):
-                shown = value.strftime('%d %B %Y')   # long form on purpose
+                # Long form on purpose (3/8/26 reads two ways), in the
+                # user's language: "3 أغسطس 2026", not "03 August 2026".
+                shown = format_date(self.env, value, date_format='d MMMM y')
             else:
                 shown = value
             if shown in (False, None, ''):

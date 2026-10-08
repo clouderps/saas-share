@@ -199,7 +199,13 @@ def resolve_date(env, text, today=None):
 
 _QTY_PREFIX = re.compile(r'^\s*(\d+(?:[.,]\d+)?)\s*[x×*]\s*(.+)$', re.I)
 _QTY_SUFFIX = re.compile(r'^(.+?)\s*[x×*]\s*(\d+(?:[.,]\d+)?)\s*$', re.I)
-_QTY_PLAIN = re.compile(r'^(.+?)\s+(\d+(?:[.,]\d+)?)\s*$')
+_QTY_PLAIN = re.compile(r'^(.+?)\s+(?:(?:كميه|كمية|الكمية|الكميه|عدد|بعدد|qty|quantity)\s*:?\s*)?'
+                        r'(\d+(?:[.,]\d+)?)\s*$', re.I)
+# "10 حبات قهوة", "5 pcs of sugar": a count word between number and name.
+_QTY_UNIT_PREFIX = re.compile(r'^\s*(\d+(?:[.,]\d+)?)\s+(?:حبه|حبة|حبات|قطعه|قطعة|قطع|pcs|pieces|units?)'
+                              r'\s+(?:من\s+|of\s+)?(.+)$', re.I)
+_QTY_BARE_PREFIX = re.compile(r'^\s*(\d+(?:[.,]\d+)?)\s+(\D.*)$')
+_AR_DIGITS = str.maketrans('٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹', '01234567890123456789')
 
 
 #: "@ 90", "price 90", "at 90", "بسعر 90" — people say it every way and
@@ -226,9 +232,11 @@ def split_price(chunk):
 
 
 def split_quantity(chunk):
-    """``2x latte`` / ``latte x2`` / ``latte 2`` → (qty, 'latte')."""
-    chunk = (chunk or '').strip()
-    for rx, qty_first in ((_QTY_PREFIX, True), (_QTY_SUFFIX, False), (_QTY_PLAIN, False)):
+    """``2x latte`` / ``latte x2`` / ``latte 2`` / ``قهوة كمية ١٠`` /
+    ``10 حبات قهوة`` → (qty, name)."""
+    chunk = (chunk or '').strip().translate(_AR_DIGITS)
+    for rx, qty_first in ((_QTY_PREFIX, True), (_QTY_UNIT_PREFIX, True),
+                          (_QTY_SUFFIX, False), (_QTY_PLAIN, False)):
         m = rx.match(chunk)
         if m:
             raw_qty = m.group(1) if qty_first else m.group(2)
@@ -315,6 +323,14 @@ def resolve_product_lines(env, text):
         price, rest = split_price(chunk)
         qty, name = split_quantity(rest)
         res = resolve_product(env, name)
+        bare = _QTY_BARE_PREFIX.match(name.translate(_AR_DIGITS))
+        if bare and not (res['value'] and res['confidence'] in ('exact', 'likely')):
+            # "2 latte": a leading number with no x/unit. Tried only after
+            # the whole text failed, so a product really called "3 in 1
+            # Coffee" still matches by its name first.
+            alt = resolve_product(env, bare.group(2))
+            if alt['value'] and alt['confidence'] in ('exact', 'likely'):
+                res, name, qty = alt, bare.group(2), float(bare.group(1).replace(',', '.'))
         if res['value'] and res['confidence'] in ('exact', 'likely'):
             line = {'product_id': res['value'], 'name': res['display'],
                     'qty': qty, 'confidence': res['confidence']}
