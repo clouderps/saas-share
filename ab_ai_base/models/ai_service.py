@@ -2,8 +2,10 @@
 
 from odoo import models, api, _
 from odoo.exceptions import UserError
+import hashlib
 import json
 import logging
+import threading
 import time
 import requests
 
@@ -100,7 +102,9 @@ class AIProviderService(models.AbstractModel):
                 return self._simulate_call(reason='no_provider_configured')
 
         effective_system = system_prompt or config.system_prompt or None
-        if config.ai_provider != 'anthropic' or image_data:
+        # Anthropic and Gemini split the prompt at the marker (cache_control
+        # / cachedContents); _call_gemini strips it on its uncached path.
+        if config.ai_provider not in ('anthropic', 'google') or image_data:
             effective_system = strip_cache_break(effective_system)
 
         if self._provider_cache_enabled():
@@ -721,25 +725,37 @@ class AIProviderService(models.AbstractModel):
             # the JSON envelope, not hidden chain-of-thought.
             if (model or '').startswith('gemini-2.5'):
                 generation_config["thinkingConfig"] = {"thinkingBudget": 0}
-            payload = {
-                "contents": [{"parts": [{"text": prompt}]}],
-                "generationConfig": generation_config,
-            }
-            if system_prompt:
-                payload["systemInstruction"] = {"parts": [{"text": system_prompt}]}
+            api_key = config._get_decrypted_key('gemini_api_key')
+            headers = {"Content-Type": "application/json", "x-goog-api-key": api_key}
             declarations = _tools_for_gemini(tools)
-            if declarations:
-                # Native function calling: the model answers a tool call as
-                # structured data instead of JSON typed into its text.
-                payload["tools"] = [{"functionDeclarations": declarations}]
-                payload["toolConfig"] = {"functionCallingConfig": {"mode": "AUTO"}}
-            response = requests.post(
-                url,
-                headers={"Content-Type": "application/json",
-                         "x-goog-api-key": config._get_decrypted_key('gemini_api_key')},
-                json=payload,
-                timeout=config.timeout,
-            )
+            stable, marker, volatile = (system_prompt or '').partition(CACHE_BREAK)
+            cache_name = None
+            if marker:
+                cache_name = _gemini_cached_content(
+                    model, stable, declarations, api_key, config.timeout)
+            if cache_name:
+                # The cache already holds the system instruction and tools;
+                # Gemini refuses a request that repeats either, so the
+                # per-user/per-question part rides in front of the prompt.
+                user_text = f"{volatile.strip()}\n\n{prompt}" if volatile.strip() else prompt
+                payload = {
+                    "cachedContent": cache_name,
+                    "contents": [{"role": "user", "parts": [{"text": user_text}]}],
+                    "generationConfig": generation_config,
+                }
+            else:
+                payload = _gemini_plain_payload(prompt, strip_cache_break(system_prompt),
+                                                declarations, generation_config)
+            response = requests.post(url, headers=headers, json=payload,
+                                     timeout=config.timeout)
+            if cache_name and response.status_code in (400, 403, 404):
+                # Expired or evicted on Google's side: forget it and answer
+                # this turn uncached; the next turn builds a fresh cache.
+                _GEMINI_CACHE.pop(_gemini_cache_key(model, stable, declarations, api_key), None)
+                payload = _gemini_plain_payload(prompt, strip_cache_break(system_prompt),
+                                                declarations, generation_config)
+                response = requests.post(url, headers=headers, json=payload,
+                                         timeout=config.timeout)
             response.raise_for_status()
             data = response.json()
             parts = ((data.get('candidates') or [{}])[0].get('content') or {}).get('parts') or []
@@ -1517,6 +1533,86 @@ def _gemini_schema(schema):
     if t == 'array':
         out['items'] = _gemini_schema(schema.get('items') or {'type': 'string'})
     return out
+
+
+def _gemini_plain_payload(prompt, system_prompt, declarations, generation_config):
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": generation_config,
+    }
+    if system_prompt:
+        payload["systemInstruction"] = {"parts": [{"text": system_prompt}]}
+    if declarations:
+        # Native function calling: the model answers a tool call as
+        # structured data instead of JSON typed into its text.
+        payload["tools"] = [{"functionDeclarations": declarations}]
+        payload["toolConfig"] = {"functionCallingConfig": {"mode": "AUTO"}}
+    return payload
+
+
+# Gemini explicit context caching. Implicit caching measured 0 % on
+# FAYIAPROD (Oct 2026) with a ~7k-token stable prefix + ~7k tokens of tool
+# declarations re-sent on every hop; an explicit cachedContents entry is
+# billed at the cached rate and skips re-processing that prefix.
+# Process-local: each worker builds its own entry, which costs one
+# creation call per worker per TTL — cheaper than coordinating.
+_GEMINI_CACHE = {}              # key -> (cache name | None, expires at)
+_GEMINI_CACHE_LOCK = threading.Lock()
+_GEMINI_CACHE_TTL = 900         # seconds asked of Google
+_GEMINI_CACHE_SLACK = 60        # stop using an entry this long before it expires
+_GEMINI_CACHE_NEGATIVE = 300    # after a failed create, don't retry for this long
+# Below Gemini's minimum cacheable size the create call is refused; skip it.
+_GEMINI_CACHE_MIN_CHARS = {'pro': 16384}   # 4096 tokens; flash/lite: 1024 tokens
+_GEMINI_CACHE_MIN_DEFAULT = 4096
+
+
+def _gemini_cache_key(model, stable, declarations, api_key):
+    blob = json.dumps([model, stable, declarations], sort_keys=True, ensure_ascii=False)
+    return hashlib.sha256((hashlib.sha256(api_key.encode()).hexdigest() + blob).encode()).hexdigest()
+
+
+def _gemini_cached_content(model, stable, declarations, api_key, timeout):
+    """Name of a live cachedContents entry holding ``stable`` + tools, or None."""
+    size = len(stable) + len(json.dumps(declarations or []))
+    floor = next((v for k, v in _GEMINI_CACHE_MIN_CHARS.items() if k in (model or '')),
+                 _GEMINI_CACHE_MIN_DEFAULT)
+    if not stable.strip() or size < floor:
+        return None
+    key = _gemini_cache_key(model, stable, declarations, api_key)
+    now = time.monotonic()
+    with _GEMINI_CACHE_LOCK:
+        hit = _GEMINI_CACHE.get(key)
+        if hit and hit[1] > now:
+            return hit[0]
+    body = {
+        "model": f"models/{model}",
+        "systemInstruction": {"parts": [{"text": stable}]},
+        "ttl": f"{_GEMINI_CACHE_TTL}s",
+    }
+    if declarations:
+        body["tools"] = [{"functionDeclarations": declarations}]
+        body["toolConfig"] = {"functionCallingConfig": {"mode": "AUTO"}}
+    try:
+        resp = requests.post(
+            "https://generativelanguage.googleapis.com/v1beta/cachedContents",
+            headers={"Content-Type": "application/json", "x-goog-api-key": api_key},
+            json=body, timeout=timeout)
+        resp.raise_for_status()
+        name = resp.json().get('name')
+    except requests.exceptions.RequestException as e:
+        detail = ''
+        if getattr(e, 'response', None) is not None:
+            detail = e.response.text[:200]
+        _logger.info('Gemini cache create failed, answering uncached: %s %s',
+                     type(e).__name__, detail)
+        name = None
+    expires = now + (_GEMINI_CACHE_TTL - _GEMINI_CACHE_SLACK if name else _GEMINI_CACHE_NEGATIVE)
+    with _GEMINI_CACHE_LOCK:
+        # Drop dead entries so a long-lived worker doesn't accumulate keys.
+        for k in [k for k, (_n, exp) in _GEMINI_CACHE.items() if exp <= now]:
+            _GEMINI_CACHE.pop(k, None)
+        _GEMINI_CACHE[key] = (name, expires)
+    return name
 
 
 def _tools_for_gemini(tools):
