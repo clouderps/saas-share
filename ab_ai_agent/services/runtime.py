@@ -212,7 +212,8 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
         except llm_adapter.AiProviderError as e:
             # A configured provider/gateway failed — finalize as a real
             # error so monitoring sees it; never present a fake answer.
-            envelope = _provider_error_envelope(locale)
+            envelope = (_quota_envelope(locale) if _is_quota_error(e)
+                        else _provider_error_envelope(locale))
             agent_run.finalize(
                 state='error',
                 response=envelope['response'],
@@ -1959,6 +1960,33 @@ def _cost_capped_envelope(agent, spent, cap, locale):
             'blocks': [
                 {'type': 'callout', 'title': 'Cost cap reached', 'body': msg,
                  'tone': 'bad', 'icon': 'fa-shield'},
+            ],
+        },
+    }
+
+
+def _is_quota_error(error):
+    """The gateway refused the call on the plan's token quota (it answers
+    'Daily token limit reached (x/y)' / 'Monthly ...')."""
+    return bool(re.search(r'token limit|quota|limit reached|limit exceeded', str(error), re.I))
+
+
+def _quota_envelope(locale):
+    # not "provider unreachable": the provider is fine, the plan quota is used
+    if locale == 'ar':
+        msg = ('تم استنفاد حصة الذكاء الاصطناعي المتاحة في باقتك لهذه الفترة. '
+               'تتجدد الحصة تلقائيًا، أو تواصل مع المسؤول لترقية الباقة.')
+    else:
+        msg = ('Your AI plan quota for this period is used up. It renews '
+               'automatically, or ask your administrator to upgrade the plan.')
+    return {
+        'response': msg,
+        'error': 'QUOTA_EXCEEDED',
+        'render': {
+            'layout': 'chat',
+            'blocks': [
+                {'type': 'callout', 'title': 'AI quota reached', 'body': msg,
+                 'tone': 'bad', 'icon': 'fa-hourglass-end'},
             ],
         },
     }
