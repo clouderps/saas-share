@@ -7,6 +7,12 @@ from ..models.res_config_settings import merge_cors
 
 
 class FakeClient:
+    objects = {}
+
+    def get_object(self, Bucket, Key):
+        import io
+        return {'Body': io.BytesIO(self.objects[(Bucket, Key)])}
+
     def generate_presigned_url(self, op, Params, ExpiresIn):
         return f"https://{Params['Bucket']}.s3.amazonaws.com/{Params['Key']}?op={op}&exp={ExpiresIn}"
 
@@ -54,6 +60,20 @@ class TestCloudStorageS3(TransactionCase):
         down = att._generate_cloud_storage_download_info()
         self.assertIn('op=get_object', down['url'])
         self.assertEqual(down['time_to_expiry'], att._cloud_storage_download_url_time_to_expiry)
+
+    def test_cloud_link_bytes_are_read_from_s3_for_outgoing_mail(self):
+        att = self._attachment('quote.pdf')
+        url = att._generate_cloud_storage_url()
+        self.env.cr.execute("UPDATE ir_attachment SET type='cloud_storage', url=%s, file_size=3 WHERE id=%s",
+                            (url, att.id))
+        att.invalidate_recordset()
+        info = att._get_cloud_storage_s3_info()
+        FakeClient.objects[(info['bucket'], info['key'])] = b'PDF'
+        self.assertEqual(att.raw, b'PDF')
+        mail = self.env['mail.mail'].create({'email_to': 'x@example.com', 'subject': 's', 'body_html': '<p>b</p>',
+                                             'attachment_ids': [(4, att.id)]})
+        sent = mail._prepare_outgoing_list()
+        self.assertEqual(sent[0]['attachments'], [('quote.pdf', b'PDF', att.mimetype)])
 
     def test_configuration_needs_credentials(self):
         Settings = self.env['res.config.settings']

@@ -78,6 +78,23 @@ class IrAttachment(models.Model):
             Params={'Bucket': bucket, 'Key': key}, ExpiresIn=int(expiration))
 
     # OVERRIDES
+    def _compute_raw(self):
+        """Server code that reads the bytes (outgoing mail attachments, merges,
+        exports) got b'' for S3 cloud links, so mails went out without the file.
+        Read them from S3 like any stored file."""
+        super()._compute_raw()
+        cloud = self.filtered(lambda a: a.type == 'cloud_storage' and not a.raw and a.url
+                              and URL_RE.fullmatch(a.url))
+        if not cloud or not self._cloud_storage_s3_active():
+            return
+        client = s3_client(s3_settings(self.env))
+        for att in cloud:
+            info = att._get_cloud_storage_s3_info()
+            try:
+                att.raw = client.get_object(Bucket=info['bucket'], Key=info['key'])['Body'].read()
+            except Exception as e:  # noqa: BLE001 — a missing object must not break the caller
+                _logger.warning('cloud storage: cannot read attachment %s from S3: %s', att.id, e)
+
     def _generate_cloud_storage_url(self):
         if not self._cloud_storage_s3_active():
             return super()._generate_cloud_storage_url()
