@@ -128,18 +128,21 @@ class IrAttachment(models.Model):
     # the bytes from the local filestore, but tenant files already live on S3
     # (ab_s3_attachment), so each one is a server-side copy, no download.
     def _s3_cloud_migration_candidates(self, limit=None, older_than=None):
-        """Odoo's own rules: record/chatter files only. Field binaries
-        (images), models whose code reads the bytes (mail.thread.main.attachment
-        = invoices/ZATCA, documents) and website/asset files stay S3-backed
-        binaries."""
-        excluded = (*self._get_cloud_storage_unsupported_models(), 'ir.ui.view', 'website')
+        """Every record file, invoices and payments included: their code
+        reads the bytes, and _compute_raw now serves cloud links from S3.
+        Odoo's unsupported-model list still keeps BROWSER uploads on those
+        models binary (their code may read the file before the browser's
+        upload lands); the cron converts them once settled. Kept binary:
+        field binaries (images), website/asset files, and XML documents
+        (ZATCA e-invoices are signed and submitted from their bytes)."""
+        excluded = ('ir.ui.view', 'website', 'ir.module.module')
         self.env.cr.execute(SQL(
             """SELECT id FROM ir_attachment
                 WHERE type = 'binary' AND url IS NULL AND store_fname IS NOT NULL
                   AND res_field IS NULL AND res_model IS NOT NULL AND res_id > 0
-                  AND res_model NOT IN %s %s
+                  AND res_model NOT IN %s AND coalesce(mimetype, '') NOT LIKE %s %s
                 ORDER BY id %s""",
-            excluded,
+            excluded, '%xml%',
             SQL('AND create_date < %s', older_than) if older_than else SQL(),
             SQL('LIMIT %s', limit) if limit else SQL()))
         return self.browse(r[0] for r in self.env.cr.fetchall())
@@ -194,7 +197,7 @@ class IrAttachment(models.Model):
         from datetime import timedelta
         from odoo import fields
         hours = int(self.env['ir.config_parameter'].sudo().get_param(
-            'cloud_storage_s3_convert_after_hours', '24') or 24)
+            'cloud_storage_s3_convert_after_hours', '1') or 1)
         cands = self.sudo()._s3_cloud_migration_candidates(
             limit=500, older_than=fields.Datetime.now() - timedelta(hours=hours))
         if cands:

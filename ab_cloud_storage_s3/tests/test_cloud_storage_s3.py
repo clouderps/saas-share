@@ -109,11 +109,13 @@ class TestCloudStorageS3(TransactionCase):
             return att
         chatter = row(name='quote.pdf', res_model='res.partner', res_id=partner.id, mimetype='application/pdf')
         image = row(res_model='res.partner', res_id=partner.id, res_field='image_1920')
-        invoice_model = next(iter(Att._get_cloud_storage_unsupported_models()), None)
-        kept = [image] + ([row(res_model=invoice_model, res_id=1)] if invoice_model else [])
+        invoice_pdf = row(name='INV.pdf', res_model='account.move', res_id=1, mimetype='application/pdf')
+        zatca_xml = row(name='INV.xml', res_model='account.move', res_id=1, mimetype='application/xml')
+        kept = [image, zatca_xml]
 
         candidates = Att._s3_cloud_migration_candidates()
         self.assertIn(chatter, candidates)
+        self.assertIn(invoice_pdf, candidates)       # bytes readable from S3 now
         self.assertFalse(set(kept) & set(candidates))
 
         copies = []
@@ -140,7 +142,7 @@ class TestCloudStorageS3(TransactionCase):
             att.invalidate_recordset()
             return att
         old = row(30, res_model='res.partner', res_id=partner.id)
-        fresh = row(1, res_model='res.partner', res_id=partner.id)
+        fresh = row(0, res_model='res.partner', res_id=partner.id)
         image = row(30, res_model='res.partner', res_id=partner.id, res_field='image_1920')
         copies = []
         with patch.object(s3mod, 's3_client', lambda settings: type('C', (), {
