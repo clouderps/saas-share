@@ -1,22 +1,19 @@
 {
-    'name': 'Redis Session & Bus',
-    'summary': 'Store Ghaima sessions and bus notifications in Redis for multi-node HA',
+    'name': 'Redis Sessions',
+    'summary': 'Store Ghaima sessions in Redis for multi-node HA',
     'description': """
 Replaces Ghaima's filesystem session store with Redis.
-Also configures Redis as the bus notification backend.
+Users stay logged in whichever app node serves them (load balancing),
+and across container restarts. Notifications (bus) already work across nodes
+through PostgreSQL.
 
-This enables:
-- Multi-node deployments (load-balanced Ghaima instances)
-- Session persistence across container restarts
-- Shared real-time notifications across all nodes
-- No user logout when routed to a different app node
-
-Configuration via ir.config_parameter:
-- ab_redis.url = redis://host:6379/0
-- ab_redis.prefix = entity_5 (session key prefix for isolation)
-- ab_redis.session_ttl = 86400 (session TTL in seconds, default 24h)
+Configuration in the server config file (not system parameters):
+- server_wide_modules = base,web,ab_redis_session
+- redis_url = redis://:<password>@host:6379/0
+- redis_session_prefix = entity_5 (one per tenant)
+- redis_session_ttl = 604800 (optional, default Odoo's 7 days)
     """,
-    'version': '18.0.1.0.0',
+    'version': '18.0.2.0.0',
     'category': 'Technical',
     'author': 'Ghaima Tech',
     'license': 'LGPL-3',
@@ -25,7 +22,6 @@ Configuration via ir.config_parameter:
     'external_dependencies': {
         'python': ['redis'],
     },
-    'post_init_hook': '_post_init_hook',
     'installable': True,
     'auto_install': False,
 }

@@ -1,176 +1,119 @@
 """
-Redis Session Store for Odoo 18 — Multi-Node HA Support
+Redis session store for Odoo 18 — sessions shared by every app node.
 
-Replaces werkzeug's filesystem session store with Redis.
-Sessions are shared across all Odoo workers/nodes.
+Odoo keeps sessions as files on the node that served the login, so behind a
+load balancer a user routed to another node is logged out. This store keeps
+them in Redis instead, built on Odoo's own FilesystemSessionStore so login
+rotation, the session token and device revocation keep their exact behaviour;
+only where the bytes live changes.
 
-What's stored in the session:
-- Login state (uid, db, login)
-- CSRF tokens
-- Shopping cart data
-- Wizard state
-- Form draft values
+Enable it in the server config (it must load before the first request, so
+also list the module in server_wide_modules):
 
-What this solves:
-- User stays logged in when routed to any app node
-- No session loss on container restart
-- Concurrent workers share sessions
-- Automatic session expiry via Redis TTL
+    server_wide_modules = base,web,ab_redis_session
+    redis_url = redis://:<password>@<host>:6379/0
+    redis_session_prefix = entity_69        # one prefix per tenant
+    redis_session_ttl = 604800              # optional, default = Odoo's 7 days
+
+Without redis_url nothing changes. If Redis is unreachable at start-up the
+node keeps file sessions and logs a warning.
+
+Real-time notifications (bus) need nothing here: Odoo 18's bus goes through
+PostgreSQL NOTIFY, which every node sharing the database already receives.
 """
-
 import json
 import logging
-import pickle
-import threading
 
-from odoo import api, models
+from odoo import api, http, models
 from odoo.tools import config as odoo_config
 
 _logger = logging.getLogger(__name__)
 
-# Redis client singleton
 _redis_client = None
-_redis_lock = threading.Lock()
-_redis_prefix = 'odoo_session'
-_redis_ttl = 86400  # 24 hours
 
 
 def _session_key(prefix, sid):
-    """Build the Redis key for a session id, namespaced by the per-tenant
-    ``prefix`` (e.g. 'entity_5') so tenants/nodes sharing one Redis never
-    collide. Module-level + pure so it is unit-testable — the
-    RedisSessionStore that uses it lives inside the _setup_redis_session_store
-    closure and can't be imported directly."""
+    """Redis key of a session, namespaced per tenant so tenants sharing one
+    Redis never see each other's sessions."""
     return f'{prefix}:{sid}'
 
 
 def _get_redis_client():
-    """Get or create Redis client singleton."""
     global _redis_client
-    if _redis_client is not None:
+    if _redis_client is None and odoo_config.get('redis_url'):
+        import redis
+        _redis_client = redis.Redis.from_url(odoo_config['redis_url'], socket_timeout=2,
+                                             socket_connect_timeout=2, health_check_interval=30)
+    return _redis_client
+
+
+class RedisSessionStore(http.FilesystemSessionStore):
+    """Odoo's store with Redis as the storage. rotate(), generate_key() and
+    is_valid_key() are inherited unchanged."""
+
+    def __init__(self, client, prefix, ttl, **kwargs):
+        super().__init__(odoo_config.session_dir, **kwargs)
+        self.redis, self.prefix, self.ttl = client, prefix, ttl
+
+    def _key(self, sid):
+        return _session_key(self.prefix, sid)
+
+    def save(self, session):
+        self.redis.set(self._key(session.sid), json.dumps(dict(session)), ex=self.ttl)
+
+    def get(self, sid):
+        if not self.is_valid_key(sid):
+            return self.new()
+        key = self._key(sid)
+        data = self.redis.get(key)
+        if data is None:
+            return self.session_class({}, sid, True)
+        self.redis.expire(key, self.ttl)  # sliding expiry, like the file mtime
         try:
-            _redis_client.ping()
-            return _redis_client
-        except Exception:
-            _redis_client = None
-
-    redis_url = odoo_config.get('redis_url', '')
-    if not redis_url:
-        return None
-
-    with _redis_lock:
-        if _redis_client is not None:
-            return _redis_client
-        try:
-            import redis
-            _redis_client = redis.Redis.from_url(redis_url, decode_responses=False)
-            _redis_client.ping()
-            _logger.info('Redis session store connected: %s', redis_url.split('@')[-1])
-            return _redis_client
-        except Exception as e:
-            _logger.warning('Redis connection failed: %s — falling back to filesystem', e)
-            return None
-
-
-def _setup_redis_session_store():
-    """Replace Odoo's session store with Redis-backed store."""
-    redis_url = odoo_config.get('redis_url', '')
-    if not redis_url:
-        _logger.info('Redis URL not configured (redis_url in odoo.conf). Using filesystem sessions.')
-        return
-
-    global _redis_prefix, _redis_ttl
-    _redis_prefix = odoo_config.get('redis_session_prefix', 'odoo_session')
-    _redis_ttl = int(odoo_config.get('redis_session_ttl', '86400'))
-
-    client = _get_redis_client()
-    if not client:
-        return
-
-    try:
-        import odoo.http
-        from werkzeug.contrib.sessions import SessionStore
-    except ImportError:
-        try:
-            from werkzeug.middleware.session import SessionStore
-        except ImportError:
-            _logger.warning('Cannot import SessionStore — Redis sessions not activated')
-            return
-
-    class RedisSessionStore(SessionStore):
-        """Werkzeug-compatible session store backed by Redis."""
-
-        def __init__(self, **kwargs):
-            super().__init__(**kwargs)
-            self.redis = client
-            self.prefix = _redis_prefix
-            self.ttl = _redis_ttl
-
-        def _key(self, sid):
-            return _session_key(self.prefix, sid)
-
-        def save(self, session):
-            key = self._key(session.sid)
-            try:
-                data = pickle.dumps(dict(session))
-                self.redis.setex(key, self.ttl, data)
-            except Exception as e:
-                _logger.warning('Redis session save failed for %s: %s', session.sid, e)
-
-        def delete(self, session):
-            key = self._key(session.sid)
-            try:
-                self.redis.delete(key)
-            except Exception as e:
-                _logger.warning('Redis session delete failed for %s: %s', session.sid, e)
-
-        def get(self, sid):
-            if not self.is_valid_key(sid):
-                return self.new()
-            key = self._key(sid)
-            try:
-                data = self.redis.get(key)
-                if data:
-                    session_data = pickle.loads(data)
-                    return self.session_class(session_data, sid, False)
-            except Exception as e:
-                _logger.warning('Redis session get failed for %s: %s', sid, e)
+            return self.session_class(json.loads(data), sid, False)
+        except ValueError:
             return self.session_class({}, sid, True)
 
-        def list(self):
-            try:
-                keys = self.redis.keys(f'{self.prefix}:*')
-                return [k.decode().split(':')[-1] for k in keys]
-            except Exception:
-                return []
+    def delete(self, session):
+        self.redis.delete(self._key(session.sid))
 
-    # Monkey-patch Odoo's session store
+    def vacuum(self, max_lifetime=None):
+        """Redis expires sessions itself (TTL)."""
+
+    def _keys_for(self, identifier):
+        # an identifier is the first 42 characters of a sid
+        return list(self.redis.scan_iter(match=self._key(identifier) + '*', count=100))
+
+    def get_missing_session_identifiers(self, identifiers):
+        return {i for i in set(identifiers) if not self._keys_for(i)}
+
+    def delete_from_identifiers(self, identifiers):
+        for identifier in identifiers:
+            if http._session_identifier_re.match(identifier):  # never a broader pattern
+                keys = self._keys_for(identifier)
+                if keys:
+                    self.redis.delete(*keys)
+
+
+def install_session_store():
+    """Swap the session store of this process. Called when the module is
+    imported (server_wide_modules makes that happen at start-up)."""
+    if not odoo_config.get('redis_url'):
+        return False
     try:
-        # Odoo 18 uses odoo.http.root.session_store
-        if hasattr(odoo.http, 'root') and odoo.http.root:
-            odoo.http.root.session_store = RedisSessionStore(
-                session_class=odoo.http.Session
-            )
-            _logger.info(
-                'Redis session store activated (prefix=%s, ttl=%ss)',
-                _redis_prefix, _redis_ttl
-            )
-        else:
-            # Root not initialized yet — hook into server startup
-            _logger.info('Redis session store will be activated on server start')
-            original_serve = getattr(odoo.http, 'serve', None)
-            if original_serve:
-                def patched_serve(*args, **kwargs):
-                    result = original_serve(*args, **kwargs)
-                    if hasattr(odoo.http, 'root') and odoo.http.root:
-                        odoo.http.root.session_store = RedisSessionStore(
-                            session_class=odoo.http.Session
-                        )
-                        _logger.info('Redis session store activated (deferred)')
-                    return result
-                odoo.http.serve = patched_serve
-    except Exception as e:
-        _logger.error('Failed to activate Redis session store: %s', e)
+        client = _get_redis_client()
+        client.ping()
+    except Exception as e:  # noqa: BLE001 — keep serving with file sessions
+        _logger.warning('Redis sessions NOT active (%s); using file sessions on this node', e)
+        return False
+    ttl = int(odoo_config.get('redis_session_ttl') or http.SESSION_LIFETIME)
+    prefix = odoo_config.get('redis_session_prefix') or 'odoo_session'
+    # Application.session_store is a lazy property: setting the instance
+    # attribute replaces it for every request of this process.
+    http.root.session_store = RedisSessionStore(client, prefix, ttl, session_class=http.Session,
+                                                renew_missing=True)
+    _logger.info('Redis sessions active (prefix=%s, ttl=%ss)', prefix, ttl)
+    return True
 
 
 class RedisSessionConfig(models.TransientModel):
@@ -179,19 +122,14 @@ class RedisSessionConfig(models.TransientModel):
 
     @api.model
     def get_redis_info(self):
-        """Return Redis connection info for diagnostics."""
-        client = _get_redis_client()
-        if not client:
-            return {'status': 'disconnected', 'reason': 'No Redis URL configured or connection failed'}
+        """Diagnostics for the cockpit."""
+        store = http.root.session_store
+        if not isinstance(store, RedisSessionStore):
+            return {'status': 'disconnected', 'reason': 'This node uses file sessions'}
         try:
-            info = client.info('server')
-            keys = client.keys(f'{_redis_prefix}:*')
-            return {
-                'status': 'connected',
-                'redis_version': info.get('redis_version'),
-                'prefix': _redis_prefix,
-                'ttl': _redis_ttl,
-                'active_sessions': len(keys),
-            }
-        except Exception as e:
+            info = store.redis.info('server')
+            count = sum(1 for _ in store.redis.scan_iter(match=f'{store.prefix}:*', count=500))
+            return {'status': 'connected', 'redis_version': info.get('redis_version'),
+                    'prefix': store.prefix, 'ttl': store.ttl, 'active_sessions': count}
+        except Exception as e:  # noqa: BLE001
             return {'status': 'error', 'reason': str(e)}

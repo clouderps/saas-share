@@ -1,11 +1,6 @@
-import logging
 from . import models
+from .models.redis_session import install_session_store
 
-_logger = logging.getLogger(__name__)
-
-
-def _post_init_hook(env):
-    """Activate Redis session store if configured."""
-    from . models.redis_session import _setup_redis_session_store
-    _setup_redis_session_store()
-    _logger.info('Redis session store initialized (if configured)')
+# Runs once per process when the module is imported; listing the module in
+# server_wide_modules makes that happen before the first request.
+install_session_store()
