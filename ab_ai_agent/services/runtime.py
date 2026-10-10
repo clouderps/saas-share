@@ -212,7 +212,7 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
         except llm_adapter.AiProviderError as e:
             # A configured provider/gateway failed — finalize as a real
             # error so monitoring sees it; never present a fake answer.
-            envelope = (_quota_envelope(locale) if _is_quota_error(e)
+            envelope = (_quota_envelope(locale, e) if _is_quota_error(e)
                         else _provider_error_envelope(locale))
             agent_run.finalize(
                 state='error',
@@ -1471,7 +1471,10 @@ def _resolve_tools(env, agent):
     def allowed(t):
         if not t.is_invocable_by(env.user):
             return False
-        if (t.code in ACTION_TOOLS or t.code in tool_dispatcher.PROPOSAL_TOOLS) and not actions_on:
+        if (t.code in ACTION_TOOLS or t.code in tool_dispatcher.PROPOSAL_TOOLS) \
+                and not (actions_on and agent.allow_write_actions):
+            # screen_button / act_on_record can confirm, post or validate:
+            # an agent without write permission must not even offer them.
             return False
         if t.preset_json and t.preset_op in ('create', 'update') \
                 and not (actions_on and agent.allow_write_actions):
@@ -1971,14 +1974,28 @@ def _is_quota_error(error):
     return bool(re.search(r'token limit|quota|limit reached|limit exceeded', str(error), re.I))
 
 
-def _quota_envelope(locale):
-    # not "provider unreachable": the provider is fine, the plan quota is used
+def _quota_envelope(locale, error=None):
+    # not "provider unreachable": the provider is fine, the plan quota is used.
+    # The gateway says which cap was hit ('Daily token limit exceeded (x/y)').
+    kind = str(error or '').lower()
     if locale == 'ar':
         msg = ('تم استنفاد حصة الذكاء الاصطناعي المتاحة في باقتك لهذه الفترة. '
                'تتجدد الحصة تلقائيًا، أو تواصل مع المسؤول لترقية الباقة.')
+        if 'daily' in kind:
+            msg = ('تم استنفاد حصة الذكاء الاصطناعي اليومية في باقتك. تتجدد غدًا عند منتصف الليل '
+                   '(بتوقيت الرياض)، أو تواصل مع المسؤول لترقية الباقة.')
+        elif 'monthly' in kind:
+            msg = ('تم استنفاد حصة الذكاء الاصطناعي الشهرية في باقتك. تتجدد في أول الشهر القادم، '
+                   'أو تواصل مع المسؤول لترقية الباقة.')
     else:
         msg = ('Your AI plan quota for this period is used up. It renews '
                'automatically, or ask your administrator to upgrade the plan.')
+        if 'daily' in kind:
+            msg = ("Today's AI quota in your plan is used up. It renews at midnight "
+                   '(Riyadh time), or ask your administrator to upgrade the plan.')
+        elif 'monthly' in kind:
+            msg = ("This month's AI quota in your plan is used up. It renews on the 1st "
+                   'of next month, or ask your administrator to upgrade the plan.')
     return {
         'response': msg,
         'error': 'QUOTA_EXCEEDED',

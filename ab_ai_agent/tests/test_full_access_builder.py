@@ -251,6 +251,25 @@ class TestFullAccessAndBuilder(TransactionCase):
                                       values={'name': 'Zyx Gate'})
         self.assertEqual(out.get('error'), 'not permitted')
 
+    def test_proposal_tools_follow_agent_write_permission(self):
+        """screen_button / act_on_record confirm, post or validate records:
+        an agent without write permission must not offer them."""
+        self.env['ir.config_parameter'].sudo().set_param('ab_ai_agent.actions_enabled', 'True')
+        proposal = {'screen_button', 'act_on_record'}
+        self.assistant.allow_write_actions = True
+        offered = set(runtime._resolve_tools(self.env, self.assistant).mapped('code'))
+        if not proposal & offered:
+            self.skipTest('proposal tools are not installed on this database')
+        self.assistant.allow_write_actions = False
+        self.assertFalse(proposal & set(runtime._resolve_tools(self.env, self.assistant).mapped('code')))
+
+    def test_quota_message_names_the_cap(self):
+        daily = runtime._quota_envelope('en', Exception('Daily token limit exceeded (5/5)'))['response']
+        monthly = runtime._quota_envelope('ar', Exception('Monthly token limit exceeded (5/5)'))['response']
+        self.assertIn('midnight', daily)
+        self.assertIn('الشهرية', monthly)
+        self.assertIn('renews', runtime._quota_envelope('en')['response'])
+
     def test_edit_keeps_filter_and_arabic_name(self):
         Agent = self.env['ai.agent'].with_user(self.designer)
         made = Agent.builder_create_tool({

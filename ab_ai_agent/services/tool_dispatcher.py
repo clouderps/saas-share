@@ -1389,7 +1389,8 @@ def _builtin_semantic_search(env, agent=None, model=None, query=None,
     try:
         rows = Index.sudo().search(
             model, query,
-            limit=int(limit), extra_domain=extra_domain,
+            # fetch extra: hits the user may not see are dropped below
+            limit=min(int(limit) * 5, 200), extra_domain=extra_domain,
             vector_col=vector_col, name_field=name_field,
             hint_fields=hint_fields or [],
             min_similarity=float(min_similarity),
@@ -1401,7 +1402,7 @@ def _builtin_semantic_search(env, agent=None, model=None, query=None,
     # rules to the hits: only rows they could open in the UI survive.
     if rows:
         visible = set(Model.search([('id', 'in', [r['id'] for r in rows])]).ids)
-        rows = [r for r in rows if r['id'] in visible]
+        rows = [r for r in rows if r['id'] in visible][:int(limit)]
     csv = Index.sudo().to_csv(rows, hint_keys=hint_fields or None)
     return {'rows': rows, 'csv': csv, 'count': len(rows), 'model': model}
 
