@@ -2,6 +2,19 @@
 
 > Per-repo tracking log. Seeded 2026-05-31 from manifest inventory + last 90 days of `git log`. Append new entries on top as work lands.
 
+## 2026-10-11 — ab_ai_ui: token cycle fixed, dark mode
+
+- `ab_ai_ui` 18.0.1.2.1: the kit no longer re-declares `--ghaima-*` on `:root`
+  (self-referencing `var()` made every token invalid). Every `--ai-*` token
+  now reads the theme token with a literal fallback
+  (`var(--ghaima-primary, #005FF6)`), declared on the kit's own roots only.
+  Dark mode under `html[data-bs-theme="dark"]` and `body.ghaima-dark`
+  (fallbacks mirror `dark.scss`). Status tints via `-rgb` triplets, text in
+  the accent hue uses `--ghaima-primary-link`, headings `--ghaima-text-brand`.
+  Logical properties throughout; fenced code / tool-trace JSON / provenance
+  JSON pinned LTR with `rtl:ignore`. Provenance `<pre>` inline style moved to
+  `.ai-prov__details`. No user-visible strings changed.
+
 ## 2026-09-30 — Agent ↔ central gateway link
 
 - `ab_ai_agent` 18.0.1.14.0: native tools now work THROUGH the gateway when it
