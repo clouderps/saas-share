@@ -1017,7 +1017,7 @@ def _business_snapshot_block_live(env):
     parses just as reliably but at ~40 % fewer tokens.
     """
     # NOTE: reads run as the REQUESTING USER (no sudo) so record rules and
-    # the ab.branch.mixin _search filter apply — a branch-scoped or
+    # the res.branch.mixin _search filter apply — a branch-scoped or
     # low-privilege user gets only their own scope in the snapshot, never
     # company-wide / cross-branch totals. A model the user can't read just
     # raises AccessError → caught → "—" placeholder.

@@ -10,7 +10,7 @@ Why a mixin rather than a central registry: a command must not exist
 when its module does not. Declaring ``/create quote`` inside a bridge
 that ``auto_install``s with ``sale`` means the command appears exactly
 when Sales is installed and disappears when it is not, with no
-conditional code anywhere. Same shape as ``ab.branch.mixin``.
+conditional code anywhere. Same shape as ``res.branch.mixin``.
 
 Minimal bridge::
 
