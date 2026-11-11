@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_mcp" model="ir.ui.view">
+        <field name="name">res.config.settings.form.ghaima.mcp</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="ab_ai_agent.res_config_settings_view_form_ghaima_ai"/>
+        <field name="arch" type="xml">
+            <xpath expr="//app[@name='ab_ai_agent']" position="inside">
+                <block title="MCP" name="ghaima_ai_mcp">
+                    <setting string="MCP access"
+                             help="Let users connect external AI apps (Claude, Cursor, ChatGPT…) with their own access rights.">
+                        <field name="mcp_in_plan" invisible="1"/>
+                        <field name="mcp_write_in_plan" invisible="1"/>
+                        <field name="mcp_enabled" readonly="not mcp_in_plan"/>
+                        <div class="text-muted" invisible="mcp_in_plan">Not in your plan</div>
+                        <div class="mt-2" invisible="not mcp_enabled">
+                            <field name="mcp_status" class="text-muted o_mcp_status w-100"/>
+                        </div>
+                        <div class="mt-2" invisible="not mcp_enabled">
+                            <button name="%(ab_mcp.action_mcp_exposed_tools)d" type="action"
+                                    string="Exposed tools" class="btn-link" icon="oi-arrow-right"/>
+                        </div>
+                    </setting>
+                    <setting string="MCP URL" invisible="not mcp_enabled"
+                             help="Address to paste into the AI app together with a user's token.">
+                        <field name="mcp_url_host_mismatch" invisible="1"/>
+                        <field name="mcp_url" widget="CopyClipboardChar" class="o_mcp_ltr o_mcp_settings_url w-100"/>
+                        <div class="alert alert-warning mt-2 mb-0" role="alert" invisible="not mcp_url_host_mismatch">
+                            <field name="mcp_url_host_mismatch" class="o_mcp_status"/>
+                        </div>
+                    </setting>
+                    <setting string="Write tools" invisible="not mcp_enabled"
+                             help="AI apps may propose changes; each one runs only after the user confirms it in Approvals.">
+                        <field name="mcp_write_tools" readonly="not mcp_write_in_plan"/>
+                        <div class="text-muted" invisible="mcp_write_in_plan">Not in your plan</div>
+                    </setting>
+                    <setting string="Limits" invisible="not mcp_enabled"
+                             help="0 = unlimited. Your plan may set a lower limit.">
+                        <div>
+                            <label for="mcp_max_calls_day" class="o_light_label me-2"/>
+                            <field name="mcp_max_calls_day" class="oe_inline"/>
+                        </div>
+                        <div>
+                            <label for="mcp_max_users" class="o_light_label me-2"/>
+                            <field name="mcp_max_users" class="oe_inline"/>
+                        </div>
+                        <div>
+                            <label for="mcp_effective_calls_day" class="o_light_label me-2"/>
+                            <field name="mcp_effective_calls_day" class="oe_inline"/>
+                        </div>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>

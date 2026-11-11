@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+
+        <record id="tool_pos_session_status" model="ai.agent.tool">
+            <field name="name">POS Session Status</field>
+            <field name="code">pos_session_status</field>
+            <field name="category">analysis</field>
+            <field name="description">Active / recent POS sessions: cashier, opened-at, current cash, sales total.</field>
+            <field name="schema">{"type": "object", "properties": {"limit": {"type": "integer", "default": 10, "description": "Max sessions (1-500)"}}, "required": []}</field>
+            <field name="output_schema">{"type": "object", "properties": {"headers": {"type": "array", "items": {"type": "string"}}, "rows": {"type": "array", "items": {"type": "array"}}, "total_rows": {"type": "integer"}}}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="is_write_action" eval="False"/>
+            <field name="allow_end_message" eval="True"/>
+            <field name="active" eval="True"/>
+            <field name="group_ids" eval="[(6, 0, [ref('point_of_sale.group_pos_user')])]"/>
+        </record>
+
+        <record id="tool_top_cashiers" model="ai.agent.tool">
+            <field name="name">Top Cashiers</field>
+            <field name="code">top_cashiers</field>
+            <field name="category">analysis</field>
+            <field name="description">Top cashiers by POS sales today (or for a given date).</field>
+            <field name="schema">{"type": "object", "properties": {"limit": {"type": "integer", "default": 5, "description": "Max cashiers (1-500)"}, "on_date": {"type": "string", "description": "ISO date YYYY-MM-DD; default today"}}, "required": []}</field>
+            <field name="output_schema">{"type": "object", "properties": {"on_date": {"type": "string"}, "headers": {"type": "array", "items": {"type": "string"}}, "rows": {"type": "array", "items": {"type": "array"}}, "total_rows": {"type": "integer"}}}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="is_write_action" eval="False"/>
+            <field name="allow_end_message" eval="True"/>
+            <field name="active" eval="True"/>
+            <field name="group_ids" eval="[(6, 0, [ref('point_of_sale.group_pos_user')])]"/>
+        </record>
+
+        <record id="tool_pos_shift_summary" model="ai.agent.tool">
+            <field name="name">POS Shift Summary</field>
+            <field name="code">pos_shift_summary</field>
+            <field name="category">analysis</field>
+            <field name="description">Summary of the current shift (open session) of each point of sale, or its last closed session when none is open: cashier, open/close time, order count, sales total and payment-method mix. Use for "how is the shift going", "what did the last shift sell". Optional config_id limits it to one POS.</field>
+            <field name="schema">{"type": "object", "properties": {"config_id": {"type": "integer", "description": "Optional pos.config id"}}, "required": []}</field>
+            <field name="output_schema">{"type": "object", "properties": {"shifts": {"type": "array", "items": {"type": "object", "properties": {"pos": {"type": "string"}, "session": {"type": "string"}, "state": {"type": "string"}, "is_current": {"type": "boolean"}, "cashier": {"type": "string"}, "opened": {"type": "string"}, "closed": {"type": "string"}, "currency": {"type": "string"}, "orders": {"type": "integer"}, "total": {"type": "number"}, "payment_mix": {"type": "array", "items": {"type": "object", "properties": {"method": {"type": "string"}, "amount": {"type": "number"}, "count": {"type": "integer"}}}}}}}, "total_rows": {"type": "integer"}}}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="is_write_action" eval="False"/>
+            <field name="allow_end_message" eval="True"/>
+            <field name="active" eval="True"/>
+            <field name="group_ids" eval="[(6, 0, [ref('point_of_sale.group_pos_user')])]"/>
+        </record>
+
+        <record id="tool_pos_payment_mix" model="ai.agent.tool">
+            <field name="name">POS Payment Mix</field>
+            <field name="code">pos_payment_mix</field>
+            <field name="category">analysis</field>
+            <field name="description">POS payment totals per payment method (cash, card, ...) for a date range. Use for "how much was paid by card this week", "cash vs card today". date_from/date_to are ISO dates (default today); optional config_id limits it to one POS.</field>
+            <field name="schema">{"type": "object", "properties": {"date_from": {"type": "string", "description": "ISO date YYYY-MM-DD"}, "date_to": {"type": "string", "description": "ISO date YYYY-MM-DD"}, "config_id": {"type": "integer", "description": "Optional pos.config id"}}, "required": []}</field>
+            <field name="output_schema">{"type": "object", "properties": {"date_from": {"type": "string"}, "date_to": {"type": "string"}, "headers": {"type": "array", "items": {"type": "string"}}, "rows": {"type": "array", "items": {"type": "array"}}, "total": {"type": "number"}, "total_rows": {"type": "integer"}}}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="is_write_action" eval="False"/>
+            <field name="allow_end_message" eval="True"/>
+            <field name="active" eval="True"/>
+            <field name="group_ids" eval="[(6, 0, [ref('point_of_sale.group_pos_user')])]"/>
+        </record>
+
+    </data>
+</odoo>

@@ -53,6 +53,10 @@ class AiAgentPendingAction(models.Model):
         ('failed', 'Failed'),
         ('expired', 'Expired'),
     ], default='proposed', required=True, readonly=True, index=True)
+    origin = fields.Selection([('assistant', 'Assistant'), ('mcp', 'MCP')],
+                              default='assistant', required=True, readonly=True,
+                              help='Surface that proposed the action. MCP proposals are '
+                                   're-checked against the MCP policy, not an agent.')
     result_json = fields.Text(readonly=True)
     error = fields.Char(readonly=True)
     decided_at = fields.Datetime(readonly=True)
@@ -85,6 +89,8 @@ class AiAgentPendingAction(models.Model):
             # Set by the dispatcher for the duration of a tool call.
             'agent_id': ((agent_run.agent_id.id if agent_run else False)
                          or self.env.context.get('ai_agent_id') or False),
+            # Set by the MCP surface; anything else is the in-app assistant.
+            'origin': 'mcp' if self.env.context.get('ai_origin') == 'mcp' else 'assistant',
         })
         return {
             'requires_confirmation': True,
@@ -94,6 +100,12 @@ class AiAgentPendingAction(models.Model):
         }
 
     # ── Decision ───────────────────────────────────────────────
+
+    @api.model
+    def _mcp_origin_allowed(self, row):
+        """Hook: may an MCP proposal still be confirmed? ``ab_mcp`` checks
+        that the user still holds a live token allowed to write."""
+        return True
 
     @api.model
     def resolve(self, key, confirm):
@@ -130,10 +142,26 @@ class AiAgentPendingAction(models.Model):
                     'message': _('Cancelled. Nothing was changed.')}
 
         from ..services import tool_dispatcher
-        # Proposals made outside an agent run (direct tool calls) are held
-        # to the default assistant's permissions.
-        agent = row.agent_id or self.env['ai.agent'].get_default()
-        if not agent or not agent.active:
+        agent = policy = None
+        if row.origin == 'mcp':
+            # MCP proposals have no agent: re-check against the MCP policy
+            # as of now (write tools / PII may have been revoked since).
+            Policy = self.env['ai.feature.policy']
+            if (not Policy.get('mcp.enabled') or self.env.user._ai_assistant_block_reason()
+                    or not self._mcp_origin_allowed(row)):
+                # sudo: readonly state fields, own row (matched above).
+                row.sudo().write({'state': 'failed', 'decided_at': now,
+                                  'error': 'mcp unavailable'})
+                return {'ok': False, 'message': _('That action is not allowed any more.')}
+            policy = tool_dispatcher.ToolPolicy(
+                allow_write_actions=bool(Policy.get('mcp.write_tools')),
+                allow_pii=bool(Policy.get('model.allow_pii')),
+                name='mcp')
+        else:
+            # Proposals made outside an agent run (direct tool calls) are
+            # held to the default assistant's permissions.
+            agent = row.agent_id or self.env['ai.agent'].get_default()
+        if policy is None and (not agent or not agent.active):
             row.sudo().write({'state': 'failed', 'decided_at': now,
                               'error': 'agent unavailable'})
             return {'ok': False, 'message': _('That action is not available any more.')}
@@ -142,7 +170,7 @@ class AiAgentPendingAction(models.Model):
         # switch, plan ceiling) as of now, with the proposing agent.
         with self.env.cr.savepoint() as sp:
             outcome = tool_dispatcher.dispatch_confirmed(
-                self.env, row.tool_code, args, agent=agent)
+                self.env, row.tool_code, args, agent=agent, policy=policy)
             if not outcome.get('ok'):
                 sp.rollback()
         if not outcome.get('ok'):

@@ -42,6 +42,7 @@ FEATURES = {
     'mcp.enabled':          ('bool', 'ab_ai_agent.feature.mcp.enabled', False, None),
     'mcp.max_users':        ('limit', 'ab_ai_agent.feature.mcp.max_users', 0, None),
     'mcp.write_tools':      ('bool', 'ab_ai_agent.feature.mcp.write_tools', False, None),
+    'mcp.max_calls_day':    ('limit', 'ab_ai_agent.feature.mcp.max_calls_day', 0, None),
     'mcp.clients':          ('list', 'ab_ai_agent.feature.mcp.clients', None, None),
     'branding.name':        ('bool', 'ab_ai_agent.feature.branding.name', True, None),
     'branding.persona':     ('bool', 'ab_ai_agent.feature.branding.persona', True, None),

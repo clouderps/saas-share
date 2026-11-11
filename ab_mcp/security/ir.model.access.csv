@@ -1,0 +1,6 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_mcp_token_user,mcp.token.user,model_mcp_token,base.group_user,1,0,0,0
+access_mcp_token_admin,mcp.token.admin,model_mcp_token,base.group_system,1,1,0,1
+access_mcp_call_log_user,mcp.call.log.user,model_mcp_call_log,base.group_user,1,0,0,0
+access_mcp_usage_day_manager,mcp.usage.day.manager,model_mcp_usage_day,ab_ai_agent.group_ai_agent_manager,1,0,0,0
+access_mcp_connect_wizard_user,mcp.connect.wizard.user,model_mcp_connect_wizard,base.group_user,1,1,1,0

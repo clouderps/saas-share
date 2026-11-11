@@ -1,0 +1,78 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0\n"
+"Language: ar\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 ? 4 : 5;\n"
+
+#. module: ab_ai_tools_sale
+#: model:ai.agent.tool,name:ab_ai_tools_sale.tool_sales_totals
+msgid "Sales Totals"
+msgstr "إجماليات المبيعات"
+
+#. module: ab_ai_tools_sale
+#: model:ai.agent.tool,description:ab_ai_tools_sale.tool_sales_totals
+msgid ""
+"Headline sales totals (amount, orders, units) for a period. Use for 'how "
+"much did we sell <period>'."
+msgstr ""
+"إجماليات المبيعات الرئيسية (المبلغ، عدد الطلبات، الوحدات) لفترة محددة. "
+"استخدمها لأسئلة مثل 'كم بعنا <الفترة>'."
+
+#. module: ab_ai_tools_sale
+#: model:ai.agent.tool,name:ab_ai_tools_sale.tool_top_products
+msgid "Top Products"
+msgstr "أعلى المنتجات مبيعًا"
+
+#. module: ab_ai_tools_sale
+#: model:ai.agent.tool,description:ab_ai_tools_sale.tool_top_products
+msgid ""
+"Top-N products by sales amount in a period. Use for 'best-selling', 'top "
+"product', 'highest grossing'. Widens an empty period and says so in `note`."
+msgstr ""
+"أعلى N منتجات حسب مبلغ المبيعات في فترة محددة. استخدمها لأسئلة 'الأكثر "
+"مبيعًا' و'أفضل منتج' و'الأعلى إيرادًا'. توسّع الفترة إذا كانت فارغة وتذكر "
+"ذلك في `note`."
+
+#. module: ab_ai_tools_sale
+#: model:ai.agent.tool,name:ab_ai_tools_sale.tool_top_customers
+msgid "Top Customers"
+msgstr "أعلى العملاء شراءً"
+
+#. module: ab_ai_tools_sale
+#: model:ai.agent.tool,description:ab_ai_tools_sale.tool_top_customers
+msgid ""
+"Top-N customers by sales amount in a period. If the period has no sales it "
+"widens (year to date, then all time) and says so in `note` — state the "
+"period used."
+msgstr ""
+"أعلى N عملاء حسب مبلغ المبيعات في فترة محددة. إذا لم توجد مبيعات في الفترة "
+"فإنها توسّعها (منذ بداية السنة، ثم كل الفترات) وتذكر ذلك في `note` — اذكر "
+"الفترة المستخدمة."
+
+#. module: ab_ai_tools_sale
+#: model:ai.agent.tool,name:ab_ai_tools_sale.tool_sales_by_branch
+msgid "Sales By Branch"
+msgstr "المبيعات حسب الفرع"
+
+#. module: ab_ai_tools_sale
+#: model:ai.agent.tool,description:ab_ai_tools_sale.tool_sales_by_branch
+msgid "Sales totals broken down by branch for a period. Requires ab_branches."
+msgstr "إجماليات المبيعات موزعة حسب الفرع لفترة محددة. تتطلب ab_branches."
+
+#. module: ab_ai_tools_sale
+#: model:ai.agent.tool,name:ab_ai_tools_sale.tool_sales_trend_monthly
+msgid "Sales Trend Monthly"
+msgstr "اتجاه المبيعات الشهري"
+
+#. module: ab_ai_tools_sale
+#: model:ai.agent.tool,description:ab_ai_tools_sale.tool_sales_trend_monthly
+msgid ""
+"Monthly sales trend over a period — for 'compare vs last month / year' "
+"questions."
+msgstr ""
+"اتجاه المبيعات الشهري خلال فترة — لأسئلة 'المقارنة مع الشهر / السنة "
+"الماضية'."

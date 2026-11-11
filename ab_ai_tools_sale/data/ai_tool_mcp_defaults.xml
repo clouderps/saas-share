@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Install-time MCP exposure; operators own it afterwards. A <function>
+         rather than <record>: a noupdate <record> would flip the shared
+         xmlid to noupdate and freeze ai_tool_data.xml on every later -u. -->
+    <data noupdate="1">
+        <function model="ai.agent.tool" name="write">
+            <value eval="[ref('tool_sales_totals'), ref('tool_top_products'), ref('tool_top_customers'),
+                          ref('tool_sales_by_branch'), ref('tool_sales_trend_monthly')]"/>
+            <value eval="{'mcp_enabled': True}"/>
+        </function>
+    </data>
+</odoo>

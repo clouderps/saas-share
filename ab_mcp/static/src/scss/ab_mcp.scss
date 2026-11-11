@@ -1,0 +1,80 @@
+// Ghaima MCP — code-like values (URL, token, config snippet) are always
+// LTR whatever the UI direction: an Arabic UI must not mirror braces or
+// collapse the snippet's newlines.
+
+/*rtl:begin:ignore*/
+.o_mcp_ltr,
+.o_mcp_code {
+    direction: ltr;
+    text-align: left;
+    unicode-bidi: isolate;
+    min-width: 0;
+    max-width: 100%;
+}
+/*rtl:end:ignore*/
+
+.o_mcp_ltr > div > span:first-child {
+    font-family: var(--font-monospace, monospace);
+}
+
+.o_mcp_code {
+    > div {
+        // CopyClipboardText: text + copy button side by side, text scrolls.
+        grid-template-columns: minmax(0, 1fr) min-content;
+        align-items: start;
+        border: 1px solid var(--border-color, #dee2e6);
+        border-radius: var(--border-radius, 0.375rem);
+    }
+    .o_field_text,
+    .o_field_widget > span,
+    > div > :first-child {
+        min-width: 0;
+        overflow-x: auto;
+        white-space: pre;
+        font-family: var(--font-monospace, monospace);
+        font-size: 0.8125rem;
+        padding-block: 0.5rem;
+        padding-inline: 0.75rem;
+    }
+    .o_clipboard_button {
+        border: none;
+    }
+}
+
+// Breathing room inside the dialog on narrow screens.
+.o_mcp_wizard {
+    padding-inline: 0.25rem;
+    .o_mcp_result {
+        min-width: 0;
+    }
+    @media (max-width: 575.98px) {
+        padding-inline: 0.5rem;
+    }
+}
+
+// Settings: full-width URL box.
+.o_mcp_settings_url {
+    width: 100%;
+}
+
+.o_mcp_status {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+// Snippet rendered by the plain text widget (readonly span/div).
+.o_mcp_code {
+    display: block;
+    overflow-x: auto;
+    border: 1px solid var(--border-color, #dee2e6);
+    border-radius: var(--border-radius, 0.375rem);
+    > span, > div, textarea {
+        display: block;
+        white-space: pre;
+        font-family: var(--font-monospace, monospace);
+        font-size: 0.8125rem;
+        padding-block: 0.5rem;
+        padding-inline: 0.75rem;
+    }
+}
+.modal .o_mcp_wizard, .modal .o_mcp_result { max-width: 100%; overflow-x: hidden; }

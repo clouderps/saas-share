@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_mcp_call_log_list" model="ir.ui.view">
+        <field name="name">mcp.call.log.list</field>
+        <field name="model">mcp.call.log</field>
+        <field name="arch" type="xml">
+            <list create="false" edit="false" decoration-danger="not ok">
+                <field name="create_date" string="Time"/>
+                <field name="user_id"/>
+                <field name="tool_code"/>
+                <field name="client"/>
+                <field name="ok"/>
+                <field name="error_kind"/>
+                <field name="duration_ms"/>
+                <field name="request_id" optional="hide"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_mcp_call_log_search" model="ir.ui.view">
+        <field name="name">mcp.call.log.search</field>
+        <field name="model">mcp.call.log</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="tool_code"/>
+                <field name="user_id"/>
+                <filter name="failed" string="Failed" domain="[('ok', '=', False)]"/>
+                <group expand="0" string="Group By">
+                    <filter name="by_tool" string="Tool" context="{'group_by': 'tool_code'}"/>
+                    <filter name="by_user" string="User" context="{'group_by': 'user_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_mcp_call_log" model="ir.actions.act_window">
+        <field name="name">MCP Calls</field>
+        <field name="res_model">mcp.call.log</field>
+        <field name="view_mode">list</field>
+    </record>
+</odoo>

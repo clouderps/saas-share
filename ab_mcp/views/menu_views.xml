@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_mcp_approvals" name="Approvals" parent="ab_ai_agent.menu_ai_root"
+              action="action_mcp_approvals" sequence="20"/>
+    <menuitem id="menu_mcp_config" name="MCP" parent="ab_ai_agent.menu_ai_config"
+              sequence="60" groups="ab_ai_agent.group_ai_agent_manager"/>
+    <menuitem id="menu_mcp_exposed_tools" name="Exposed tools" parent="menu_mcp_config"
+              action="action_mcp_exposed_tools" sequence="10"/>
+    <menuitem id="menu_mcp_tokens" name="Tokens" parent="menu_mcp_config"
+              action="action_mcp_token_all" sequence="20" groups="base.group_system"/>
+    <menuitem id="menu_mcp_calls" name="Calls" parent="menu_mcp_config"
+              action="action_mcp_call_log" sequence="30"/>
+    <menuitem id="menu_mcp_my_tokens" name="My AI app connections" parent="ab_ai_agent.menu_ai_root"
+              action="action_mcp_token_mine" sequence="25"/>
+</odoo>

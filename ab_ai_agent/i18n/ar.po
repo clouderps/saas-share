@@ -439,6 +439,7 @@ msgstr "اسأل وكيل الذكاء الاصطناعي عن هذا السجل
 
 #. module: ab_ai_agent
 #: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent__persona__assistant
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_pending_action__origin__assistant
 #: model_terms:ir.ui.view,arch_db:ab_ai_agent.res_config_settings_view_form_ghaima_ai
 msgid "Assistant"
 msgstr "المساعد"
@@ -2561,7 +2562,7 @@ msgstr "بدأ في"
 #: model:ir.model.fields,field_description:ab_ai_agent.field_ai_usage_local_budget__state
 #: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_run_search
 msgid "State"
-msgstr "الولاية "
+msgstr "الحالة"
 
 #. module: ab_ai_agent
 #: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_run_form
@@ -4708,6 +4709,7 @@ msgstr "عدّ السجلات"
 #. module: ab_ai_agent
 #. odoo-javascript
 #: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_builder_dialog.js:0
+#: model:ai.agent.tool,name:ab_ai_agent.tool_create_record
 msgid "Create a record"
 msgstr "إنشاء سجل"
 
@@ -5368,3 +5370,174 @@ msgstr "تفعيل المساعد ذاتياً"
 #: model:ir.model.fields,help:ab_ai_agent.field_res_users__ai_assistant_self_service
 msgid "Users may switch the assistant on or off themselves."
 msgstr "يمكن للمستخدمين تشغيل المساعد أو إيقافه بأنفسهم."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_agent_pending_action__origin__mcp
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__ai_usage_local_log__surface__mcp
+msgid "MCP"
+msgstr "MCP"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_pending_action__origin
+msgid "Origin"
+msgstr "المصدر"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_pending_action__origin
+msgid ""
+"Surface that proposed the action. MCP proposals are re-checked against the "
+"MCP policy, not an agent."
+msgstr ""
+"الواجهة التي اقترحت الإجراء. يُعاد التحقق من مقترحات MCP وفق سياسة MCP، وليس"
+" وفق وكيل."
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,name:ab_ai_agent.tool_act_on_record
+msgid "Press a button on any record"
+msgstr "الضغط على زر في أي سجل"
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,name:ab_ai_agent.tool_count_records
+msgid "Count records (any model the user can read)"
+msgstr "عدّ السجلات (أي نموذج يمكن للمستخدم قراءته)"
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,name:ab_ai_agent.tool_data_analysis
+msgid "Data Analysis (timeseries + chart)"
+msgstr "تحليل البيانات (سلسلة زمنية + رسم بياني)"
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,name:ab_ai_agent.tool_date_reference
+msgid "Date Reference"
+msgstr "مرجع التاريخ"
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,name:ab_ai_agent.tool_echo
+msgid "Echo"
+msgstr "صدى (اختبار)"
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,name:ab_ai_agent.tool_explain_screen
+msgid "Explain a screen from live metadata"
+msgstr "شرح شاشة من بياناتها الحية"
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,name:ab_ai_agent.tool_find_menu
+msgid "Find where to do something"
+msgstr "البحث عن مكان تنفيذ إجراء"
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,name:ab_ai_agent.tool_find_records
+msgid "Find records (any model the user can read)"
+msgstr "البحث عن سجلات (أي نموذج يمكن للمستخدم قراءته)"
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,name:ab_ai_agent.tool_hr_attendance_missing_today
+msgid "HR: Missing Check-ins Today"
+msgstr "الموارد البشرية: من لم يسجل حضوره اليوم"
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,name:ab_ai_agent.tool_hr_attendance_open_shifts
+msgid "HR: Currently Clocked-In"
+msgstr "الموارد البشرية: الحاضرون حاليًا"
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,name:ab_ai_agent.tool_hr_leave_pending
+msgid "HR: Pending Leave Requests"
+msgstr "الموارد البشرية: طلبات الإجازة المعلقة"
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,name:ab_ai_agent.tool_list_my_apps
+msgid "List the apps this user can open"
+msgstr "عرض التطبيقات المتاحة للمستخدم"
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,name:ab_ai_agent.tool_navigate
+msgid "Go to (record, list or screen)"
+msgstr "الانتقال إلى (سجل أو قائمة أو شاشة)"
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,name:ab_ai_agent.tool_open_action
+msgid "Open Action by XMLID"
+msgstr "فتح إجراء بالمعرّف الخارجي"
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,name:ab_ai_agent.tool_open_graph
+msgid "Open Graph View"
+msgstr "فتح عرض الرسم البياني"
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,name:ab_ai_agent.tool_open_list
+msgid "Open List View"
+msgstr "فتح عرض القائمة"
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,name:ab_ai_agent.tool_open_pivot
+msgid "Open Pivot View"
+msgstr "فتح العرض المحوري"
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,name:ab_ai_agent.tool_open_record
+msgid "Open Record"
+msgstr "فتح سجل"
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,name:ab_ai_agent.tool_post_message
+msgid "Send a message or log a note"
+msgstr "إرسال رسالة أو تسجيل ملاحظة"
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,name:ab_ai_agent.tool_query_data
+msgid "Ask the data (any records the user can read)"
+msgstr "اسأل البيانات (أي سجلات يمكن للمستخدم قراءتها)"
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,name:ab_ai_agent.tool_read_record
+msgid "Record details (any model the user can read)"
+msgstr "تفاصيل سجل (أي نموذج يمكن للمستخدم قراءته)"
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,name:ab_ai_agent.tool_recent_records
+msgid "Recent Records (latest added)"
+msgstr "أحدث السجلات (آخر ما أضيف)"
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,name:ab_ai_agent.tool_record_action
+msgid "Confirm / Post / Validate a record by number"
+msgstr "تأكيد / ترحيل / اعتماد سجل برقمه"
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,name:ab_ai_agent.tool_schedule_activity
+msgid "Schedule a to-do"
+msgstr "جدولة مهمة"
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,name:ab_ai_agent.tool_screen_button
+msgid "Press a button on the open record (after confirmation)"
+msgstr "الضغط على زر في السجل المفتوح (بعد التأكيد)"
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,name:ab_ai_agent.tool_semantic_search
+msgid "Semantic Search (vector k-NN)"
+msgstr "البحث الدلالي (أقرب المتجهات)"
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,name:ab_ai_agent.tool_update_record
+msgid "Change fields on a record"
+msgstr "تعديل حقول في سجل"
+
+#. module: ab_ai_agent
+#: model:ai.agent.tool,description:ab_ai_agent.tool_create_record
+msgid ""
+"Create a record: a quotation, RFQ / purchase order, customer invoice, lead, "
+"task, leave request, contact… values = {field: value} using real field names"
+" (partner_id takes a name); lines = [{product, quantity, price}] for orders "
+"and invoices. Only PROPOSES: the user gets Confirm / Cancel and nothing "
+"changes until they click Confirm; it then runs with the user's own access "
+"rights. Never say it is done."
+msgstr ""
+"إنشاء سجل: عرض سعر، طلب عرض سعر / أمر شراء، فاتورة عميل، فرصة، مهمة، طلب "
+"إجازة، جهة اتصال… القيم = {الحقل: القيمة} بأسماء الحقول الفعلية (partner_id "
+"يقبل الاسم)؛ البنود = [{product, quantity, price}] للطلبات والفواتير. هذه "
+"الأداة تقترح فقط: يظهر للمستخدم تأكيد / إلغاء ولا يتغير شيء حتى يضغط تأكيد، "
+"ثم تُنفَّذ بصلاحيات المستخدم نفسه. لا تقل أبدًا إن العملية تمت."

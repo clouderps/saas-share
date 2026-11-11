@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_mcp_connect_wizard_form" model="ir.ui.view">
+        <field name="name">mcp.connect.wizard.form</field>
+        <field name="model">mcp.connect.wizard</field>
+        <field name="arch" type="xml">
+            <form class="o_mcp_wizard">
+                <field name="state" invisible="1"/>
+                <field name="write_available" invisible="1"/>
+                <group invisible="state != 'draft'">
+                    <group>
+                        <field name="client"/>
+                        <field name="name"/>
+                        <field name="expiry_days"/>
+                    </group>
+                    <group>
+                        <field name="preset" widget="radio"/>
+                        <field name="tool_ids" widget="many2many_tags" invisible="preset == 'readonly'"
+                               required="preset == 'custom'"/>
+                        <field name="allow_write" invisible="preset == 'readonly'"
+                               readonly="not write_available"/>
+                        <div class="text-muted" colspan="2"
+                             invisible="preset == 'readonly' or write_available">Not in your plan</div>
+                    </group>
+                </group>
+                <div invisible="state != 'done'" class="o_mcp_result">
+                    <div class="alert alert-warning" role="alert">
+                        Copy this token now. It is shown only once and cannot be recovered.
+                    </div>
+                    <group>
+                        <field name="mcp_url" widget="CopyClipboardChar" class="o_mcp_ltr"/>
+                        <field name="token" widget="CopyClipboardChar" class="o_mcp_ltr"/>
+                    </group>
+                    <div class="d-flex align-items-center gap-2 mt-2">
+                        <label for="config_snippet" class="mb-0"/>
+                        <field name="config_snippet" widget="CopyClipboardButton" nolabel="1"/>
+                    </div>
+                    <field name="config_snippet" widget="text" nolabel="1" readonly="1"
+                           class="o_mcp_code w-100"/>
+                </div>
+                <footer>
+                    <button name="action_generate" type="object" string="Create token"
+                            class="btn-primary" invisible="state != 'draft'"/>
+                    <button special="cancel" string="Cancel" invisible="state != 'draft'"/>
+                    <button special="cancel" string="Done" class="btn-primary" invisible="state != 'done'"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

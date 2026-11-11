@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="tool_get_proposal_status" model="ai.agent.tool">
+            <field name="name">Proposal status</field>
+            <field name="code">get_proposal_status</field>
+            <field name="category">retrieval</field>
+            <field name="description">Status of a change proposed earlier (key from the proposal): proposed (awaiting the user's confirmation in Ghaima), executed, cancelled, failed or expired.</field>
+            <field name="schema">{"type": "object", "properties": {"key": {"type": "string", "description": "Proposal key returned when the change was proposed"}}, "required": ["key"]}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="mcp_enabled" eval="True"/>
+        </record>
+    </data>
+</odoo>

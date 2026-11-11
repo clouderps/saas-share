@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Install-time default only: noupdate <function> is skipped on -u, so an
+         admin's MCP toggle survives upgrades. All tools here are read-only. -->
+    <data noupdate="1">
+        <function model="ai.agent.tool" name="write"
+                  eval="[[ref('tool_ar_aging'), ref('tool_top_overdue_partners'), ref('tool_pl_trend'), ref('tool_cashflow_daily'), ref('tool_cashflow_by_journal'), ref('tool_pl_summary'), ref('tool_cash_position'), ref('tool_tax_summary')], {'mcp_enabled': True}]"/>
+    </data>
+</odoo>

@@ -84,13 +84,25 @@ def _is_transport_error(error):
 def gateway_policy(env):
     """The plan's ceiling for the assistant, as last reported by central
     ({'actions': bool, 'voice': bool}); {} when not linked / not reported."""
-    gw = _try_get_gateway(env) if llm_mode(env) != 'direct' else None
-    if not gw or not hasattr(gw, 'get_policy'):
-        return {}
-    try:
-        return gw.get_policy()
-    except Exception:
-        return {}
+    # Memoised per HTTP request: the offering filter asks for it
+    # once per tool list.
+    from odoo.http import request
+    if request:
+        if not hasattr(request, '_ab_ai_cache'):
+            request._ab_ai_cache = {}
+        cache = request._ab_ai_cache
+    else:
+        cache = {}
+    if 'ab_ai_agent.gateway_policy' not in cache:
+        gw = _try_get_gateway(env) if llm_mode(env) != 'direct' else None
+        policy = {}
+        if gw and hasattr(gw, 'get_policy'):
+            try:
+                policy = gw.get_policy() or {}
+            except Exception:
+                policy = {}
+        cache['ab_ai_agent.gateway_policy'] = policy
+    return dict(cache['ab_ai_agent.gateway_policy'])
 
 
 def native_tools_active(env):

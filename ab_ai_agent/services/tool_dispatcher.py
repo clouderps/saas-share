@@ -107,8 +107,33 @@ def dispatch(env, tool_record, arguments, *, agent=None, agent_run=None,
     if gate:
         kind, message = gate
         return _error(kind, tool_record, time.perf_counter() - started, message)
-    return _run(env, tool_record, arguments, agent=agent, policy=policy,
-                started=started, sanitize_errors=sanitize_errors)
+    out = _run(env, tool_record, arguments, agent=agent, policy=policy,
+               started=started, sanitize_errors=sanitize_errors)
+    if isinstance(policy, ToolPolicy) and not policy.allow_pii and out.get('ok'):
+        # External (agent-less) callers without PII rights never see raw
+        # personal data in a result, whatever the tool returned.
+        out['result'] = mask_result(env, out.get('result'), False)
+    return out
+
+
+def mask_result(env, result, allow_pii):
+    """Redact PII in every string leaf of ``result`` (dict/list/tuple
+    recursion) unless ``allow_pii``. Keys are kept; non-strings pass."""
+    if allow_pii:
+        return result
+    from odoo.addons.ab_ai_base.lib.redaction import redact
+
+    def _walk(value):
+        if isinstance(value, str):
+            return redact(value)[0] if value else value
+        if isinstance(value, dict):
+            # Proposal keys are opaque ids, never PII: keep them intact.
+            return {k: (v if k == 'key' and isinstance(v, str) else _walk(v))
+                    for k, v in value.items()}
+        if isinstance(value, (list, tuple)):
+            return [_walk(v) for v in value]
+        return value
+    return _walk(result)
 
 
 def dispatch_confirmed(env, tool_code, arguments, *, agent=None, policy=None,
@@ -192,6 +217,13 @@ def _run(env, tool_record, arguments, *, agent, policy, started, sanitize_errors
             result = _dispatch_server_action(env, tool_record, arguments, agent=agent)
         else:
             result = _dispatch_python(env, tool_record, arguments, agent=agent)
+    except AccessError as ae:
+        # AccessError text names models, ids and rules: a sanitized
+        # (external) caller only gets a fixed message.
+        message = ('You do not have access to the records this tool needs.'
+                   if sanitize_errors else str(ae))
+        return _error('user_error', tool_record, time.perf_counter() - started,
+                      message, end_message=end_message)
     except UserError as ue:
         # UserError text is written for users: shown in every mode.
         return _error('user_error', tool_record, time.perf_counter() - started,
@@ -931,8 +963,9 @@ def _builtin_hr_leave_pending(env, agent=None, limit=50, **_kw):
         with env.cr.savepoint(flush=False):
             rows = Leave.search([('state', '=', 'confirm')],
                                        limit=int(limit), order='date_from')
-    except Exception as e:
-        return {'error': str(e)}
+    except Exception:
+        _logger.exception('HR tool query failed')
+        return {'error': 'The HR data could not be read.'}
     return {
         'count': len(rows),
         'leaves': [{
@@ -958,8 +991,9 @@ def _builtin_hr_attendance_open_shifts(env, agent=None, **_kw):
         with env.cr.savepoint(flush=False):
             rows = Att.search([('check_out', '=', False)],
                                      order='check_in desc', limit=100)
-    except Exception as e:
-        return {'error': str(e)}
+    except Exception:
+        _logger.exception('HR tool query failed')
+        return {'error': 'The HR data could not be read.'}
     return {
         'count': len(rows),
         'open_attendances': [{

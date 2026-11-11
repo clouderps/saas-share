@@ -1,0 +1,67 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* ab_ai_tools_pos
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: Arabic\n"
+"Language: ar\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 ? 4 : 5;\n"
+
+#. module: ab_ai_tools_pos
+#: model:ai.agent.tool,name:ab_ai_tools_pos.tool_pos_session_status
+msgid "POS Session Status"
+msgstr "حالة جلسات نقاط البيع"
+
+#. module: ab_ai_tools_pos
+#: model:ai.agent.tool,name:ab_ai_tools_pos.tool_top_cashiers
+msgid "Top Cashiers"
+msgstr "أفضل الكاشيرية"
+
+#. module: ab_ai_tools_pos
+#: model:ai.agent.tool,name:ab_ai_tools_pos.tool_pos_shift_summary
+msgid "POS Shift Summary"
+msgstr "ملخص الوردية في نقطة البيع"
+
+#. module: ab_ai_tools_pos
+#: model:ai.agent.tool,name:ab_ai_tools_pos.tool_pos_payment_mix
+msgid "POS Payment Mix"
+msgstr "توزيع طرق الدفع في نقاط البيع"
+
+#. module: ab_ai_tools_pos
+#. odoo-python
+#: code:addons/ab_ai_tools_pos/services/pos_tools.py:0
+msgid "Invalid date for %(label)s: %(value)s (use YYYY-MM-DD)."
+msgstr "تاريخ غير صالح في %(label)s: %(value)s (استخدم الصيغة YYYY-MM-DD)."
+
+#. module: ab_ai_tools_pos
+#. odoo-python
+#: code:addons/ab_ai_tools_pos/services/pos_tools.py:0
+msgid "date_from must be on or before date_to."
+msgstr "يجب أن يكون date_from في تاريخ date_to أو قبله."
+
+#. module: ab_ai_tools_pos
+#: model:ai.agent.tool,description:ab_ai_tools_pos.tool_pos_session_status
+msgid "Active / recent POS sessions: cashier, opened-at, current cash, sales total."
+msgstr "جلسات نقاط البيع النشطة والأخيرة: الكاشير، وقت الفتح، النقد الحالي، إجمالي المبيعات."
+
+#. module: ab_ai_tools_pos
+#: model:ai.agent.tool,description:ab_ai_tools_pos.tool_top_cashiers
+msgid "Top cashiers by POS sales today (or for a given date)."
+msgstr "أفضل الكاشيرية حسب مبيعات نقاط البيع اليوم (أو في تاريخ محدد)."
+
+#. module: ab_ai_tools_pos
+#: model:ai.agent.tool,description:ab_ai_tools_pos.tool_pos_shift_summary
+msgid "Summary of the current shift (open session) of each point of sale, or its last closed session when none is open: cashier, open/close time, order count, sales total and payment-method mix. Use for \"how is the shift going\", \"what did the last shift sell\". Optional config_id limits it to one POS."
+msgstr "ملخص الوردية الحالية (الجلسة المفتوحة) لكل نقطة بيع، أو آخر جلسة مغلقة إن لم توجد جلسة مفتوحة: الكاشير، وقت الفتح والإغلاق، عدد الطلبات، إجمالي المبيعات وتوزيع طرق الدفع. استخدمها لأسئلة مثل \"كيف تسير الوردية\" و\"كم باعت الوردية الأخيرة\". يحصرها config_id الاختياري في نقطة بيع واحدة."
+
+#. module: ab_ai_tools_pos
+#: model:ai.agent.tool,description:ab_ai_tools_pos.tool_pos_payment_mix
+msgid "POS payment totals per payment method (cash, card, ...) for a date range. Use for \"how much was paid by card this week\", \"cash vs card today\". date_from/date_to are ISO dates (default today); optional config_id limits it to one POS."
+msgstr "إجماليات مدفوعات نقاط البيع لكل طريقة دفع (نقد، بطاقة، ...) خلال فترة. استخدمها لأسئلة مثل \"كم دُفع بالبطاقة هذا الأسبوع\" و\"النقد مقابل البطاقة اليوم\". date_from وdate_to تاريخان بصيغة ISO (الافتراضي اليوم)؛ ويحصرها config_id الاختياري في نقطة بيع واحدة."

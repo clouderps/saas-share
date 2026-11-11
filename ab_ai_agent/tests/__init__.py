@@ -19,3 +19,4 @@ from . import test_navigate
 from . import test_full_access_builder
 from . import test_dispatch_policy
 from . import test_feature_policy
+from . import test_mcp_prereqs

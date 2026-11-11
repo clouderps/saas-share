@@ -30,6 +30,7 @@ SURFACE_SELECTION = [
     ('cron',      'Cron / background'),
     ('api',       'External API'),
     ('skill',     'Skill launcher'),
+    ('mcp',       'MCP'),
 ]
 
 STATUS_SELECTION = [

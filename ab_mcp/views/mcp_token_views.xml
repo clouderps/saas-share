@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_mcp_token_list" model="ir.ui.view">
+        <field name="name">mcp.token.list</field>
+        <field name="model">mcp.token</field>
+        <field name="arch" type="xml">
+            <list create="false" decoration-muted="state != 'active'">
+                <!-- Row action + state first: still on screen at 360px. -->
+                <button name="action_revoke" type="object" string="Revoke" icon="fa-ban"
+                        class="btn-link text-danger" invisible="state != 'active'"
+                        confirm="Revoke this token? The AI app using it will lose access immediately."/>
+                <field name="state" widget="badge" decoration-success="state == 'active'"/>
+                <field name="name"/>
+                <field name="user_id" groups="base.group_system" optional="show"/>
+                <field name="client" optional="show"/>
+                <field name="prefix" optional="hide"/>
+                <field name="preset" optional="hide"/>
+                <field name="allow_write" optional="hide"/>
+                <field name="expires_at" optional="show"/>
+                <field name="last_used_at" optional="show"/>
+                <field name="last_client" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_mcp_token_form" model="ir.ui.view">
+        <field name="name">mcp.token.form</field>
+        <field name="model">mcp.token</field>
+        <field name="arch" type="xml">
+            <form create="false" edit="false">
+                <header>
+                    <button name="action_revoke" type="object" string="Revoke" invisible="state != 'active'"
+                            confirm="Revoke this token? The AI app using it will lose access immediately."
+                            confirm-title="Revoke token" confirm-label="Revoke token" cancel-label="Keep it"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="user_id"/>
+                            <field name="client"/>
+                            <field name="prefix"/>
+                        </group>
+                        <group>
+                            <field name="preset"/>
+                            <field name="allow_write"/>
+                            <field name="expires_at"/>
+                            <field name="revoked_at"/>
+                            <field name="last_used_at"/>
+                            <field name="last_client"/>
+                        </group>
+                    </group>
+                    <field name="tool_ids" invisible="preset != 'custom'" widget="many2many_tags"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_mcp_token_mine" model="ir.actions.act_window">
+        <field name="name">My AI app connections</field>
+        <field name="res_model">mcp.token</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('user_id', '=', uid)]</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No AI app connected yet</p>
+            <p>Use "Connect an AI app" in your preferences to create an access token.</p>
+        </field>
+    </record>
+
+    <record id="action_mcp_token_all" model="ir.actions.act_window">
+        <field name="name">MCP Tokens</field>
+        <field name="res_model">mcp.token</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

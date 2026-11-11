@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+        <record id="tool_ar_aging" model="ai.agent.tool">
+            <field name="name">Receivables Aging</field>
+            <field name="code">ar_aging</field>
+            <field name="category">analysis</field>
+            <field name="description">Accounts receivable aging — total outstanding amount per bucket (not_due / 0-30 / 31-60 / 61-90 / 90+) for the allowed companies. Use for 'aging buckets', 'overdue breakdown', 'who's late paying'.</field>
+            <field name="schema">{"type": "object", "properties": {}, "required": []}</field>
+            <field name="output_schema">{"type": "object", "properties": {"currency": {"type": "string"}, "headers": {"type": "array", "items": {"type": "string"}}, "rows": {"type": "array", "items": {"type": "array"}}, "total_rows": {"type": "integer"}}}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="is_write_action" eval="False"/>
+            <field name="allow_end_message" eval="True"/>
+            <field name="active" eval="True"/>
+            <field name="group_ids" eval="[(6, 0, [ref('account.group_account_invoice')])]"/>
+        </record>
+
+        <record id="tool_top_overdue_partners" model="ai.agent.tool">
+            <field name="name">Top Debtors</field>
+            <field name="code">top_overdue_partners</field>
+            <field name="category">analysis</field>
+            <field name="description">Top-N customers by total open (residual) receivable amount. Use for 'who owes me the most?' / 'biggest debtors'.</field>
+            <field name="schema">{"type": "object", "properties": {"limit": {"type": "integer", "default": 10, "minimum": 1, "maximum": 500}}, "required": []}</field>
+            <field name="output_schema">{"type": "object", "properties": {"currency": {"type": "string"}, "headers": {"type": "array", "items": {"type": "string"}}, "rows": {"type": "array", "items": {"type": "array"}}, "total_rows": {"type": "integer"}}}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="is_write_action" eval="False"/>
+            <field name="allow_end_message" eval="True"/>
+            <field name="active" eval="True"/>
+            <field name="group_ids" eval="[(6, 0, [ref('account.group_account_invoice')])]"/>
+        </record>
+
+        <record id="tool_pl_trend" model="ai.agent.tool">
+            <field name="name">Profit &amp; Loss Trend</field>
+            <field name="code">pl_trend</field>
+            <field name="category">analysis</field>
+            <field name="description">Monthly Profit &amp; Loss trend (revenue, expenses, net profit) over the requested period. Use for 'show me my P&amp;L by month', 'when did expenses spike'.</field>
+            <field name="schema">{"type": "object", "properties": {"period": {"type": "string", "description": "Relative period: today, yesterday, this_week, last_week, this_month, last_month, this_quarter, ytd, last_year", "enum": ["today", "yesterday", "this_week", "last_week", "this_month", "last_month", "this_quarter", "ytd", "last_year"], "default": "ytd"}}, "required": []}</field>
+            <field name="output_schema">{"type": "object", "properties": {"currency": {"type": "string"}, "headers": {"type": "array", "items": {"type": "string"}}, "rows": {"type": "array", "items": {"type": "array"}}, "total_rows": {"type": "integer"}}}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="is_write_action" eval="False"/>
+            <field name="allow_end_message" eval="True"/>
+            <field name="active" eval="True"/>
+            <field name="group_ids" eval="[(6, 0, [ref('account.group_account_invoice')])]"/>
+        </record>
+
+        <record id="tool_cashflow_daily" model="ai.agent.tool">
+            <field name="name">Daily Cash Flow</field>
+            <field name="code">cashflow_daily</field>
+            <field name="category">analysis</field>
+            <field name="description">Daily cash inflow/outflow/net across all bank and cash journals. Use for 'how much cash came in today', 'what came in this week', 'show me cash by day'.</field>
+            <field name="schema">{"type": "object", "properties": {"period": {"type": "string", "description": "Relative period: today, yesterday, this_week, last_week, this_month, last_month, this_quarter, ytd, last_year", "enum": ["today", "yesterday", "this_week", "last_week", "this_month", "last_month", "this_quarter", "ytd", "last_year"], "default": "this_month"}}, "required": []}</field>
+            <field name="output_schema">{"type": "object", "properties": {"currency": {"type": "string"}, "headers": {"type": "array", "items": {"type": "string"}}, "rows": {"type": "array", "items": {"type": "array"}}, "total_rows": {"type": "integer"}}}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="is_write_action" eval="False"/>
+            <field name="allow_end_message" eval="True"/>
+            <field name="active" eval="True"/>
+            <field name="group_ids" eval="[(6, 0, [ref('account.group_account_invoice')])]"/>
+        </record>
+
+        <record id="tool_cashflow_by_journal" model="ai.agent.tool">
+            <field name="name">Cash Flow by Journal</field>
+            <field name="code">cashflow_by_journal</field>
+            <field name="category">analysis</field>
+            <field name="description">Cash inflow / outflow / net grouped by journal (Mada / Visa / Cash / Bank Transfer …). Use for 'breakdown by payment method'.</field>
+            <field name="schema">{"type": "object", "properties": {"period": {"type": "string", "description": "Relative period: today, yesterday, this_week, last_week, this_month, last_month, this_quarter, ytd, last_year", "enum": ["today", "yesterday", "this_week", "last_week", "this_month", "last_month", "this_quarter", "ytd", "last_year"], "default": "this_month"}}, "required": []}</field>
+            <field name="output_schema">{"type": "object", "properties": {"currency": {"type": "string"}, "headers": {"type": "array", "items": {"type": "string"}}, "rows": {"type": "array", "items": {"type": "array"}}, "total_rows": {"type": "integer"}}}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="is_write_action" eval="False"/>
+            <field name="allow_end_message" eval="True"/>
+            <field name="active" eval="True"/>
+            <field name="group_ids" eval="[(6, 0, [ref('account.group_account_invoice')])]"/>
+        </record>
+
+        <record id="tool_pl_summary" model="ai.agent.tool">
+            <field name="name">Profit &amp; Loss Summary</field>
+            <field name="code">pl_summary</field>
+            <field name="category">analysis</field>
+            <field name="description">Profit &amp; Loss summary for a period: revenue, expenses, net profit. Numbers in company currency.</field>
+            <field name="schema">{"type": "object", "properties": {"period": {"type": "string", "description": "Relative period: today, yesterday, this_week, last_week, this_month, last_month, this_quarter, ytd, last_year", "enum": ["today", "yesterday", "this_week", "last_week", "this_month", "last_month", "this_quarter", "ytd", "last_year"], "default": "this_month"}}, "required": []}</field>
+            <field name="output_schema">{"type": "object", "properties": {"revenue": {"type": "number"}, "expenses": {"type": "number"}, "net_profit": {"type": "number"}, "period": {"type": "string"}, "currency": {"type": "string"}}}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="is_write_action" eval="False"/>
+            <field name="allow_end_message" eval="True"/>
+            <field name="active" eval="True"/>
+            <field name="group_ids" eval="[(6, 0, [ref('account.group_account_invoice')])]"/>
+        </record>
+
+        <record id="tool_cash_position" model="ai.agent.tool">
+            <field name="name">Cash Position</field>
+            <field name="code">cash_position</field>
+            <field name="category">analysis</field>
+            <field name="description">Current balances of all liquidity (cash and bank) journals.</field>
+            <field name="schema">{"type": "object", "properties": {}, "required": []}</field>
+            <field name="output_schema">{"type": "object", "properties": {"currency": {"type": "string"}, "headers": {"type": "array", "items": {"type": "string"}}, "rows": {"type": "array", "items": {"type": "array"}}, "total_rows": {"type": "integer"}}}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="is_write_action" eval="False"/>
+            <field name="allow_end_message" eval="True"/>
+            <field name="active" eval="True"/>
+            <field name="group_ids" eval="[(6, 0, [ref('account.group_account_invoice')])]"/>
+        </record>
+
+        <record id="tool_tax_summary" model="ai.agent.tool">
+            <field name="name">Tax Summary</field>
+            <field name="code">tax_summary</field>
+            <field name="category">analysis</field>
+            <field name="description">Output VAT / sales tax collected and input tax credited for a period.</field>
+            <field name="schema">{"type": "object", "properties": {"period": {"type": "string", "description": "Relative period: today, yesterday, this_week, last_week, this_month, last_month, this_quarter, ytd, last_year", "enum": ["today", "yesterday", "this_week", "last_week", "this_month", "last_month", "this_quarter", "ytd", "last_year"], "default": "this_month"}}, "required": []}</field>
+            <field name="output_schema">{"type": "object", "properties": {"output_tax": {"type": "number"}, "input_tax": {"type": "number"}, "net_payable": {"type": "number"}, "period": {"type": "string"}, "currency": {"type": "string"}}}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="is_write_action" eval="False"/>
+            <field name="allow_end_message" eval="True"/>
+            <field name="active" eval="True"/>
+            <field name="group_ids" eval="[(6, 0, [ref('account.group_account_invoice')])]"/>
+        </record>
+
+    </data>
+</odoo>

@@ -1,0 +1,809 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* ab_mcp
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-11 10:37+0000\n"
+"PO-Revision-Date: 2026-11-11 10:37+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ar\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 ? 4 : 5;\n"
+
+#. module: ab_mcp
+#: model_terms:ir.ui.view,arch_db:ab_mcp.res_config_settings_view_form_mcp
+msgid "0 = unlimited. Your plan may set a lower limit."
+msgstr "0 = بلا حد. قد تحدد باقتك حدًا أقل."
+
+#. module: ab_mcp
+#: model:ir.model.fields.selection,name:ab_mcp.selection__mcp_connect_wizard__expiry_days__365
+msgid "1 year"
+msgstr "سنة واحدة"
+
+#. module: ab_mcp
+#: model:ir.model.fields.selection,name:ab_mcp.selection__mcp_connect_wizard__expiry_days__30
+msgid "30 days"
+msgstr "30 يومًا"
+
+#. module: ab_mcp
+#: model:ir.model.fields.selection,name:ab_mcp.selection__mcp_connect_wizard__expiry_days__90
+msgid "90 days"
+msgstr "90 يومًا"
+
+#. module: ab_mcp
+#: model:ir.model,name:ab_mcp.model_ai_agent_pending_action
+msgid "AI Proposed Action (awaiting confirmation)"
+msgstr "إجراء مقترح من الذكاء الاصطناعي (بانتظار التأكيد)"
+
+#. module: ab_mcp
+#: model_terms:ir.ui.view,arch_db:ab_mcp.res_config_settings_view_form_mcp
+msgid ""
+"AI apps may propose changes; each one runs only after the user confirms it "
+"in Approvals."
+msgstr ""
+"يمكن لتطبيقات الذكاء الاصطناعي اقتراح تغييرات؛ ولا يُنفَّذ أي منها إلا بعد "
+"أن يؤكده المستخدم في الموافقات."
+
+#. module: ab_mcp
+#: model:ir.model.fields.selection,name:ab_mcp.selection__mcp_token__state__active
+msgid "Active"
+msgstr "نشط"
+
+#. module: ab_mcp
+#: model_terms:ir.ui.view,arch_db:ab_mcp.res_config_settings_view_form_mcp
+msgid "Address to paste into the AI app together with a user's token."
+msgstr "العنوان الذي يُلصق في تطبيق الذكاء الاصطناعي مع رمز المستخدم."
+
+#. module: ab_mcp
+#. odoo-python
+#: code:addons/ab_mcp/controllers/mcp.py:0
+msgid "All MCP seats of your plan are in use."
+msgstr "جميع مقاعد MCP في باقتك مستخدمة."
+
+#. module: ab_mcp
+#. odoo-python
+#: code:addons/ab_mcp/models/mcp_token.py:0
+msgid "All MCP seats of your plan are in use. Ask an administrator."
+msgstr "جميع مقاعد MCP في باقتك مستخدمة. تواصل مع المسؤول."
+
+#. module: ab_mcp
+#: model:ir.model.fields.selection,name:ab_mcp.selection__mcp_connect_wizard__preset__manager
+#: model:ir.model.fields.selection,name:ab_mcp.selection__mcp_token__preset__manager
+msgid "All allowed tools"
+msgstr "كل الأدوات المسموح بها"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_connect_wizard__allow_write
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_token__allow_write
+msgid "Allow write tools"
+msgstr "السماح بأدوات التعديل"
+
+#. module: ab_mcp
+#: model:ir.actions.act_window,name:ab_mcp.action_mcp_approvals
+#: model:ir.ui.menu,name:ab_mcp.menu_mcp_approvals
+msgid "Approvals"
+msgstr "الموافقات"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_call_log__args_hash
+msgid "Args Hash"
+msgstr "بصمة المعطيات"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_ai_agent_tool__mcp_available
+msgid "Available over MCP"
+msgstr "متاحة عبر MCP"
+
+#. module: ab_mcp
+#: model_terms:ir.ui.view,arch_db:ab_mcp.view_pending_action_approvals_search
+msgid "Awaiting confirmation"
+msgstr "بانتظار التأكيد"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_usage_day__calls
+#: model:ir.ui.menu,name:ab_mcp.menu_mcp_calls
+msgid "Calls"
+msgstr "الاستدعاءات"
+
+#. module: ab_mcp
+#: model_terms:ir.ui.view,arch_db:ab_mcp.view_mcp_connect_wizard_form
+msgid "Cancel"
+msgstr "إلغاء"
+
+#. module: ab_mcp
+#: model_terms:ir.ui.view,arch_db:ab_mcp.view_ai_agent_tool_mcp_search
+msgid "Category"
+msgstr "الفئة"
+
+#. module: ab_mcp
+#: model_terms:ir.actions.act_window,help:ab_mcp.action_mcp_approvals
+msgid ""
+"Changes proposed by the assistant or by a connected AI app wait here for "
+"your confirmation for 15 minutes."
+msgstr ""
+"التغييرات التي يقترحها المساعد أو تطبيق ذكاء اصطناعي مرتبط تنتظر تأكيدك هنا "
+"لمدة 15 دقيقة."
+
+#. module: ab_mcp
+#: model:ir.model.fields.selection,name:ab_mcp.selection__mcp_connect_wizard__client__chatgpt
+#: model:ir.model.fields.selection,name:ab_mcp.selection__mcp_token__client__chatgpt
+msgid "ChatGPT"
+msgstr "ChatGPT"
+
+#. module: ab_mcp
+#: model:ir.model.fields.selection,name:ab_mcp.selection__mcp_connect_wizard__client__claude_code
+#: model:ir.model.fields.selection,name:ab_mcp.selection__mcp_token__client__claude_code
+msgid "Claude Code"
+msgstr "Claude Code"
+
+#. module: ab_mcp
+#: model:ir.model.fields.selection,name:ab_mcp.selection__mcp_connect_wizard__client__claude_desktop
+#: model:ir.model.fields.selection,name:ab_mcp.selection__mcp_token__client__claude_desktop
+msgid "Claude Desktop"
+msgstr "Claude Desktop"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_call_log__client
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_connect_wizard__client
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_token__client
+msgid "Client"
+msgstr "التطبيق"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_call_log__company_id
+msgid "Company"
+msgstr "الشركة"
+
+#. module: ab_mcp
+#: model:ir.model,name:ab_mcp.model_res_config_settings
+msgid "Config Settings"
+msgstr "إعدادات التهيئة"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_connect_wizard__config_snippet
+msgid "Configuration"
+msgstr "الإعداد"
+
+#. module: ab_mcp
+#: model_terms:ir.ui.view,arch_db:ab_mcp.view_pending_action_approvals_form
+#: model_terms:ir.ui.view,arch_db:ab_mcp.view_pending_action_approvals_list
+msgid "Confirm"
+msgstr "تأكيد"
+
+#. module: ab_mcp
+#. odoo-python
+#: code:addons/ab_mcp/models/res_users.py:0
+#: code:addons/ab_mcp/wizard/mcp_connect_wizard.py:0
+#: model_terms:ir.ui.view,arch_db:ab_mcp.view_users_form_simple_modif_mcp
+msgid "Connect an AI app"
+msgstr "ربط تطبيق ذكاء اصطناعي"
+
+#. module: ab_mcp
+#: model_terms:ir.ui.view,arch_db:ab_mcp.view_users_form_simple_modif_mcp
+msgid ""
+"Connect an AI app (Claude, Cursor, ChatGPT…) to Ghaima with your own access rights.\n"
+"                        Changes it proposes wait for your confirmation in Approvals."
+msgstr ""
+"اربط تطبيق ذكاء اصطناعي (Claude أو Cursor أو ChatGPT…) بغيمة بصلاحياتك أنت.\n"
+"                        التغييرات التي يقترحها تنتظر تأكيدك في الموافقات."
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_res_users__mcp_token_count
+msgid "Connected AI apps"
+msgstr "تطبيقات الذكاء الاصطناعي المرتبطة"
+
+#. module: ab_mcp
+#. odoo-javascript
+#: code:addons/ab_mcp/static/src/xml/copy_button.xml:0
+msgid "Copy"
+msgstr "نسخ"
+
+#. module: ab_mcp
+#: model_terms:ir.ui.view,arch_db:ab_mcp.view_mcp_connect_wizard_form
+msgid "Copy this token now. It is shown only once and cannot be recovered."
+msgstr "انسخ هذا الرمز الآن. يُعرض مرة واحدة فقط ولا يمكن استرجاعه."
+
+#. module: ab_mcp
+#: model_terms:ir.ui.view,arch_db:ab_mcp.view_mcp_connect_wizard_form
+msgid "Create token"
+msgstr "إنشاء الرمز"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_call_log__create_uid
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_connect_wizard__create_uid
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_token__create_uid
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_usage_day__create_uid
+msgid "Created by"
+msgstr "أنشئ بواسطة"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_call_log__create_date
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_connect_wizard__create_date
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_token__create_date
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_usage_day__create_date
+msgid "Created on"
+msgstr "أنشئ في"
+
+#. module: ab_mcp
+#: model:ir.model.fields.selection,name:ab_mcp.selection__mcp_connect_wizard__client__cursor
+#: model:ir.model.fields.selection,name:ab_mcp.selection__mcp_token__client__cursor
+msgid "Cursor"
+msgstr "Cursor"
+
+#. module: ab_mcp
+#. odoo-python
+#: code:addons/ab_mcp/controllers/mcp.py:0
+msgid "Daily MCP call limit reached."
+msgstr "تم بلوغ الحد اليومي لاستدعاءات MCP."
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_usage_day__day
+msgid "Day"
+msgstr "اليوم"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_ai_agent_pending_action__details_text
+msgid "Details"
+msgstr "التفاصيل"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_call_log__display_name
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_connect_wizard__display_name
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_token__display_name
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_usage_day__display_name
+msgid "Display Name"
+msgstr "الاسم المعروض"
+
+#. module: ab_mcp
+#: model:ir.model.fields.selection,name:ab_mcp.selection__mcp_connect_wizard__state__done
+#: model_terms:ir.ui.view,arch_db:ab_mcp.view_mcp_connect_wizard_form
+msgid "Done"
+msgstr "تم"
+
+#. module: ab_mcp
+#: model:ir.model.fields.selection,name:ab_mcp.selection__mcp_connect_wizard__state__draft
+msgid "Draft"
+msgstr "مسودة"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_call_log__duration_ms
+msgid "Duration Ms"
+msgstr "المدة (مللي ثانية)"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_res_config_settings__mcp_effective_calls_day
+msgid "Effective daily limit"
+msgstr "الحد اليومي الفعلي"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_call_log__error_kind
+msgid "Error Kind"
+msgstr "نوع الخطأ"
+
+#. module: ab_mcp
+#: model:ir.model.fields.selection,name:ab_mcp.selection__mcp_token__state__expired
+msgid "Expired"
+msgstr "منتهي"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_ai_agent_pending_action__expires_at
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_token__expires_at
+msgid "Expires At"
+msgstr "ينتهي في"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_connect_wizard__expiry_days
+msgid "Expires after"
+msgstr "ينتهي بعد"
+
+#. module: ab_mcp
+#: model_terms:ir.ui.view,arch_db:ab_mcp.view_ai_agent_tool_mcp_search
+msgid "Exposed over MCP"
+msgstr "متاحة عبر MCP"
+
+#. module: ab_mcp
+#: model:ir.actions.act_window,name:ab_mcp.action_mcp_exposed_tools
+#: model:ir.ui.menu,name:ab_mcp.menu_mcp_exposed_tools
+#: model_terms:ir.ui.view,arch_db:ab_mcp.res_config_settings_view_form_mcp
+msgid "Exposed tools"
+msgstr "الأدوات المتاحة"
+
+#. module: ab_mcp
+#: model_terms:ir.ui.view,arch_db:ab_mcp.view_mcp_call_log_search
+msgid "Failed"
+msgstr "فشل"
+
+#. module: ab_mcp
+#: model:ir.model.fields,help:ab_mcp.field_ai_agent_tool__mcp_available
+msgid ""
+"False for tools MCP never offers whatever the toggle says: screen-only "
+"tools, memory tools, server actions and write tools that would not ask for "
+"confirmation."
+msgstr ""
+"غير مفعّل للأدوات التي لا يعرضها MCP أبدًا مهما كانت حالة المفتاح: أدوات "
+"الشاشة فقط، وأدوات الذاكرة، والإجراءات الآلية، وأدوات الكتابة التي لا تطلب "
+"تأكيدًا."
+
+#. module: ab_mcp
+#: model:ir.model.fields,help:ab_mcp.field_mcp_token__prefix
+msgid "First characters of the token, to recognise it."
+msgstr "الأحرف الأولى من الرمز للتعرّف عليه."
+
+#. module: ab_mcp
+#: model_terms:ir.ui.view,arch_db:ab_mcp.view_pending_action_approvals_search
+msgid "From AI apps (MCP)"
+msgstr "من تطبيقات الذكاء الاصطناعي (MCP)"
+
+#. module: ab_mcp
+#. odoo-python
+#: code:addons/ab_mcp/controllers/mcp.py:0
+msgid "Ghaima AI is not active for this user."
+msgstr "غيمة للذكاء الاصطناعي غير مفعّل لهذا المستخدم."
+
+#. module: ab_mcp
+#. odoo-python
+#: code:addons/ab_mcp/controllers/mcp.py:0
+msgid "Ghaima AI is switched off on this system."
+msgstr "تم إيقاف غيمة للذكاء الاصطناعي على هذا النظام."
+
+#. module: ab_mcp
+#: model:ir.model,name:ab_mcp.model_ai_agent_tool
+msgid "Ghaima AI — Agent tool"
+msgstr "ذكاء غيمة — أداة المساعد"
+
+#. module: ab_mcp
+#: model:ir.model,name:ab_mcp.model_mcp_token
+msgid "Ghaima MCP — Access token"
+msgstr "غيمة MCP — رمز الوصول"
+
+#. module: ab_mcp
+#: model:ir.model,name:ab_mcp.model_mcp_call_log
+msgid "Ghaima MCP — Call log (no content)"
+msgstr "غيمة MCP — سجل الاستدعاءات (بدون محتوى)"
+
+#. module: ab_mcp
+#: model:ir.model,name:ab_mcp.model_mcp_usage_day
+msgid "Ghaima MCP — Calls per day (quota counter)"
+msgstr "غيمة MCP — الاستدعاءات اليومية (عداد الحصة)"
+
+#. module: ab_mcp
+#: model:ir.model,name:ab_mcp.model_mcp_connect_wizard
+msgid "Ghaima MCP — Connect an AI app"
+msgstr "غيمة MCP — ربط تطبيق ذكاء اصطناعي"
+
+#. module: ab_mcp
+#: model_terms:ir.ui.view,arch_db:ab_mcp.view_mcp_call_log_search
+msgid "Group By"
+msgstr "تجميع حسب"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_call_log__id
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_connect_wizard__id
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_token__id
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_usage_day__id
+msgid "ID"
+msgstr "المعرّف"
+
+#. module: ab_mcp
+#: model_terms:ir.ui.view,arch_db:ab_mcp.view_mcp_token_form
+msgid "Keep it"
+msgstr "تراجع"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_token__last_client
+msgid "Last Client"
+msgstr "آخر تطبيق"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_call_log__write_uid
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_connect_wizard__write_uid
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_token__write_uid
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_usage_day__write_uid
+msgid "Last Updated by"
+msgstr "آخر تحديث بواسطة"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_call_log__write_date
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_connect_wizard__write_date
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_token__write_date
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_usage_day__write_date
+msgid "Last Updated on"
+msgstr "آخر تحديث في"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_token__last_used_at
+msgid "Last Used At"
+msgstr "آخر استخدام"
+
+#. module: ab_mcp
+#: model_terms:ir.ui.view,arch_db:ab_mcp.res_config_settings_view_form_mcp
+msgid ""
+"Let users connect external AI apps (Claude, Cursor, ChatGPT…) with their own"
+" access rights."
+msgstr ""
+"السماح للمستخدمين بربط تطبيقات ذكاء اصطناعي خارجية (Claude وCursor "
+"وChatGPT…) بصلاحياتهم."
+
+#. module: ab_mcp
+#: model_terms:ir.ui.view,arch_db:ab_mcp.res_config_settings_view_form_mcp
+msgid "Limits"
+msgstr "الحدود"
+
+#. module: ab_mcp
+#: model:ir.ui.menu,name:ab_mcp.menu_mcp_config
+#: model_terms:ir.ui.view,arch_db:ab_mcp.res_config_settings_view_form_mcp
+msgid "MCP"
+msgstr "MCP"
+
+#. module: ab_mcp
+#: model:ir.actions.act_window,name:ab_mcp.action_mcp_call_log
+msgid "MCP Calls"
+msgstr "استدعاءات MCP"
+
+#. module: ab_mcp
+#: model:ir.actions.act_window,name:ab_mcp.action_mcp_token_all
+msgid "MCP Tokens"
+msgstr "رموز MCP"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_connect_wizard__mcp_url
+#: model:ir.model.fields,field_description:ab_mcp.field_res_config_settings__mcp_url
+#: model_terms:ir.ui.view,arch_db:ab_mcp.res_config_settings_view_form_mcp
+msgid "MCP URL"
+msgstr "رابط MCP"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_res_config_settings__mcp_enabled
+#: model_terms:ir.ui.view,arch_db:ab_mcp.res_config_settings_view_form_mcp
+#: model_terms:ir.ui.view,arch_db:ab_mcp.view_users_form_simple_modif_mcp
+msgid "MCP access"
+msgstr "الوصول عبر MCP"
+
+#. module: ab_mcp
+#. odoo-python
+#: code:addons/ab_mcp/controllers/mcp.py:0
+msgid "MCP access is not included in your plan."
+msgstr "الوصول عبر MCP غير مشمول في باقتك."
+
+#. module: ab_mcp
+#. odoo-python
+#: code:addons/ab_mcp/controllers/mcp.py:0
+msgid "MCP access is turned off on this system."
+msgstr "الوصول عبر MCP متوقف على هذا النظام."
+
+#. module: ab_mcp
+#. odoo-python
+#: code:addons/ab_mcp/wizard/mcp_connect_wizard.py:0
+msgid "MCP access is turned off or not included in your plan."
+msgstr "الوصول عبر MCP متوقف أو غير مشمول في باقتك."
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_res_config_settings__mcp_max_calls_day
+msgid "MCP calls per day"
+msgstr "استدعاءات MCP في اليوم"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_res_config_settings__mcp_status
+msgid "MCP status"
+msgstr "حالة MCP"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_res_config_settings__mcp_max_users
+msgid "MCP users"
+msgstr "مستخدمو MCP"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_res_config_settings__mcp_write_tools
+msgid "MCP write tools"
+msgstr "أدوات التعديل عبر MCP"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_res_config_settings__mcp_in_plan
+msgid "Mcp In Plan"
+msgstr "MCP ضمن الباقة"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_res_config_settings__mcp_url_host_mismatch
+msgid "Mcp Url Host Mismatch"
+msgstr "اختلاف نطاق رابط MCP"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_res_config_settings__mcp_write_in_plan
+msgid "Mcp Write In Plan"
+msgstr "التعديل عبر MCP ضمن الباقة"
+
+#. module: ab_mcp
+#. odoo-python
+#: code:addons/ab_mcp/wizard/mcp_connect_wizard.py:0
+msgid "My AI app"
+msgstr "تطبيقي للذكاء الاصطناعي"
+
+#. module: ab_mcp
+#: model:ir.actions.act_window,name:ab_mcp.action_mcp_token_mine
+#: model:ir.ui.menu,name:ab_mcp.menu_mcp_my_tokens
+msgid "My AI app connections"
+msgstr "تطبيقات الذكاء الاصطناعي المرتبطة بي"
+
+#. module: ab_mcp
+#: model_terms:ir.ui.view,arch_db:ab_mcp.view_users_form_simple_modif_mcp
+msgid "My connections"
+msgstr "اتصالاتي"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_connect_wizard__name
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_token__name
+msgid "Name"
+msgstr "الاسم"
+
+#. module: ab_mcp
+#: model_terms:ir.actions.act_window,help:ab_mcp.action_mcp_token_mine
+msgid "No AI app connected yet"
+msgstr "لا يوجد تطبيق ذكاء اصطناعي مرتبط بعد"
+
+#. module: ab_mcp
+#: model_terms:ir.ui.view,arch_db:ab_mcp.res_config_settings_view_form_mcp
+#: model_terms:ir.ui.view,arch_db:ab_mcp.view_mcp_connect_wizard_form
+msgid "Not in your plan"
+msgstr "غير مشمول في باقتك"
+
+#. module: ab_mcp
+#: model_terms:ir.actions.act_window,help:ab_mcp.action_mcp_approvals
+msgid "Nothing to approve"
+msgstr "لا توجد طلبات للموافقة"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_call_log__ok
+msgid "Ok"
+msgstr "ناجح"
+
+#. module: ab_mcp
+#: model:ir.model.constraint,message:ab_mcp.constraint_mcp_usage_day_day_unique
+msgid "One counter per day."
+msgstr "عداد واحد لكل يوم."
+
+#. module: ab_mcp
+#: model:ir.model.fields.selection,name:ab_mcp.selection__mcp_connect_wizard__client__other
+#: model:ir.model.fields.selection,name:ab_mcp.selection__mcp_token__client__other
+msgid "Other"
+msgstr "أخرى"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_token__prefix
+msgid "Prefix"
+msgstr "البادئة"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_connect_wizard__preset
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_token__preset
+msgid "Preset"
+msgstr "مستوى الوصول"
+
+#. module: ab_mcp
+#. odoo-python
+#: code:addons/ab_mcp/controllers/mcp.py:0
+msgid ""
+"Proposal created, nothing has changed yet: \"%(summary)s\". The user must "
+"confirm it in Ghaima within 15 minutes: %(url)s . Check it with "
+"get_proposal_status (key %(key)s)."
+msgstr ""
+"تم إنشاء اقتراح ولم يتغير شيء بعد: \"%(summary)s\". يجب أن يؤكده المستخدم في"
+" غيمة خلال 15 دقيقة: %(url)s . تحقق منه باستخدام get_proposal_status "
+"(المفتاح %(key)s)."
+
+#. module: ab_mcp
+#: model:ai.agent.tool,name:ab_mcp.tool_get_proposal_status
+msgid "Proposal status"
+msgstr "حالة المقترح"
+
+#. module: ab_mcp
+#: model_terms:ir.ui.view,arch_db:ab_mcp.view_pending_action_approvals_form
+#: model_terms:ir.ui.view,arch_db:ab_mcp.view_pending_action_approvals_list
+msgid "Proposed on"
+msgstr "تاريخ الاقتراح"
+
+#. module: ab_mcp
+#: model_terms:ir.ui.view,arch_db:ab_mcp.view_pending_action_approvals_form
+msgid "Raw data"
+msgstr "البيانات الخام"
+
+#. module: ab_mcp
+#: model:ir.model.fields.selection,name:ab_mcp.selection__mcp_connect_wizard__preset__readonly
+#: model:ir.model.fields.selection,name:ab_mcp.selection__mcp_token__preset__readonly
+msgid "Read only"
+msgstr "قراءة فقط"
+
+#. module: ab_mcp
+#: model_terms:ir.ui.view,arch_db:ab_mcp.view_pending_action_approvals_form
+#: model_terms:ir.ui.view,arch_db:ab_mcp.view_pending_action_approvals_list
+msgid "Reject"
+msgstr "رفض"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_call_log__request_id
+msgid "Request"
+msgstr "الطلب"
+
+#. module: ab_mcp
+#: model_terms:ir.ui.view,arch_db:ab_mcp.view_mcp_token_form
+#: model_terms:ir.ui.view,arch_db:ab_mcp.view_mcp_token_list
+msgid "Revoke"
+msgstr "إلغاء الرمز"
+
+#. module: ab_mcp
+#: model_terms:ir.ui.view,arch_db:ab_mcp.view_mcp_token_form
+#: model_terms:ir.ui.view,arch_db:ab_mcp.view_mcp_token_list
+msgid "Revoke this token? The AI app using it will lose access immediately."
+msgstr ""
+"هل تريد إلغاء هذا الرمز؟ سيفقد تطبيق الذكاء الاصطناعي الذي يستخدمه الوصول "
+"فورًا."
+
+#. module: ab_mcp
+#: model_terms:ir.ui.view,arch_db:ab_mcp.view_mcp_token_form
+msgid "Revoke token"
+msgstr "إلغاء الرمز"
+
+#. module: ab_mcp
+#: model:ir.model.fields.selection,name:ab_mcp.selection__mcp_token__state__revoked
+msgid "Revoked"
+msgstr "ملغى"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_token__revoked_at
+msgid "Revoked At"
+msgstr "تاريخ الإلغاء"
+
+#. module: ab_mcp
+#: model:ir.model.fields,help:ab_mcp.field_mcp_call_log__args_hash
+msgid "SHA-256 of the arguments; the arguments are not stored."
+msgstr "بصمة SHA-256 للمعطيات؛ لا تُحفظ المعطيات نفسها."
+
+#. module: ab_mcp
+#. odoo-python
+#: code:addons/ab_mcp/models/res_config_settings.py:0
+msgid "Seats used: %(seats)s / %(max)s · Calls today: %(calls)s / %(limit)s"
+msgstr ""
+"المقاعد المستخدمة: %(seats)s / %(max)s · استدعاءات اليوم: %(calls)s / "
+"%(limit)s"
+
+#. module: ab_mcp
+#: model:ir.model.fields.selection,name:ab_mcp.selection__mcp_connect_wizard__preset__custom
+#: model:ir.model.fields.selection,name:ab_mcp.selection__mcp_token__preset__custom
+msgid "Selected tools"
+msgstr "أدوات محددة"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_connect_wizard__state
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_token__state
+msgid "State"
+msgstr "الحالة"
+
+#. module: ab_mcp
+#: model:ai.agent.tool,description:ab_mcp.tool_get_proposal_status
+msgid ""
+"Status of a change proposed earlier (key from the proposal): proposed "
+"(awaiting the user's confirmation in Ghaima), executed, cancelled, failed or"
+" expired."
+msgstr ""
+"حالة تغيير مقترح سابقًا (بالمفتاح الوارد في المقترح): مقترح (بانتظار تأكيد "
+"المستخدم في غيمة) أو منفّذ أو ملغى أو فاشل أو منتهي."
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_ai_agent_pending_action__target_model_display
+msgid "Target model"
+msgstr "النموذج المستهدف"
+
+#. module: ab_mcp
+#. odoo-python
+#: code:addons/ab_mcp/models/res_config_settings.py:0
+msgid ""
+"The MCP URL uses %(base)s (web.base.url) but you opened Ghaima at %(here)s. "
+"Copied snippets will point to %(base)s."
+msgstr ""
+"رابط MCP يستخدم %(base)s (web.base.url) بينما فتحت غيمة على %(here)s. "
+"الإعدادات المنسوخة ستشير إلى %(base)s."
+
+#. module: ab_mcp
+#. odoo-python
+#: code:addons/ab_mcp/controllers/mcp.py:0
+msgid "The tool failed."
+msgstr "فشلت الأداة."
+
+#. module: ab_mcp
+#. odoo-python
+#: code:addons/ab_mcp/controllers/mcp.py:0
+msgid "This AI app is not included in your plan."
+msgstr "تطبيق الذكاء الاصطناعي هذا غير مشمول في باقتك."
+
+#. module: ab_mcp
+#: model_terms:ir.ui.view,arch_db:ab_mcp.view_mcp_call_log_list
+msgid "Time"
+msgstr "الوقت"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_call_log__token_id
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_connect_wizard__token
+msgid "Token"
+msgstr "الرمز"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_token__token_hash
+msgid "Token Hash"
+msgstr "بصمة الرمز"
+
+#. module: ab_mcp
+#: model:ir.model.constraint,message:ab_mcp.constraint_mcp_token_token_hash_unique
+msgid "Token hashes are unique."
+msgstr "بصمات الرموز يجب أن تكون فريدة."
+
+#. module: ab_mcp
+#: model:ir.ui.menu,name:ab_mcp.menu_mcp_tokens
+msgid "Tokens"
+msgstr "الرموز"
+
+#. module: ab_mcp
+#: model_terms:ir.ui.view,arch_db:ab_mcp.view_mcp_call_log_search
+msgid "Tool"
+msgstr "الأداة"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_call_log__tool_code
+msgid "Tool Code"
+msgstr "رمز الأداة"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_connect_wizard__tool_ids
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_token__tool_ids
+msgid "Tools"
+msgstr "الأدوات"
+
+#. module: ab_mcp
+#. odoo-python
+#: code:addons/ab_mcp/controllers/mcp.py:0
+msgid "Unknown tool."
+msgstr "أداة غير معروفة."
+
+#. module: ab_mcp
+#: model_terms:ir.actions.act_window,help:ab_mcp.action_mcp_token_mine
+msgid "Use \"Connect an AI app\" in your preferences to create an access token."
+msgstr "استخدم «ربط تطبيق ذكاء اصطناعي» في تفضيلاتك لإنشاء رمز وصول."
+
+#. module: ab_mcp
+#: model:ir.model,name:ab_mcp.model_res_users
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_call_log__user_id
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_token__user_id
+#: model_terms:ir.ui.view,arch_db:ab_mcp.view_mcp_call_log_search
+msgid "User"
+msgstr "المستخدم"
+
+#. module: ab_mcp
+#: model:ir.model.fields.selection,name:ab_mcp.selection__mcp_connect_wizard__client__vscode
+#: model:ir.model.fields.selection,name:ab_mcp.selection__mcp_token__client__vscode
+msgid "VS Code"
+msgstr "VS Code"
+
+#. module: ab_mcp
+#: model:ir.model.fields,field_description:ab_mcp.field_mcp_connect_wizard__write_available
+msgid "Write Available"
+msgstr "التعديل متاح"
+
+#. module: ab_mcp
+#: model_terms:ir.ui.view,arch_db:ab_mcp.res_config_settings_view_form_mcp
+msgid "Write tools"
+msgstr "أدوات التعديل"
+
+#. module: ab_mcp
+#: model:ir.model.fields,help:ab_mcp.field_mcp_token__allow_write
+msgid "Write tools still only propose; you confirm each change in Ghaima."
+msgstr "أدوات التعديل تقترح فقط؛ وتؤكد أنت كل تغيير في غيمة."
+
+#. module: ab_mcp
+#. odoo-python
+#: code:addons/ab_mcp/models/res_config_settings.py:0
+msgid "unlimited"
+msgstr "بلا حد"

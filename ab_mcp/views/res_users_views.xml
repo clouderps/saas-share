@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_users_form_simple_modif_mcp" model="ir.ui.view">
+        <field name="name">res.users.preferences.mcp</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form_simple_modif"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="MCP access" name="mcp_access">
+                    <p class="text-muted">
+                        Connect an AI app (Claude, Cursor, ChatGPT…) to Ghaima with your own access rights.
+                        Changes it proposes wait for your confirmation in Approvals.
+                    </p>
+                    <button name="action_mcp_connect" type="object" string="Connect an AI app"
+                            class="btn-primary"/>
+                    <button name="action_mcp_tokens" type="object" string="My connections"
+                            class="btn-link" icon="fa-plug"/>
+                    <group>
+                        <field name="mcp_token_count" readonly="1"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+        <record id="tool_sales_totals" model="ai.agent.tool">
+            <field name="name">Sales Totals</field>
+            <field name="code">sales_totals</field>
+            <field name="category">analysis</field>
+            <field name="description">Headline sales totals (amount, orders, units) for a period. Use for 'how much did we sell &lt;period&gt;'.</field>
+            <field name="schema">{"type": "object", "properties": {"period": {"type": "string", "enum": ["today", "yesterday", "this_week", "last_week", "this_month", "last_month", "this_quarter", "ytd", "last_year"], "default": "this_month", "description": "Relative period"}, "branch_id": {"type": "integer"}}, "required": []}</field>
+            <field name="output_schema">{"type": "object", "properties": {"headers": {"type": "array", "items": {"type": "string"}}, "rows": {"type": "array", "items": {"type": "array"}}, "total_rows": {"type": "integer"}, "fact": {"type": "string"}, "note": {"type": "string"}, "period_used": {"type": "string"}}, "required": ["headers", "rows", "total_rows"]}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="is_write_action" eval="False"/>
+            <field name="group_ids" eval="[Command.set([ref('sales_team.group_sale_salesman')])]"/>
+        </record>
+
+        <record id="tool_top_products" model="ai.agent.tool">
+            <field name="name">Top Products</field>
+            <field name="code">top_products</field>
+            <field name="category">analysis</field>
+            <field name="description">Top-N products by sales amount in a period. Use for 'best-selling', 'top product', 'highest grossing'. Widens an empty period and says so in `note`.</field>
+            <field name="schema">{"type": "object", "properties": {"period": {"type": "string", "enum": ["today", "yesterday", "this_week", "last_week", "this_month", "last_month", "this_quarter", "ytd", "last_year"], "default": "this_month", "description": "Relative period"}, "limit": {"type": "integer", "minimum": 1, "maximum": 500, "default": 5}}, "required": []}</field>
+            <field name="output_schema">{"type": "object", "properties": {"headers": {"type": "array", "items": {"type": "string"}}, "rows": {"type": "array", "items": {"type": "array"}}, "total_rows": {"type": "integer"}, "fact": {"type": "string"}, "note": {"type": "string"}, "period_used": {"type": "string"}}, "required": ["headers", "rows", "total_rows"]}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="is_write_action" eval="False"/>
+            <field name="group_ids" eval="[Command.set([ref('sales_team.group_sale_salesman')])]"/>
+        </record>
+
+        <record id="tool_top_customers" model="ai.agent.tool">
+            <field name="name">Top Customers</field>
+            <field name="code">top_customers</field>
+            <field name="category">analysis</field>
+            <field name="description">Top-N customers by sales amount in a period. If the period has no sales it widens (year to date, then all time) and says so in `note` — state the period used.</field>
+            <field name="schema">{"type": "object", "properties": {"period": {"type": "string", "enum": ["today", "yesterday", "this_week", "last_week", "this_month", "last_month", "this_quarter", "ytd", "last_year"], "default": "this_month", "description": "Relative period"}, "limit": {"type": "integer", "minimum": 1, "maximum": 500, "default": 5}}, "required": []}</field>
+            <field name="output_schema">{"type": "object", "properties": {"headers": {"type": "array", "items": {"type": "string"}}, "rows": {"type": "array", "items": {"type": "array"}}, "total_rows": {"type": "integer"}, "fact": {"type": "string"}, "note": {"type": "string"}, "period_used": {"type": "string"}}, "required": ["headers", "rows", "total_rows"]}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="is_write_action" eval="False"/>
+            <field name="group_ids" eval="[Command.set([ref('sales_team.group_sale_salesman')])]"/>
+        </record>
+
+        <record id="tool_sales_by_branch" model="ai.agent.tool">
+            <field name="name">Sales By Branch</field>
+            <field name="code">sales_by_branch</field>
+            <field name="category">analysis</field>
+            <field name="description">Sales totals broken down by branch for a period. Requires ab_branches.</field>
+            <field name="schema">{"type": "object", "properties": {"period": {"type": "string", "enum": ["today", "yesterday", "this_week", "last_week", "this_month", "last_month", "this_quarter", "ytd", "last_year"], "default": "this_month", "description": "Relative period"}}, "required": []}</field>
+            <field name="output_schema">{"type": "object", "properties": {"headers": {"type": "array", "items": {"type": "string"}}, "rows": {"type": "array", "items": {"type": "array"}}, "total_rows": {"type": "integer"}, "fact": {"type": "string"}, "note": {"type": "string"}, "period_used": {"type": "string"}}, "required": ["headers", "rows", "total_rows"]}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="is_write_action" eval="False"/>
+            <field name="group_ids" eval="[Command.set([ref('sales_team.group_sale_salesman')])]"/>
+        </record>
+
+        <record id="tool_sales_trend_monthly" model="ai.agent.tool">
+            <field name="name">Sales Trend Monthly</field>
+            <field name="code">sales_trend_monthly</field>
+            <field name="category">analysis</field>
+            <field name="description">Monthly sales trend over a period — for 'compare vs last month / year' questions.</field>
+            <field name="schema">{"type": "object", "properties": {"period": {"type": "string", "enum": ["today", "yesterday", "this_week", "last_week", "this_month", "last_month", "this_quarter", "ytd", "last_year"], "default": "ytd", "description": "Relative period"}}, "required": []}</field>
+            <field name="output_schema">{"type": "object", "properties": {"headers": {"type": "array", "items": {"type": "string"}}, "rows": {"type": "array", "items": {"type": "array"}}, "total_rows": {"type": "integer"}, "fact": {"type": "string"}, "note": {"type": "string"}, "period_used": {"type": "string"}}, "required": ["headers", "rows", "total_rows"]}</field>
+            <field name="dispatch_kind">python</field>
+            <field name="is_write_action" eval="False"/>
+            <field name="group_ids" eval="[Command.set([ref('sales_team.group_sale_salesman')])]"/>
+        </record>
+
+    </data>
+</odoo>

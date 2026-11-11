@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <!-- Icon-only copy buttons need an accessible name (WCAG 4.1.2). -->
+    <t t-inherit="web.CopyButton" t-inherit-mode="extension">
+        <xpath expr="//button" position="attributes">
+            <attribute name="title">Copy</attribute>
+            <attribute name="aria-label">Copy</attribute>
+        </xpath>
+    </t>
+</templates>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_ai_agent_tool_mcp_list" model="ir.ui.view">
+        <field name="name">ai.agent.tool.mcp.list</field>
+        <field name="model">ai.agent.tool</field>
+        <field name="priority">50</field>
+        <field name="arch" type="xml">
+            <list create="false" editable="bottom" delete="false">
+                <field name="name" readonly="1"/>
+                <field name="code" readonly="1" optional="hide"/>
+                <field name="category" readonly="1"/>
+                <field name="group_ids" widget="many2many_tags" readonly="1" optional="show"/>
+                <field name="mcp_enabled" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_ai_agent_tool_mcp_search" model="ir.ui.view">
+        <field name="name">ai.agent.tool.mcp.search</field>
+        <field name="model">ai.agent.tool</field>
+        <field name="priority">50</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <filter name="exposed" string="Exposed over MCP" domain="[('mcp_enabled', '=', True)]"/>
+                <filter name="by_category" string="Category" context="{'group_by': 'category'}"/>
+            </search>
+        </field>
+    </record>
+    <record id="action_mcp_exposed_tools" model="ir.actions.act_window">
+        <field name="name">Exposed tools</field>
+        <field name="res_model">ai.agent.tool</field>
+        <field name="view_mode">list</field>
+        <field name="domain">[('mcp_available', '=', True)]</field>
+        <field name="context">{'search_default_by_category': 1}</field>
+        <field name="search_view_id" ref="view_ai_agent_tool_mcp_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_ai_agent_tool_mcp_list')})]"/>
+    </record>
+</odoo>

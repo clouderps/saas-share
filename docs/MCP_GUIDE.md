@@ -6,9 +6,27 @@
 
 MCP (Model Context Protocol) lets an outside AI app (Claude Desktop, Cursor, ChatGPT…) use a Ghaima instance's data and actions with the signed-in user's own permissions. Each instance has its own MCP address; each user turns it on with a personal token; the central plan decides who may use it.
 
-**Built today (2026-11-11): groundwork only.** Each of the 66 assistant tools has an **Expose over MCP** switch, can describe itself as an MCP tool (name, inputs, read-only/destructive hint), and every call is checked against the plan, the kill switch and the user's permissions.
+**Built (2026-11-11), not yet deployed:**
 
-**Not built yet:** the `/mcp` server address, per-user MCP tokens, the MCP settings screen, and the plan options on central.
+- **`ab_mcp` core** (saas-share, domain-free): `POST /mcp` on each instance, a stateless JSON-RPC 2.0 server (`initialize`, `ping`, `tools/list`, `tools/call`; protocol 2025-11-25 / 2025-06-18). Every request goes through these checks in order: bearer token, kill switch, `mcp.enabled` (plan ceiling), allowed clients, assistant seat, MCP seats, daily call quota (429). Tools then run as the token's user through the shared `ab_ai_agent` dispatcher, with PII masked unless the plan allows it. Errors carry a `request_id` and never include exception text.
+- **Personal tokens** (`mcp.token`): `gmcp_…` tokens, stored as a SHA-256 hash only, shown once, with an expiry (30/90/365 days) and a preset (read-only, manager, or a custom tool list). The owner can revoke a token. Each call is logged with an argument hash only, kept 90 days.
+- **Connect wizard** (My Profile ▸ MCP access, or AI ▸ My AI app connections): generates a token and a ready-to-paste config for Claude Desktop, Claude Code, VS Code and others. The instance settings have an MCP block (enable, URL, write tools, local limits, seats/calls status) and an **Exposed tools** list for turning tools on or off.
+- **Approvals:** write tools never act directly over MCP. They create a pending action (`origin = mcp`) that the user confirms or rejects under AI ▸ Approvals within 15 minutes. `get_proposal_status` lets the AI app check the result.
+- **Plan ceiling:** central `ai.plan` has `mcp_enabled`, `mcp_max_users`, `mcp_calls_per_day` and `mcp_write_tools`. The tenant bridge `ab_ai_agent_plan_ceiling` caps the local settings with them.
+- **3 tool packs** (saas-share, auto-install on `[ab_ai_agent, <app>]`, ORM as the user, company-scoped, read-only, exposed by default):
+  - `ab_ai_tools_sale`: `sales_totals`, `top_products`, `top_customers`, `sales_by_branch`, `sales_trend_monthly`
+  - `ab_ai_tools_account`: `ar_aging`, `top_overdue_partners`, `pl_trend`, `cashflow_daily`, `cashflow_by_journal`, `pl_summary`, `cash_position`, `tax_summary`
+  - `ab_ai_tools_pos`: `pos_session_status`, `top_cashiers`, `pos_shift_summary`, `pos_payment_mix`
+
+  These tools used to live in `ab_ai_chatbot` and were moved out. On an existing instance, installing a pack adopts the existing tool rows, so ids and codes stay the same and nothing is duplicated. The in-app assistant still reaches them through the shared registry.
+
+**Not built yet:**
+
+- OAuth 2.1 sign-in for MCP clients (only bearer tokens today).
+- Tool packs for the other areas (inventory, purchase, HR, CRM, MRP…). Inventory, customer and record tools are still inside `ab_ai_chatbot` and are not MCP-exposed by default.
+- Signed plan delivery: the tenant can currently edit its own plan ceiling.
+- A per-user daily quota (the quota is per instance today).
+- `ai.usage.local.log` rows with `surface = mcp`.
 
 ## How it fits
 
@@ -51,6 +69,33 @@ Avatar ▸ My Profile ▸ **Ghaima AI** ▸ **MCP access** ▸ **Create token**:
 
 ### Step 4: AI app configuration
 
+The **Connect an AI app** wizard prints the right snippet for the chosen app, with the URL and token filled in and a copy button. The URL comes from `web.base.url`; Settings ▸ MCP warns when it differs from the host you are browsing. The token is never stored: it travels only in the result dialog, so closing the dialog (Done or X) leaves nothing behind.
+
+**Claude Desktop** — `claude_desktop_config.json` only launches stdio servers, so the remote endpoint is bridged with [`mcp-remote`](https://www.npmjs.com/package/mcp-remote) (needs Node.js). The bearer value goes through `env` so the space in `Bearer <token>` survives argument splitting:
+
+```json
+{
+  "mcpServers": {
+    "ghaima": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://<company>.ghaima.sa/mcp",
+               "--header", "Authorization:${GHAIMA_AUTH}"],
+      "env": { "GHAIMA_AUTH": "Bearer <your MCP token>" }
+    }
+  }
+}
+```
+
+**Claude Code** — native HTTP transport:
+
+```bash
+claude mcp add --transport http ghaima https://<company>.ghaima.sa/mcp --header "Authorization: Bearer <your MCP token>"
+```
+
+**VS Code** — `{"servers": {"ghaima": {"type": "http", "url": …, "headers": {…}}}}`.
+
+**Cursor and other URL-capable clients:**
+
 ```json
 {
   "mcpServers": {
@@ -81,7 +126,7 @@ The same 66 tools as the in-app assistant (47 read, 19 write). They work only on
 | Work and messages | — | create_task, schedule_activity, post_message, run_command | "Remind me to call this customer Sunday" |
 | Help and knowledge | kb_search, kb_read, find_menu, explain_screen, list_my_apps, list_commands, date_reference | remember_fact, remember_note, update_settings | "How do I close a POS session?" |
 
-**Not offered over MCP (screen-only):** navigate, open_*, screen_button, update_preference.
+**Not offered over MCP:** screen-only tools (navigate, open_*, screen_button, update_preference, update_settings), memory tools (remember_fact, remember_note), server-action tools and any write tool that would not ask for confirmation. Settings ▸ MCP ▸ Exposed tools lists only tools MCP can actually offer (`ai.agent.tool.mcp_available`).
 
 **In practice:**
 
@@ -114,3 +159,25 @@ An MCP token can never do more than its user can.
 | Tool missing from the list | Not exposed, or user lacks access to that app | Admin ticks it under Exposed tools, or grants access |
 | `429 limit reached` | Daily MCP call limit used up | Wait for the next day or raise the limit |
 | "The assistant can't answer right now" | AI provider down or out of credit | Check Settings ▸ AI provider, or the gateway link to central |
+
+## Hardening notes (Phase 0/1 review fixes)
+
+- **Never-execute guarantee.** `ab_mcp.services.catalog.is_mcp_safe` drops, whatever
+  `mcp_enabled` says: `dispatch_kind='server_action'` tools, `category='memory'` tools,
+  and any `is_write_action` tool that is not confirm-first (`ACTION_TOOLS`,
+  `PROPOSAL_TOOLS`, `record_action`, create/update presets). With write off on the
+  token/plan, every `is_write_action` tool is hidden. Not listed means not callable.
+- **Names are PII over MCP.** `top_customers`, `top_overdue_partners` and `top_cashiers`
+  return people's names, which regex masking cannot catch. Over MCP they are offered only
+  when `model.allow_pii` is on (owner decision pending: alternative is ids/initials). The
+  in-app assistant is unaffected.
+- **Quota.** `mcp.usage.day` is counted on its own short READ COMMITTED cursor in UTC days;
+  a call that later fails still counts. `last_used_at` is written at most every 5 minutes.
+- **Confirm re-check.** Confirming an MCP proposal also requires `mcp.enabled`, an active
+  assistant for the user, and a live token of theirs with `allow_write`.
+- **Seats.** Archived and portal users hold no seat; archiving a user revokes their tokens.
+- **Deploy order.** On an existing tenant run, in the same invocation:
+  `-u ab_ai_agent,ab_ai_chatbot -i ab_mcp,ab_ai_tools_sale,ab_ai_tools_account,ab_ai_tools_pos`
+  (packs only for installed apps). A plain `-u ab_ai_chatbot` does not auto-install the
+  packs, which would leave the moved tool codes without a Python callable. Each pack's
+  `post_init_hook` attaches its tools to the Ghaima Assistant.

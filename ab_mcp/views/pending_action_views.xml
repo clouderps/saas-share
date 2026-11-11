@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pending_action_approvals_list" model="ir.ui.view">
+        <field name="name">ai.agent.pending.action.approvals.list</field>
+        <field name="model">ai.agent.pending.action</field>
+        <field name="priority">50</field>
+        <field name="arch" type="xml">
+            <list create="false" edit="false" delete="false">
+                <!-- Decision buttons + state first: still on screen at 360px. -->
+                <button name="action_mcp_confirm" type="object" string="Confirm" icon="fa-check"
+                        class="btn-primary" invisible="state != 'proposed'"/>
+                <button name="action_mcp_reject" type="object" string="Reject" icon="fa-times"
+                        invisible="state != 'proposed'"/>
+                <field name="state" widget="badge" decoration-info="state == 'proposed'"
+                       decoration-success="state == 'executed'" decoration-danger="state == 'failed'"/>
+                <field name="summary"/>
+                <field name="create_date" string="Proposed on" optional="show"/>
+                <field name="tool_code" optional="hide"/>
+                <field name="origin" optional="hide"/>
+                <field name="expires_at" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pending_action_approvals_form" model="ir.ui.view">
+        <field name="name">ai.agent.pending.action.approvals.form</field>
+        <field name="model">ai.agent.pending.action</field>
+        <field name="priority">50</field>
+        <field name="arch" type="xml">
+            <form create="false" edit="false" delete="false">
+                <header>
+                    <button name="action_mcp_confirm" type="object" string="Confirm"
+                            class="btn-primary" invisible="state != 'proposed'"/>
+                    <button name="action_mcp_reject" type="object" string="Reject"
+                            invisible="state != 'proposed'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="proposed,executed"/>
+                </header>
+                <sheet>
+                    <!-- Mobile: Odoo folds header buttons into the cog menu; repeat them in-sheet. -->
+                    <div class="d-flex gap-2 mb-3 d-md-none" invisible="state != 'proposed'">
+                        <button name="action_mcp_confirm" type="object" string="Confirm"
+                                class="btn-primary flex-fill"/>
+                        <button name="action_mcp_reject" type="object" string="Reject"
+                                class="btn-secondary flex-fill"/>
+                    </div>
+                    <h2><field name="summary"/></h2>
+                    <group>
+                        <group>
+                            <field name="tool_code"/>
+                            <field name="origin"/>
+                            <field name="target_model_display"/>
+                        </group>
+                        <group>
+                            <field name="create_date" string="Proposed on"/>
+                            <field name="expires_at"/>
+                            <field name="decided_at"/>
+                            <field name="error" invisible="not error"/>
+                        </group>
+                    </group>
+                    <label for="details_text"/>
+                    <field name="details_text" nolabel="1" class="o_mcp_status"/>
+                    <group string="Raw data" groups="base.group_no_one">
+                        <field name="args_json" nolabel="1" colspan="2" class="o_mcp_code w-100"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_pending_action_approvals_search" model="ir.ui.view">
+        <field name="name">ai.agent.pending.action.approvals.search</field>
+        <field name="model">ai.agent.pending.action</field>
+        <field name="priority">50</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="summary"/>
+                <filter name="pending" string="Awaiting confirmation" domain="[('state', '=', 'proposed')]"/>
+                <filter name="from_mcp" string="From AI apps (MCP)" domain="[('origin', '=', 'mcp')]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_mcp_approvals" model="ir.actions.act_window">
+        <field name="name">Approvals</field>
+        <field name="res_model">ai.agent.pending.action</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('user_id', '=', uid)]</field>
+        <field name="context">{'search_default_pending': 1}</field>
+        <field name="search_view_id" ref="view_pending_action_approvals_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_pending_action_approvals_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_pending_action_approvals_form')})]"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Nothing to approve</p>
+            <p>Changes proposed by the assistant or by a connected AI app wait here for your confirmation for 15 minutes.</p>
+        </field>
+    </record>
+</odoo>

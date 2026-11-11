@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- MCP exposure defaults, applied on install only (noupdate) so an
+         admin's later choice is kept. A <function> rather than <record>:
+         a noupdate <record> would flip the shared xmlid to noupdate and
+         freeze ai_tool_data.xml on every later -u.
+         Every tool in this pack is read-only, so all are exposed. -->
+    <data noupdate="1">
+        <function model="ai.agent.tool" name="write">
+            <value eval="[ref('tool_pos_session_status'), ref('tool_top_cashiers'),
+                          ref('tool_pos_shift_summary'), ref('tool_pos_payment_mix')]"/>
+            <value eval="{'mcp_enabled': True}"/>
+        </function>
+    </data>
+</odoo>
