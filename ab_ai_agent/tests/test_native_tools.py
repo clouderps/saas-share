@@ -35,7 +35,7 @@ class TestGeminiNativeTools(TransactionCase):
             {'functionCall': {'name': 'find_menu', 'args': {'query': 'invoice'}}}]}}],
             'usageMetadata': {}}
 
-        def fake_post(url, headers=None, json=None, timeout=None):
+        def fake_post(url, headers=None, json=None, timeout=None, **_kw):
             seen.update(url=url, headers=headers, json=json)
             return resp
         with patch('odoo.addons.ab_ai_base.models.ai_service.requests.post', fake_post):
@@ -67,7 +67,7 @@ class TestGeminiContextCache(TransactionCase):
         self.system = 'S' * 5000 + ai_service.CACHE_BREAK + 'VOLATILE'
 
     def _post(self, calls, gen_status=200):
-        def fake_post(url, headers=None, json=None, timeout=None):
+        def fake_post(url, headers=None, json=None, timeout=None, **_kw):
             calls.append((url, json))
             resp = MagicMock()
             if url.endswith('/cachedContents'):

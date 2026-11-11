@@ -182,6 +182,17 @@ class AIAgentCommand(models.Model):
           ``error``       — resolution or create failed
         """
         self.ensure_one()
+        # Same gates as the agent: kill switch, per-user activation, seat,
+        # and the local + plan "actions" switch. Slash commands create
+        # records, so they are actions even though they skip the model.
+        user = self.env.user
+        if user._ai_assistant_block_reason():
+            return {'status': 'blocked',
+                    'message': _('The assistant is switched off for you.')}
+        if (not self.env['ai.feature.policy'].get('assistant.actions')
+                or not user._ai_plan_allows('actions')):
+            return {'status': 'blocked',
+                    'message': _('Assistant actions are switched off.')}
         if not self.available_for(self.env.user):
             return {'status': 'blocked',
                     'message': _('You do not have permission to run "%s".')

@@ -13,7 +13,9 @@
 from datetime import timedelta
 
 from odoo import fields
-from odoo.tests.common import TransactionCase, new_test_user, tagged
+from odoo.tests.common import TransactionCase, tagged
+
+from odoo.addons.ab_ai_agent.tests.common import new_test_user
 
 from odoo.addons.ab_ai_agent.services import tool_dispatcher as td
 from odoo.addons.ab_ai_agent.services.runtime import (
@@ -173,7 +175,7 @@ class TestHardening(TransactionCase):
         config._get_decrypted_key.return_value = 'k'
         captured = {}
 
-        def fake_post(url, headers=None, json=None, timeout=None):
+        def fake_post(url, headers=None, json=None, timeout=None, **_kw):
             captured.update(json)
             resp = MagicMock(status_code=200)
             resp.json.return_value = {

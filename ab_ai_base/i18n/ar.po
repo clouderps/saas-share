@@ -774,3 +774,21 @@ msgstr "sk-..."
 #: model_terms:ir.ui.view,arch_db:ab_ai_base.view_ai_provider_config_form
 msgid "sk-ant-..."
 msgstr "sk-ant-..."
+
+#. module: ab_ai_base
+#. odoo-python
+#: code:addons/ab_ai_base/models/ai_service.py:0
+msgid ""
+"Local LLM is disabled. An administrator must enable the "
+"\"ab_ai_base.allow_local_llm\" system parameter."
+msgstr ""
+"النموذج اللغوي المحلي معطّل. يجب على المسؤول تفعيل معامل النظام "
+"\"ab_ai_base.allow_local_llm\"."
+
+#. module: ab_ai_base
+#. odoo-python
+#: code:addons/ab_ai_base/models/ai_service.py:0
+msgid ""
+"The local LLM endpoint must point to a loopback or private network address."
+msgstr ""
+"يجب أن يشير عنوان النموذج اللغوي المحلي إلى عنوان محلي (loopback) أو عنوان شبكة خاصة."

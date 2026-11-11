@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-from odoo.tests.common import TransactionCase, new_test_user, tagged
+from odoo.tests.common import TransactionCase, tagged
+
+from odoo.addons.ab_ai_agent.tests.common import new_test_user
 
 
 @tagged('post_install', '-at_install', 'ghaima_ai_command')
@@ -9,8 +11,12 @@ class TestLeaveCommand(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.user = new_test_user(cls.env, login='leave_cmd_user', groups='base.group_user')
-        cls.me = cls.env['hr.employee'].create({'name': 'Leave Me', 'user_id': cls.user.id})
-        cls.other = cls.env['hr.employee'].create({'name': 'Someone Else'})
+        cls.me = cls.env['hr.employee'].create({
+            'name': 'Leave Me', 'user_id': cls.user.id,
+            # explicit: tenants auto-number this field and validate its format
+            'identification_id': '1012345678'})
+        cls.other = cls.env['hr.employee'].create({
+            'name': 'Someone Else', 'identification_id': '2012345678'})
         cls.ltype = cls.env['hr.leave.type'].create({
             'name': 'AI Test Leave', 'requires_allocation': 'no', 'request_unit': 'day'})
         cls.command = cls.env['ai.agent.command'].search([('code', '=', 'create_leave')])

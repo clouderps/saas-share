@@ -149,6 +149,8 @@ class TestSystemGuidance(TransactionCase):
         self.assertTrue(res['model'])
 
     def test_explain_resolves_a_human_model_description(self):
+        if 'account.move' not in self.env:
+            self.skipTest('account not installed')
         res = td._builtin_explain_screen(self.env, screen='Journal Entry')
         self.assertEqual(res.get('model'), 'account.move')
 
@@ -170,6 +172,8 @@ class TestSystemGuidance(TransactionCase):
         self.assertIn('name', [f['field'] for f in res['key_fields']])
 
     def test_explain_reports_lifecycle_when_the_model_has_one(self):
+        if 'sale.order' not in self.env:
+            self.skipTest('sale not installed')
         res = td._builtin_explain_screen(self.env, model='sale.order')
         self.assertTrue(res['lifecycle'], 'sale.order has a state field')
 

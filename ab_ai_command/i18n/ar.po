@@ -482,3 +482,15 @@ msgstr "لم تُدخل أي قيمة."
 #: code:addons/ab_ai_command/models/ai_command_mixin.py:0
 msgid "Several matches for \"%(text)s\" in %(field)s. Which one?"
 msgstr "توجد عدة نتائج لـ \"%(text)s\" في %(field)s. أيها تقصد؟"
+
+#. module: ab_ai_command
+#. odoo-python
+#: code:addons/ab_ai_command/models/ai_agent_command.py:0
+msgid "The assistant is switched off for you."
+msgstr "المساعد متوقف لحسابك."
+
+#. module: ab_ai_command
+#. odoo-python
+#: code:addons/ab_ai_command/models/ai_agent_command.py:0
+msgid "Assistant actions are switched off."
+msgstr "إجراءات المساعد متوقفة."

@@ -8,6 +8,19 @@ class ResConfigSettings(models.TransientModel):
     ai_assistant_enabled = fields.Boolean(
         string='Floating assistant', default=True,
         config_parameter='ab_ai_agent.assistant_enabled')
+    ai_assistant_activation = fields.Selection(
+        [('self', 'Each user turns it on in their preferences'),
+         ('admin', 'Administrators choose the users')],
+        string='Who turns the assistant on', default='self',
+        config_parameter='ab_ai_agent.assistant_activation')
+    ai_assistant_max_users = fields.Integer(
+        string='Assistant seats', default=0,
+        config_parameter='ab_ai_agent.assistant_max_users',
+        help='How many users may use the assistant at the same time. 0: no limit.')
+    ai_kill_switch = fields.Boolean(
+        string='Switch Ghaima AI off', default=False,
+        config_parameter='ab_ai_agent.kill_switch',
+        help='Stops the assistant and every assistant action for all users at once.')
     ai_proactive_enabled = fields.Boolean(
         string='Proactive tips', default=True,
         config_parameter='ab_ai_agent.proactive_enabled',
@@ -75,3 +88,14 @@ class ResConfigSettings(models.TransientModel):
              'to it, otherwise its own provider key. If the gateway cannot be '
              'reached, the own key is used for 5 minutes before trying again.')
 
+    def set_values(self):
+        res = super().set_values()
+        # An unticked Boolean deletes its parameter, and these three default
+        # to ON when unset — so "off" has to be stored explicitly.
+        icp = self.env['ir.config_parameter'].sudo()  # sudo: settings are admin-only already
+        for field, key in (('ai_assistant_enabled', 'ab_ai_agent.assistant_enabled'),
+                           ('ai_actions_enabled', 'ab_ai_agent.actions_enabled'),
+                           ('ai_voice_enabled', 'ab_ai_agent.voice_enabled')):
+            if not self[field]:
+                icp.set_param(key, 'False')
+        return res

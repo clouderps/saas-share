@@ -44,6 +44,8 @@ class AiAgentPendingAction(models.Model):
     summary = fields.Char(readonly=True)
     agent_run_id = fields.Many2one('ai.agent.run', readonly=True,
                                    ondelete='set null')
+    # The agent whose permissions the confirmation is re-checked against.
+    agent_id = fields.Many2one('ai.agent', readonly=True, ondelete='cascade')
     state = fields.Selection([
         ('proposed', 'Awaiting confirmation'),
         ('executed', 'Executed'),
@@ -65,17 +67,24 @@ class AiAgentPendingAction(models.Model):
     def propose(self, tool_code, args, *, target=None, summary='', agent_run=None, details=None):
         """Record a proposal for the CURRENT user and return the chip payload.
 
-        Created as the user (the ACL grants create on own rows), so a
-        proposal can never be minted on someone else's behalf.
+        Users have no create right on this model: a proposal can only be
+        minted here, for the calling user, by a tool that validated its
+        target — never by a raw RPC create with a hand-picked tool/agent.
         """
-        row = self.create({
+        # sudo: see above; user_id / company_id are pinned to the caller.
+        row = self.sudo().create({
             'key': secrets.token_urlsafe(18),
+            'user_id': self.env.uid,
+            'company_id': self.env.company.id,
             'tool_code': tool_code,
             'args_json': json.dumps(args or {}, default=str),
             'target_model': target._name if target else False,
             'target_id': target.id if target else 0,
             'summary': (summary or '')[:250],
             'agent_run_id': agent_run.id if agent_run else False,
+            # Set by the dispatcher for the duration of a tool call.
+            'agent_id': ((agent_run.agent_id.id if agent_run else False)
+                         or self.env.context.get('ai_agent_id') or False),
         })
         return {
             'requires_confirmation': True,
@@ -121,20 +130,33 @@ class AiAgentPendingAction(models.Model):
                     'message': _('Cancelled. Nothing was changed.')}
 
         from ..services import tool_dispatcher
-        fn = tool_dispatcher.get(row.tool_code)
-        if not fn:
+        # Proposals made outside an agent run (direct tool calls) are held
+        # to the default assistant's permissions.
+        agent = row.agent_id or self.env['ai.agent'].get_default()
+        if not agent or not agent.active:
             row.sudo().write({'state': 'failed', 'decided_at': now,
-                              'error': 'tool unavailable'})
+                              'error': 'agent unavailable'})
             return {'ok': False, 'message': _('That action is not available any more.')}
         args = json.loads(row.args_json or '{}')
-        try:
-            with self.env.cr.savepoint():
-                result = fn(self.env, agent=None, _ai_confirmed=True, **args)
-        except Exception as e:
-            _logger.info('Confirmed AI action %s failed: %s', row.tool_code, e)
+        # Re-runs every dispatch gate (groups, write/PII permission, kill
+        # switch, plan ceiling) as of now, with the proposing agent.
+        with self.env.cr.savepoint() as sp:
+            outcome = tool_dispatcher.dispatch_confirmed(
+                self.env, row.tool_code, args, agent=agent)
+            if not outcome.get('ok'):
+                sp.rollback()
+        if not outcome.get('ok'):
+            # sudo: readonly state fields, own row (matched above).
             row.sudo().write({'state': 'failed', 'decided_at': now,
-                              'error': str(e)[:250]})
+                              'error': str(outcome.get('error') or 'failed')[:250]})
+            if outcome.get('error') == 'user_error':
+                return {'ok': False, 'message': outcome.get('message')}
+            if outcome.get('error') in ('forbidden', 'pii_blocked', 'write_blocked',
+                                        'not_offered', 'unavailable',
+                                        'assistant_off', 'actions_off'):
+                return {'ok': False, 'message': _('That action is not allowed any more.')}
             return {'ok': False, 'message': _('That action could not be completed.')}
+        result = outcome.get('result')
         result = result if isinstance(result, dict) else {'result': result}
         if result.get('error'):
             row.sudo().write({'state': 'failed', 'decided_at': now,

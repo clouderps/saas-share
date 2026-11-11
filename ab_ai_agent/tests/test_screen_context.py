@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """Phase 2 — the Screen Context Engine trusts nothing from the browser."""
 from odoo import fields
-from odoo.tests.common import TransactionCase, new_test_user, tagged
+from odoo.tests.common import TransactionCase, tagged
+
+from odoo.addons.ab_ai_agent.tests.common import new_test_user
 
 
 @tagged('post_install', '-at_install', 'ghaima_ai_agent')

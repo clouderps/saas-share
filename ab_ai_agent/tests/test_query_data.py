@@ -2,7 +2,9 @@
 """query_data: any readable model, as the user, validated, bounded."""
 from datetime import date
 
-from odoo.tests.common import TransactionCase, new_test_user, tagged
+from odoo.tests.common import TransactionCase, tagged
+
+from odoo.addons.ab_ai_agent.tests.common import new_test_user
 
 from odoo.addons.ab_ai_agent.services.query_data import query_data
 

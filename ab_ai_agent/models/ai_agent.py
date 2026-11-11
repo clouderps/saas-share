@@ -290,7 +290,8 @@ class AIAgent(models.Model):
     @api.model
     def _agent_limit(self):
         try:
-            return max(0, int(self.env['ir.config_parameter'].sudo().get_param(LIMIT_PARAM) or 0))
+            # LIMIT_PARAM stays the local default (see ai.feature.policy).
+            return self.env['ai.feature.policy'].get('agents.max')
         except (TypeError, ValueError):
             return 0
 

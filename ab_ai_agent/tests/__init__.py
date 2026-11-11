@@ -17,3 +17,5 @@ from . import test_create_flows
 from . import test_ghaima_base
 from . import test_navigate
 from . import test_full_access_builder
+from . import test_dispatch_policy
+from . import test_feature_policy

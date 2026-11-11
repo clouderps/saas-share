@@ -95,6 +95,16 @@ class AIAgentTool(models.Model):
     preset_model = fields.Char(readonly=True, index=True)
     preset_op = fields.Char(readonly=True)
 
+    # External exposure (MCP). Off by default: a tool reaches an external
+    # client only when an operator opts it in.
+    mcp_enabled = fields.Boolean(
+        string='Expose over MCP', default=False, index=True,
+        help='Offer this tool to external MCP clients. The same gates apply '
+             'as in the in-app assistant (groups, record rules, plan).')
+    output_schema = fields.Text(
+        help='Optional JSON Schema of the result, advertised to MCP clients '
+             'as outputSchema.')
+
     # ACL
     group_ids = fields.Many2many(
         'res.groups', 'ai_agent_tool_group_rel', 'tool_id', 'group_id',
@@ -171,6 +181,104 @@ class AIAgentTool(models.Model):
             'is_write_action': self.is_write_action,
             'allow_end_message': self.allow_end_message,
         }
+
+    @api.constrains('output_schema')
+    def _check_output_schema(self):
+        for tool in self.filtered('output_schema'):
+            try:
+                data = json.loads(tool.output_schema)
+            except (ValueError, TypeError):
+                data = None
+            if not isinstance(data, dict):
+                raise ValidationError(_(
+                    "Tool '%(name)s' output schema must be a JSON object.",
+                    name=tool.name))
+
+    # ── Offering / external spec ───────────────────────────────
+
+    def _is_mutating(self):
+        """True for tools that change data, directly or once confirmed."""
+        self.ensure_one()
+        from ..services import tool_dispatcher
+        return bool(self.is_write_action
+                    or self.code in tool_dispatcher.ACTION_TOOLS
+                    or self.code in tool_dispatcher.PROPOSAL_TOOLS
+                    or (self.preset_json and self.preset_op in ('create', 'update')))
+
+    def _offered_to(self, user, policy):
+        """Subset of ``self`` that may be offered to ``user`` under ``policy``
+        (an ``ai.agent`` record or a ``tool_dispatcher.ToolPolicy``).
+
+        Write tools the policy may not run are not offered at all: listing a
+        tool the dispatcher will refuse only teaches the model to call it
+        again and again. The actions kill switch and the plan ceiling
+        (central) hide every confirm-first tool; a tenant setting cannot
+        re-enable what the subscription does not include.
+        """
+        from ..services import tool_dispatcher
+        from ..services.llm_adapter import gateway_policy
+        icp = self.env['ir.config_parameter'].sudo()
+
+        def flag(key, default='True'):
+            return str(icp.get_param(key, default)).lower() in ('1', 'true', 'yes')
+        can_write = bool(policy) and bool(policy.allow_write_actions)
+        actions_on = self.env['ai.feature.policy'].get('assistant.actions') and can_write
+        if actions_on and gateway_policy(self.env).get('actions') is False:
+            actions_on = False
+        memory_on = flag('ab_ai_agent.user_memory')
+
+        def allowed(t):
+            if not t.is_invocable_by(user):
+                return False
+            if (t.code in tool_dispatcher.ACTION_TOOLS
+                    or t.code in tool_dispatcher.PROPOSAL_TOOLS) and not actions_on:
+                return False
+            if t.preset_json and t.preset_op in ('create', 'update') and not actions_on:
+                # Console-made write presets only propose, but they are still
+                # writes: kill switch, plan and write permission all apply.
+                return False
+            if t.is_write_action:
+                # A user's own memory is theirs to write; everything else
+                # needs write permission (confirm-first action tools are not
+                # write actions at dispatch — they only propose).
+                return (t.category == 'memory' and memory_on) or can_write
+            return True
+        return self.filtered(allowed)
+
+    def tool_spec(self):
+        """Transport-neutral description of the tool (MCP and others)."""
+        self.ensure_one()
+        schema = json.loads(self.schema or '{}') or {}
+        schema.setdefault('type', 'object')
+        schema.setdefault('properties', {})
+        # __end_message is an in-app LLM helper, never an external argument.
+        schema['properties'].pop('__end_message', None)
+        if '__end_message' in (schema.get('required') or []):
+            schema['required'] = [r for r in schema['required'] if r != '__end_message']
+        mutating = self._is_mutating()
+        spec = {
+            'name': self.code,
+            'title': self.name or self.code,
+            'description': self.description or '',
+            'inputSchema': schema,
+            'annotations': {
+                'title': self.name or self.code,
+                'readOnlyHint': not mutating,
+                'destructiveHint': mutating,
+            },
+            # sudo: group xmlids are metadata; reading them must not need
+            # Administration rights.
+            'groups': [x for x in self.group_ids.sudo().get_external_id().values() if x],
+        }
+        if self.output_schema:
+            spec['outputSchema'] = json.loads(self.output_schema)
+        return spec
+
+    def as_mcp_schema(self):
+        """The tool as an MCP ``tools/list`` entry."""
+        spec = self.tool_spec()
+        spec.pop('groups', None)
+        return spec
 
     @api.constrains('preset_json')
     def _check_preset(self):

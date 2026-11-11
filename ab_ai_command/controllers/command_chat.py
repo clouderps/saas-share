@@ -19,6 +19,8 @@ class AICommandController(http.Controller):
         Command = request.env.get('ai.agent.command')
         if Command is None:
             return {'success': True, 'commands': []}
+        if request.env.user._ai_assistant_block_reason():
+            return {'success': True, 'commands': []}
         return {'success': True,
                 'commands': Command.palette_for_user(request.env.user)}
 

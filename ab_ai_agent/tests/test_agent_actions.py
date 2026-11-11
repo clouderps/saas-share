@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """Agent actions: propose first, run on Confirm, as the user, validated."""
-from odoo.tests.common import TransactionCase, new_test_user, tagged
+from odoo.tests.common import TransactionCase, tagged
+
+from odoo.addons.ab_ai_agent.tests.common import new_test_user
 
 from odoo.addons.ab_ai_agent.services import agent_actions as aa
 

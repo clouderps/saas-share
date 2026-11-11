@@ -426,6 +426,9 @@ class AIAgentController(http.Controller):
           screen (dict, optional) — the aiScreenContext descriptor of the
               page the user is on; re-validated server-side as the user
         """
+        blocked = request.env.user._ai_assistant_block_reason()
+        if blocked:
+            return {'success': False, 'error': 'assistant_unavailable', 'reason': blocked}
         message = (kwargs.get('message') or '').strip()
         if not message and not kwargs.get('skill_code'):
             return {'success': False, 'error': 'message_or_skill_required'}

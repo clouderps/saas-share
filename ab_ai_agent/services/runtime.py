@@ -83,6 +83,21 @@ def run(env, *, agent, user_question, conversation=None, surface='chat',
     })
     on_event('start', run_id=agent_run.id, agent=agent.name, agent_code=agent.code)
 
+    # ── 1b. Kill switch / activation / seat ───────────────────
+    # Every surface that reaches the model passes here (chat, FAB, skills),
+    # so a switched-off assistant spends no tokens — not only /ai_agent/run.
+    blocked = env.user._ai_assistant_block_reason()
+    if blocked:
+        envelope = _unavailable_envelope(blocked, locale)
+        agent_run.finalize(
+            state='cancelled',
+            response=envelope['response'],
+            error='ASSISTANT_UNAVAILABLE:%s' % blocked,
+            latency_ms=int((time.perf_counter() - started_perf) * 1000),
+        )
+        on_event('done', run_id=agent_run.id, state='cancelled')
+        return envelope['response'], agent_run, envelope
+
     # ── 2. Budget guard (local mirror) ────────────────────────
     Budget = env.get('ai.usage.local.budget')
     if Budget is not None:
@@ -1449,50 +1464,13 @@ def _tool_protocol_block(tools, native=False):
 
 
 def _resolve_tools(env, agent):
-    """Effective tool set for the agent, ACL-filtered for the current user.
-
-    Write tools the agent may not run are not offered at all: listing a
-    tool the dispatcher will refuse only teaches the model to call it
-    again and again (a native-tools run spent 12 steps on a blocked
-    confirm_sale_order while screen_button — confirm-first — was there).
-    """
-    icp = env['ir.config_parameter'].sudo()
-
-    def flag(key, default='True'):
-        return str(icp.get_param(key, default)).lower() in ('1', 'true', 'yes')
-    actions_on = flag('ab_ai_agent.actions_enabled')
-    # The plan (central) is a ceiling: a tenant setting cannot re-enable
-    # what the subscription does not include.
-    from .llm_adapter import gateway_policy
-    if gateway_policy(env).get('actions') is False:
-        actions_on = False
-    memory_on = flag('ab_ai_agent.user_memory')
-
-    def allowed(t):
-        if not t.is_invocable_by(env.user):
-            return False
-        if (t.code in ACTION_TOOLS or t.code in tool_dispatcher.PROPOSAL_TOOLS) \
-                and not (actions_on and agent.allow_write_actions):
-            # screen_button / act_on_record can confirm, post or validate:
-            # an agent without write permission must not even offer them.
-            return False
-        if t.preset_json and t.preset_op in ('create', 'update') \
-                and not (actions_on and agent.allow_write_actions):
-            # Console-made write presets only propose, but they are still
-            # writes: the kill switch, the plan and the agent's own
-            # write permission all apply.
-            return False
-        if t.is_write_action:
-            # A user's own memory is theirs to write; everything else needs
-            # the agent's write permission (confirm-first action tools are
-            # not write actions at dispatch — they only propose).
-            return (t.category == 'memory' and memory_on) or agent.allow_write_actions
-        return True
-    return agent._effective_tools().filtered(allowed)
+    """Effective tool set for the agent, filtered for the current user by
+    ``ai.agent.tool._offered_to`` (ACL, kill switch, plan ceiling, the
+    agent's write permission)."""
+    return agent._effective_tools()._offered_to(env.user, agent)
 
 
-ACTION_TOOLS = frozenset({'screen_button', 'act_on_record', 'create_record', 'update_record',
-                          'post_message', 'schedule_activity'})
+ACTION_TOOLS = tool_dispatcher.ACTION_TOOLS
 
 # Tool routing: which tools a question can need. CORE is always offered;
 # a group joins when the question (Arabic or English) mentions its world.
@@ -1928,6 +1906,34 @@ def _agent_limit_envelope(limit, locale):
             'blocks': [
                 {'type': 'callout', 'title': 'AI plan limit', 'body': msg,
                  'tone': 'bad', 'icon': 'fa-exclamation-triangle'},
+            ],
+        },
+    }
+
+
+def _unavailable_envelope(reason, locale):
+    if locale == 'ar':
+        msg = {
+            'killed': 'تم إيقاف مساعد غيمة مؤقتًا من قِبل المسؤول.',
+            'disabled': 'مساعد غيمة غير مفعّل في هذا النظام.',
+            'no_seat': 'جميع مقاعد مساعد غيمة مستخدمة. تواصل مع المسؤول.',
+        }.get(reason, 'مساعد غيمة غير مفعّل لحسابك. فعّله من التفضيلات أو تواصل مع المسؤول.')
+    else:
+        msg = {
+            'killed': 'Ghaima AI is switched off by your administrator for now.',
+            'disabled': 'Ghaima AI is not enabled on this system.',
+            'no_seat': 'All Ghaima AI seats are in use. Contact your administrator.',
+        }.get(reason, 'Ghaima AI is not turned on for your account. Turn it on in '
+                      'your preferences or contact your administrator.')
+    return {
+        'response': msg,
+        'error': 'ASSISTANT_UNAVAILABLE',
+        'reason': reason,
+        'render': {
+            'layout': 'chat',
+            'blocks': [
+                {'type': 'callout', 'title': 'Ghaima AI', 'body': msg,
+                 'tone': 'bad', 'icon': 'fa-power-off'},
             ],
         },
     }

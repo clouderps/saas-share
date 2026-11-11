@@ -5,7 +5,9 @@ import json
 from unittest.mock import patch, MagicMock
 
 from odoo.exceptions import UserError
-from odoo.tests.common import HttpCase, TransactionCase, new_test_user, tagged
+from odoo.tests.common import HttpCase, TransactionCase, tagged
+
+from odoo.addons.ab_ai_agent.tests.common import new_test_user
 
 WAV = base64.b64encode(b'RIFF' + b'\0' * 64).decode()
 
@@ -36,7 +38,7 @@ class TestVoiceService(TransactionCase):
         config._get_decrypted_key.return_value = 'k'
         captured = {}
 
-        def fake_post(url, headers=None, json=None, timeout=None):
+        def fake_post(url, headers=None, json=None, timeout=None, **_kw):
             captured.update(url=url, headers=headers, json=json)
             resp = MagicMock()
             resp.json.return_value = {'candidates': [{'content': {'parts': [{'text': ' مرحبا '}]}}]}

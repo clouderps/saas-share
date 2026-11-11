@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-from odoo.tests.common import TransactionCase, new_test_user, tagged
+from odoo.tests.common import TransactionCase, tagged
+
+from odoo.addons.ab_ai_agent.tests.common import new_test_user
 
 from odoo.addons.ab_ai_agent.services import tool_dispatcher
 from odoo.addons.ab_ai_agent_cache.services import answer_cache as ac

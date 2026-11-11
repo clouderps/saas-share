@@ -14,6 +14,8 @@ from __future__ import annotations
 import json
 import logging
 import time
+import uuid
+from dataclasses import dataclass
 
 from odoo.exceptions import AccessError, UserError
 
@@ -54,44 +56,135 @@ def all_tools():
     return dict(_REGISTRY)
 
 
-def dispatch(env, tool_record, arguments, *, agent=None, agent_run=None):
+# Confirm-first tools shipped by this module: they only propose at
+# dispatch, but they change data once confirmed, so the actions kill
+# switch, the plan ceiling and the agent's write permission hide them.
+ACTION_TOOLS = frozenset({'screen_button', 'act_on_record', 'create_record', 'update_record',
+                          'post_message', 'schedule_activity'})
+
+
+@dataclass(frozen=True)
+class ToolPolicy:
+    """What a caller without an ``ai.agent`` (MCP, scripts) may do.
+
+    Duck-types the two agent flags the gates read, so ``dispatch`` and
+    ``ai.agent.tool._offered_to`` take either an agent record or this.
+    ``sanitize_errors`` defaults on: external callers never see exception
+    text, only a generic message and a request id to quote.
+    """
+    allow_write_actions: bool = False
+    allow_pii: bool = False
+    sanitize_errors: bool = True
+    name: str = 'policy'
+
+
+def _policy_of(agent, policy):
+    return policy if policy is not None else agent
+
+
+def dispatch(env, tool_record, arguments, *, agent=None, agent_run=None,
+             policy=None, sanitize_errors=None):
     """Run a tool by record.
 
     Validates ACL, dispatches to the registered callable or the
     ir.actions.server target. Returns ``{'ok': bool, 'result': ...,
     'error': str, 'duration_ms': int}``. Never raises — every failure
     becomes part of the LLM context so the model can recover.
+
+    ``policy`` carries the gate flags when there is no agent (an
+    ``ai.agent`` record or a :class:`ToolPolicy`); it defaults to
+    ``agent``. A caller without an agent has no runtime tool filter in
+    front of it, so the offering gates (kill switch, plan ceiling,
+    confirm-first write tools) are re-run here for it.
+    ``sanitize_errors`` (default: the policy's own flag, off for agents)
+    replaces exception text with a generic message + request id.
     """
     started = time.perf_counter()
+    policy = _policy_of(agent, policy)
+    if sanitize_errors is None:
+        sanitize_errors = bool(getattr(policy, 'sanitize_errors', False))
+    gate = _gates(env, tool_record, policy, offering=agent is None)
+    if gate:
+        kind, message = gate
+        return _error(kind, tool_record, time.perf_counter() - started, message)
+    return _run(env, tool_record, arguments, agent=agent, policy=policy,
+                started=started, sanitize_errors=sanitize_errors)
 
-    # ── ACL ────────────────────────────────────────────────────
+
+def dispatch_confirmed(env, tool_code, arguments, *, agent=None, policy=None,
+                       sanitize_errors=None):
+    """Execute a change the user confirmed (``ai.agent.pending.action``).
+
+    Every gate ``dispatch`` runs — tool ACL/groups, PII, write permission —
+    plus the offering gates (actions kill switch, plan ceiling, the
+    agent's write permission on confirm-first tools) is re-run with the
+    agent that proposed it, because rights, settings or the plan may have
+    changed between the proposal and the click. Same return shape as
+    :func:`dispatch`; the ``_ai_confirmed`` flag is set server-side only.
+    """
+    started = time.perf_counter()
+    policy = _policy_of(agent, policy)
+    if sanitize_errors is None:
+        sanitize_errors = bool(getattr(policy, 'sanitize_errors', False))
+    Tool = env['ai.agent.tool']
+    # sudo: look the tool up regardless of the user's read ACL on the
+    # catalogue; is_invocable_by() below is the real per-user check.
+    tool_record = Tool.sudo().search([('code', '=', tool_code or '')], limit=1).with_env(env)
+    if not tool_record or (not tool_record.preset_json and not get(tool_record.code)):
+        return {'ok': False, 'tool': tool_code or '', 'error': 'unavailable',
+                'message': 'That action is not available any more.',
+                'duration_ms': 0, 'end_message': None}
+    gate = _gates(env, tool_record, policy, offering=True)
+    if gate:
+        kind, message = gate
+        return _error(kind, tool_record, time.perf_counter() - started, message)
+    return _run(env, tool_record, arguments, agent=agent, policy=policy,
+                started=started, sanitize_errors=sanitize_errors, confirmed=True)
+
+
+def _gates(env, tool_record, policy, *, offering):
+    """First failing gate as ``(kind, message)``, or None."""
+    Policy = env['ai.feature.policy']
+    if Policy.get('kill'):
+        return 'assistant_off', 'Ghaima AI is switched off on this system.'
+    # The in-app assistant path (an ai.agent policy or none) needs the user's
+    # assistant activation; a ToolPolicy caller (e.g. MCP) is gated by its own
+    # feature keys in its own module.
+    if not isinstance(policy, ToolPolicy) and not env.user._ai_assistant_allowed():
+        return 'assistant_off', 'Ghaima AI is not active for this user.'
+    if (tool_record._is_mutating() and tool_record.category != 'memory'
+            and not Policy.get('assistant.actions')):
+        return 'actions_off', 'Assistant actions are turned off on this system.'
     if not tool_record.is_invocable_by(env.user):
-        return _error('forbidden', tool_record, time.perf_counter() - started,
-                      f'You do not have permission to invoke {tool_record.code}.')
+        return 'forbidden', f'You do not have permission to invoke {tool_record.code}.'
+    if tool_record.requires_pii and (not policy or not policy.allow_pii):
+        return 'pii_blocked', (
+            'This tool reads personal data and the assistant is not allowed '
+            'to (the "Allow Pii" setting is off on this agent). Tell the user '
+            'exactly that, and that an administrator can turn it on in '
+            'AI > Agents > All Agents. Do NOT say there is no data.')
+    if tool_record.is_write_action and (not policy or not policy.allow_write_actions):
+        return 'write_blocked', 'Agent is not allowed to invoke write actions.'
+    if offering and not tool_record._offered_to(env.user, policy):
+        return 'not_offered', ('This action is turned off on this system, not '
+                               'included in the plan, or not allowed for this assistant.')
+    return None
 
-    # ── PII gate ───────────────────────────────────────────────
-    if tool_record.requires_pii and (not agent or not agent.allow_pii):
-        return _error('pii_blocked', tool_record, time.perf_counter() - started,
-                      'This tool reads personal data and the assistant is not allowed '
-                      'to (the "Allow Pii" setting is off on this agent). Tell the user '
-                      'exactly that, and that an administrator can turn it on in '
-                      'AI > Agents > All Agents. Do NOT say there is no data.')
 
-    # ── Write-action gate ──────────────────────────────────────
-    if tool_record.is_write_action and (not agent or not agent.allow_write_actions):
-        return _error('write_blocked', tool_record, time.perf_counter() - started,
-                      'Agent is not allowed to invoke write actions.')
-
+def _run(env, tool_record, arguments, *, agent, policy, started, sanitize_errors,
+         confirmed=False):
     # ── Strip the __end_message helper from arguments ──────────
     arguments = dict(arguments or {})
     end_message = arguments.pop('__end_message', None)
     # `_ai_*` kwargs are server-side flags (e.g. `_ai_confirmed`, set
-    # only by ai.agent.pending.action.resolve after the user's click).
-    # A model — or text injected into a record it read — must never be
-    # able to pass them and skip the confirmation step.
+    # only by dispatch_confirmed after the user's click). A model — or
+    # text injected into a record it read — must never be able to pass
+    # them and skip the confirmation step.
     arguments = {k: v for k, v in arguments.items()
                  if not str(k).startswith('_ai_')}
     arguments = _coerce_json_args(tool_record, arguments)
+    if confirmed:
+        arguments['_ai_confirmed'] = True
 
     # ── Dispatch ───────────────────────────────────────────────
     try:
@@ -100,12 +193,18 @@ def dispatch(env, tool_record, arguments, *, agent=None, agent_run=None):
         else:
             result = _dispatch_python(env, tool_record, arguments, agent=agent)
     except UserError as ue:
+        # UserError text is written for users: shown in every mode.
         return _error('user_error', tool_record, time.perf_counter() - started,
                       str(ue), end_message=end_message)
     except Exception as e:
-        _logger.exception("Tool %s failed", tool_record.code)
-        return _error('exception', tool_record, time.perf_counter() - started,
-                      f'{type(e).__name__}: {e}', end_message=end_message)
+        request_id = uuid.uuid4().hex[:12]
+        _logger.exception("Tool %s failed [request %s]", tool_record.code, request_id)
+        message = (f'The tool failed. Reference: {request_id}' if sanitize_errors
+                   else f'{type(e).__name__}: {e}')
+        out = _error('exception', tool_record, time.perf_counter() - started,
+                     message, end_message=end_message)
+        out['request_id'] = request_id
+        return out
 
     duration_ms = int((time.perf_counter() - started) * 1000)
     return {
@@ -148,6 +247,10 @@ def _coerce_json_args(tool_record, arguments):
 
 
 def _dispatch_python(env, tool, arguments, agent=None):
+    if agent:
+        # Proposals made during this call remember which agent proposed
+        # them, so the confirmation re-checks that agent's permissions.
+        env = env(context=dict(env.context, ai_agent_id=agent.id))
     if tool.preset_json:
         # Console-builder tool: a preset over the generic data tools.
         from .generic_data import run_preset
@@ -670,6 +773,9 @@ def _resolve_model(env, name):
         try:
             hit = IrModel.sudo().search(
                 ['|', ('name', '=ilike', raw), ('name', 'ilike', raw)], limit=1)
+            if not hit and len(raw) > 3 and raw[-1] in 'sS':
+                # "Contacts" → the model described as "Contact".
+                hit = IrModel.sudo().search([('name', '=ilike', raw[:-1])], limit=1)
             if hit and env.get(hit.model) is not None:
                 return hit.model
         except Exception:
@@ -872,14 +978,14 @@ def _builtin_hr_attendance_open_shifts(env, agent=None, **_kw):
 # `action`). The LLM only writes the surrounding narrative paragraph.
 
 _DA_METRICS = {
-    # key: (table, amount_col, date_col, state_sql, label)
-    'pos_sales': ("pos_order", "amount_total", "date_order",
-                  "state IN ('paid','done','invoiced')", "POS sales"),
-    'sale_orders': ("sale_order", "amount_total", "date_order",
-                    "state IN ('sale','done')", "Sales orders"),
-    'invoiced_revenue': ("account_move", "amount_total_signed", "invoice_date",
-                         "move_type = 'out_invoice' AND state = 'posted'",
-                         "Invoiced revenue"),
+    # key: (model, amount_field, date_field, domain, label)
+    'pos_sales': ('pos.order', 'amount_total', 'date_order',
+                  [('state', 'in', ('paid', 'done', 'invoiced'))], 'POS sales'),
+    'sale_orders': ('sale.order', 'amount_total', 'date_order',
+                    [('state', 'in', ('sale', 'done'))], 'Sales orders'),
+    'invoiced_revenue': ('account.move', 'amount_total_signed', 'invoice_date',
+                         [('move_type', '=', 'out_invoice'), ('state', '=', 'posted')],
+                         'Invoiced revenue'),
 }
 _DA_GROUPS = {'day', 'week', 'month'}
 
@@ -892,15 +998,19 @@ def _builtin_data_analysis(env, agent=None, metric='pos_sales',
       metric:      pos_sales | sale_orders | invoiced_revenue
       period_days: lookback window (1–365, default 30)
       group:       day | week | month (bucket granularity)
+
+    Aggregates through ``_read_group`` as the calling user, so model ACLs,
+    record rules and the user's allowed companies all apply — the former
+    raw SQL summed every company's rows for anyone who could ask.
     """
-    from datetime import timedelta
+    from datetime import datetime as _dt, timedelta
     from odoo import fields as _fields
 
     spec = _DA_METRICS.get(metric)
     if not spec:
         return {'error': f'unknown metric {metric!r}; '
                          f'choose one of {sorted(_DA_METRICS)}'}
-    table, amt_col, date_col, state_sql, label = spec
+    model_name, amt_field, date_field, base_domain, label = spec
     group = group if group in _DA_GROUPS else 'day'
     _ = env._
     # What the user reads is translated; `summary` (for the model) stays English.
@@ -917,30 +1027,35 @@ def _builtin_data_analysis(env, agent=None, metric='pos_sales',
     prev_start = start - timedelta(days=period_days)
     unit = (env.company.currency_id.symbol or 'SAR')
 
-    # Guard: table may not exist on every tenant (no POS, no accounting).
-    env.cr.execute("SELECT to_regclass(%s)", (f'public.{table}',))
-    if not (env.cr.fetchone() or [None])[0]:
-        return {'error': f'{metric}: table {table} not present on this instance'}
+    # The app may not be installed on every instance (no POS, no accounting).
+    Model = env.get(model_name)
+    if Model is None:
+        return {'error': f'{metric}: {model_name} not present on this instance'}
+    if not Model.has_access('read'):
+        return {'error': f'{metric}: you do not have access to {model_name}'}
+    domain = list(base_domain)
+    if 'company_id' in Model._fields:
+        # Record rules already restrict to allowed companies; this keeps the
+        # totals to the companies active in the switcher as well.
+        domain.append(('company_id', 'in', env.companies.ids))
 
-    q = (
-        f"SELECT date_trunc(%s, {date_col})::date d, "
-        f"       COALESCE(SUM({amt_col}), 0) amt, COUNT(*) n "
-        f"  FROM {table} "
-        f" WHERE {state_sql} AND {date_col} >= %s AND {date_col} < %s "
-        f" GROUP BY 1 ORDER BY 1"
-    )
+    def window(lo, hi):
+        return domain + [(date_field, '>=', lo), (date_field, '<', hi)]
+
     try:
         with env.cr.savepoint(flush=False):
-            env.cr.execute(q, (group, start, today))
-            rows = env.cr.fetchall()
-            env.cr.execute(
-                f"SELECT COALESCE(SUM({amt_col}), 0) FROM {table} "
-                f"WHERE {state_sql} AND {date_col} >= %s AND {date_col} < %s",
-                (prev_start, start),
-            )
-            prev_total = float((env.cr.fetchone() or [0])[0] or 0)
-    except Exception as e:  # never raise into the hop loop
-        return {'error': f'{metric} query failed: {type(e).__name__}: {e}'}
+            grouped = Model._read_group(
+                window(start, today), groupby=[f'{date_field}:{group}'],
+                aggregates=[f'{amt_field}:sum', '__count'],
+                order=f'{date_field}:{group}')
+            [[prev_total]] = Model._read_group(
+                window(prev_start, start), aggregates=[f'{amt_field}:sum'])
+    except Exception:  # never raise into the hop loop
+        _logger.exception('data_analysis %s failed', metric)
+        return {'error': f'{metric} query failed'}
+    prev_total = float(prev_total or 0)
+    rows = [((d.date() if isinstance(d, _dt) else d), float(amt or 0), int(n))
+            for d, amt, n in grouped if d]
 
     if not rows:
         return {

@@ -232,6 +232,11 @@ def call_llm(env, agent, *, system_prompt, user_prompt, tools=None,
                 # the stronger model for complex questions (runtime._route_model)
                 model_override=model_override,
                 tools=tools or None,
+                # An agent entitled to PII (allow_pii) sends the turn as is
+                # — otherwise phone/email lookups and "create a customer
+                # with phone …" would reach the model redacted. Everyone
+                # else follows ab_ai_base.redact_pii (default on).
+                redact=False if (agent and agent.allow_pii) else None,
             )
             usage = dict(usage or {})
             usage.setdefault('request_id', request_id)

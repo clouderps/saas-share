@@ -84,12 +84,15 @@
                             <field name="is_write_action"/>
                             <field name="allow_end_message"/>
                             <field name="requires_pii"/>
+                            <field name="mcp_enabled"/>
                         </group>
                     </group>
                     <separator string="Description (shown to the LLM)"/>
                     <field name="description"/>
                     <separator string="JSON Schema (parameters)"/>
                     <field name="schema" widget="ace" options="{'mode': 'json'}"/>
+                    <separator string="Output JSON Schema (MCP, optional)"/>
+                    <field name="output_schema" widget="ace" options="{'mode': 'json'}"/>
                     <separator string="Access control"/>
                     <field name="group_ids" widget="many2many_tags"/>
                 </sheet>

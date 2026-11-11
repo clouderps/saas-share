@@ -12,6 +12,18 @@
                                  help="Ghaima AI button on every screen; it knows which screen the user is on.">
                             <field name="ai_assistant_enabled"/>
                         </setting>
+                        <setting string="Who turns the assistant on"
+                                 help="Each user in their preferences, or administrators per user (Settings > Users).">
+                            <field name="ai_assistant_activation" widget="radio"/>
+                            <div class="mt-2">
+                                <label for="ai_assistant_max_users" class="o_light_label"/>
+                                <field name="ai_assistant_max_users" class="oe_inline"/>
+                            </div>
+                        </setting>
+                        <setting string="Switch Ghaima AI off"
+                                 help="Emergency stop: no answers and no actions for anyone until switched back on.">
+                            <field name="ai_kill_switch"/>
+                        </setting>
                         <setting string="Proactive tips"
                                  help="One or two lines from live data when a screen opens. Users can turn this off.">
                             <field name="ai_proactive_enabled"/>
@@ -76,9 +88,24 @@
         <field name="arch" type="xml">
             <xpath expr="//group[@name='preferences']" position="after">
                 <group string="Ghaima AI" name="ghaima_ai">
+                    <field name="ai_assistant_self_service" invisible="1"/>
+                    <field name="ai_assistant_active" readonly="not ai_assistant_self_service"/>
                     <field name="ai_proactive_mode" readonly="0" widget="radio"/>
                     <field name="ai_voice_autoplay" readonly="0"/>
                     <field name="ai_cursor_animation" readonly="0"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="res_users_view_form_ghaima_ai_seat" model="ir.ui.view">
+        <field name="name">res.users.form.ghaima.ai.seat</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='messaging']" position="before">
+                <group string="Ghaima AI" name="ghaima_ai_seat" invisible="share">
+                    <field name="ai_assistant_active"/>
                 </group>
             </xpath>
         </field>

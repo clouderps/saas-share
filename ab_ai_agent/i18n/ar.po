@@ -1273,6 +1273,7 @@ msgstr ""
 #: model:ir.module.category,name:ab_ai_agent.module_category_ai_agent
 #: model_terms:ir.ui.view,arch_db:ab_ai_agent.res_config_settings_view_form_ghaima_ai
 #: model_terms:ir.ui.view,arch_db:ab_ai_agent.res_users_view_form_preferences_ghaima_ai
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.res_users_view_form_ghaima_ai_seat
 msgid "Ghaima AI"
 msgstr "غيمه للذكاء الاصطناعي"
 
@@ -5228,3 +5229,142 @@ msgstr ""
 #: code:addons/ab_ai_agent/static/src/components/ai_agent_console/ai_agent_console.xml:0
 msgid "· added in console"
 msgstr "· مضافة من لوحة التحكم"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__mcp_enabled
+msgid "Expose over MCP"
+msgstr "إتاحة عبر MCP"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_tool__mcp_enabled
+msgid ""
+"Offer this tool to external MCP clients. The same gates apply as in the in-"
+"app assistant (groups, record rules, plan)."
+msgstr ""
+"إتاحة هذه الأداة لعملاء MCP الخارجيين. تُطبَّق القيود نفسها المطبّقة في "
+"المساعد داخل التطبيق (المجموعات، قواعد السجلات، الباقة)."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_ai_agent_tool__output_schema
+msgid "Output Schema"
+msgstr "مخطط المخرجات"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_ai_agent_tool__output_schema
+msgid ""
+"Optional JSON Schema of the result, advertised to MCP clients as "
+"outputSchema."
+msgstr ""
+"مخطط JSON اختياري لنتيجة الأداة، يُعلَن لعملاء MCP بوصفه outputSchema."
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.view_ai_agent_tool_form
+msgid "Output JSON Schema (MCP, optional)"
+msgstr "مخطط JSON للمخرجات (MCP، اختياري)"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent_tool.py:0
+msgid "Tool '%(name)s' output schema must be a JSON object."
+msgstr "يجب أن يكون مخطط مخرجات الأداة '%(name)s' كائن JSON."
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/ai_agent_pending_action.py:0
+msgid "That action is not allowed any more."
+msgstr "لم يعد هذا الإجراء مسموحًا به."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_res_users__ai_assistant_active
+msgid "Use Ghaima AI"
+msgstr "استخدام غيمة للذكاء الاصطناعي"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_res_users__ai_assistant_active
+msgid ""
+"This user can open the Ghaima AI assistant. Each active user takes one "
+"assistant seat."
+msgstr ""
+"يمكن لهذا المستخدم فتح مساعد غيمة للذكاء الاصطناعي. كل مستخدم مفعّل يشغل "
+"مقعدًا واحدًا من مقاعد المساعد."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_res_users__ai_assistant_activated_on
+msgid "Ai Assistant Activated On"
+msgstr "تاريخ تفعيل المساعد"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_res_config_settings__ai_assistant_activation
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.res_config_settings_view_form_ghaima_ai
+msgid "Who turns the assistant on"
+msgstr "من يفعّل المساعد"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__res_config_settings__ai_assistant_activation__self
+msgid "Each user turns it on in their preferences"
+msgstr "كل مستخدم يفعّله من تفضيلاته"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields.selection,name:ab_ai_agent.selection__res_config_settings__ai_assistant_activation__admin
+msgid "Administrators choose the users"
+msgstr "المسؤولون يختارون المستخدمين"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_res_config_settings__ai_assistant_max_users
+msgid "Assistant seats"
+msgstr "مقاعد المساعد"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_res_config_settings__ai_assistant_max_users
+msgid "How many users may use the assistant at the same time. 0: no limit."
+msgstr "عدد المستخدمين الذين يمكنهم استخدام المساعد في الوقت نفسه. 0: بلا حد."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_res_config_settings__ai_kill_switch
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.res_config_settings_view_form_ghaima_ai
+msgid "Switch Ghaima AI off"
+msgstr "إيقاف غيمة للذكاء الاصطناعي"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_res_config_settings__ai_kill_switch
+msgid "Stops the assistant and every assistant action for all users at once."
+msgstr "يوقف المساعد وجميع إجراءاته لكل المستخدمين دفعة واحدة."
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.res_config_settings_view_form_ghaima_ai
+msgid ""
+"Each user in their preferences, or administrators per user (Settings > "
+"Users)."
+msgstr ""
+"كل مستخدم من تفضيلاته، أو المسؤولون لكل مستخدم (الإعدادات > المستخدمون)."
+
+#. module: ab_ai_agent
+#: model_terms:ir.ui.view,arch_db:ab_ai_agent.res_config_settings_view_form_ghaima_ai
+msgid ""
+"Emergency stop: no answers and no actions for anyone until switched back on."
+msgstr "إيقاف طارئ: لا إجابات ولا إجراءات لأي أحد حتى تتم إعادة التشغيل."
+
+#. module: ab_ai_agent
+#: model:ir.model,name:ab_ai_agent.model_ai_feature_policy
+msgid "Ghaima AI — Feature policy (local setting AND ceiling)"
+msgstr "غيمة للذكاء الاصطناعي — سياسة الميزات (الإعداد المحلي وسقف الباقة)"
+
+#. module: ab_ai_agent
+#. odoo-python
+#: code:addons/ab_ai_agent/models/res_users.py:0
+msgid ""
+"All %(limit)s Ghaima AI seats are in use. Turn the assistant off for another"
+" user first, or raise the number of seats."
+msgstr ""
+"جميع مقاعد غيمة للذكاء الاصطناعي (%(limit)s) مستخدمة. أوقف المساعد لمستخدم "
+"آخر أولًا، أو زِد عدد المقاعد."
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,field_description:ab_ai_agent.field_res_users__ai_assistant_self_service
+msgid "Ai Assistant Self Service"
+msgstr "تفعيل المساعد ذاتياً"
+
+#. module: ab_ai_agent
+#: model:ir.model.fields,help:ab_ai_agent.field_res_users__ai_assistant_self_service
+msgid "Users may switch the assistant on or off themselves."
+msgstr "يمكن للمستخدمين تشغيل المساعد أو إيقافه بأنفسهم."

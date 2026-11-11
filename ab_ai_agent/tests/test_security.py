@@ -20,6 +20,8 @@ class TestRecordActionSafety(TransactionCase):
 
     def setUp(self):
         super().setUp()
+        if 'sale.order' not in self.env:
+            self.skipTest('sale not installed')
         self.partner = self.env['res.partner'].create({'name': 'AI Test Co'})
         self.product = self.env['product.product'].create(
             {'name': 'AI Test Product'})
@@ -102,6 +104,8 @@ class TestSnapshotIsolation(TransactionCase):
     def test_snapshot_omits_data_user_cannot_read(self):
         from odoo.addons.ab_ai_agent.services.runtime import (
             _business_snapshot_block)
+        if 'sale.order' not in self.env:
+            self.skipTest('sale not installed')
         partner = self.env['res.partner'].create({'name': 'Snap Co'})
         product = self.env['product.product'].create({'name': 'Snap P'})
         so = self.env['sale.order'].create({

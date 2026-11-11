@@ -9,6 +9,18 @@ import threading
 import time
 import requests
 
+from ..lib import endpoints as endpoint_policy
+from ..lib import redaction
+
+
+def _post(url, **kw):
+    """POST to a cloud provider. The host must be on the fixed provider
+    allow-list and redirects are never followed (a redirect could carry
+    the API key and prompt to another host)."""
+    endpoint_policy.check_cloud_url(url)
+    kw.setdefault('allow_redirects', False)
+    return requests.post(url, **kw)
+
 _logger = logging.getLogger(__name__)
 
 # Callers (ab_ai_agent's prompt composer) put this token between the part
@@ -32,8 +44,12 @@ class AIProviderService(models.AbstractModel):
 
     def call(self, prompt, config=None, system_prompt=None,
              image_data=None, image_mimetype=None, model_override=None,
-             tools=None):
+             tools=None, redact=None):
         """Call AI provider with a prompt, optionally with an image.
+
+        ``redact``: None follows ``ab_ai_base.redact_pii`` (default on);
+        False sends the prompt as is (caller is entitled to PII, e.g. an
+        agent with ``allow_pii``); True always redacts. Direct path only.
 
         Args:
             prompt: The user prompt text
@@ -101,6 +117,7 @@ class AIProviderService(models.AbstractModel):
                         model_override=model_override, tools=tools)
                 return self._simulate_call(reason='no_provider_configured')
 
+        prompt = self._redact_outbound(prompt, redact)
         effective_system = system_prompt or config.system_prompt or None
         # Anthropic and Gemini split the prompt at the marker (cache_control
         # / cachedContents); _call_gemini strips it on its uncached path.
@@ -192,6 +209,27 @@ class AIProviderService(models.AbstractModel):
         usage.setdefault('provider', 'gateway')
         return text, usage
 
+    def _redaction_enabled(self):
+        """PII redaction on the direct provider path. Default ON; an admin
+        can opt out (e.g. an ID-extraction workload) with
+        ``ab_ai_base.redact_pii = False``."""
+        icp = self.env['ir.config_parameter'].sudo()  # sudo: read a system flag for any caller
+        return str(icp.get_param('ab_ai_base.redact_pii', 'True')).lower() \
+                in ('1', 'true', 'yes')
+
+    def _redact_outbound(self, text, redact=None):
+        """Redact PII from the user prompt before it leaves for a provider
+        the tenant calls directly. The operator-authored system prompt is
+        left alone (same rule as the central gateway). The gateway path is
+        not touched — central applies its own guardrails."""
+        if redact is False or (redact is None and not self._redaction_enabled()):
+            return text
+        safe, count, types = redaction.redact(text)
+        if count:
+            _logger.info('ai.provider.service: redacted %d PII item(s) (%s)',
+                         count, ','.join(sorted(types)))
+        return safe
+
     def _provider_cache_enabled(self):
         """True when provider-native prompt caching should be engaged.
 
@@ -266,7 +304,7 @@ class AIProviderService(models.AbstractModel):
     # ------------------------------------------------------------------
 
     def stream_call(self, prompt, config=None, system_prompt=None,
-                    tools=None):
+                    tools=None, redact=None):
         """Generator-style streaming variant of ``call()``.
 
         Yields a sequence of dicts:
@@ -307,6 +345,7 @@ class AIProviderService(models.AbstractModel):
                 yield from self._simulate_stream(reason='no_provider_configured')
                 return
 
+        prompt = self._redact_outbound(prompt, redact)
         full_prompt = prompt
         if system_prompt:
             full_prompt = f"{strip_cache_break(system_prompt)}\n\n{prompt}"
@@ -375,7 +414,7 @@ class AIProviderService(models.AbstractModel):
             payload["tools"] = tools
 
         try:
-            with requests.post(
+            with _post(
                 "https://api.openai.com/v1/chat/completions",
                 headers={
                     "Authorization": "Bearer %s" % config._get_decrypted_key('openai_api_key'),
@@ -465,7 +504,7 @@ class AIProviderService(models.AbstractModel):
     # ------------------------------------------------------------------
 
     def call_with_tools(self, prompt, config=None, system_prompt=None, tools=None,
-                        model_override=None):
+                        model_override=None, redact=None):
         """Non-streaming call that surfaces the model's tool_calls when
         the model decides to invoke a tool. Returns
             (response_text, usage_dict, tool_calls_list_or_None).
@@ -495,6 +534,7 @@ class AIProviderService(models.AbstractModel):
                 text, usage = self._simulate_call(reason='no_provider_configured')
                 return text, usage, None
 
+        prompt = self._redact_outbound(prompt, redact)
         full_prompt = prompt
         if system_prompt:
             full_prompt = f"{strip_cache_break(system_prompt)}\n\n{prompt}"
@@ -520,7 +560,7 @@ class AIProviderService(models.AbstractModel):
         """OpenAI tool-calling. Returns (text, usage, tool_calls|None)."""
         model = model_override or config.openai_model
         try:
-            response = requests.post(
+            response = _post(
                 "https://api.openai.com/v1/chat/completions",
                 headers={
                     "Authorization": "Bearer %s" % config._get_decrypted_key('openai_api_key'),
@@ -665,7 +705,7 @@ class AIProviderService(models.AbstractModel):
             # whether to call a tool or answer in plain text.
             body["tool_choice"] = "auto"
         try:
-            response = requests.post(
+            response = _post(
                 "https://api.openai.com/v1/chat/completions",
                 headers={
                     "Authorization": "Bearer %s" % config._get_decrypted_key('openai_api_key'),
@@ -746,7 +786,7 @@ class AIProviderService(models.AbstractModel):
             else:
                 payload = _gemini_plain_payload(prompt, strip_cache_break(system_prompt),
                                                 declarations, generation_config)
-            response = requests.post(url, headers=headers, json=payload,
+            response = _post(url, headers=headers, json=payload,
                                      timeout=config.timeout)
             if cache_name and response.status_code in (400, 403, 404):
                 # Expired or evicted on Google's side: forget it and answer
@@ -754,7 +794,7 @@ class AIProviderService(models.AbstractModel):
                 _GEMINI_CACHE.pop(_gemini_cache_key(model, stable, declarations, api_key), None)
                 payload = _gemini_plain_payload(prompt, strip_cache_break(system_prompt),
                                                 declarations, generation_config)
-                response = requests.post(url, headers=headers, json=payload,
+                response = _post(url, headers=headers, json=payload,
                                          timeout=config.timeout)
             response.raise_for_status()
             data = response.json()
@@ -852,7 +892,7 @@ class AIProviderService(models.AbstractModel):
                     payload["system"] = system_prompt
             if tools:
                 payload["tools"] = _tools_for_anthropic(tools)
-            response = requests.post(
+            response = _post(
                 "https://api.anthropic.com/v1/messages",
                 headers={
                     "x-api-key": config._get_decrypted_key('claude_api_key'),
@@ -917,7 +957,7 @@ class AIProviderService(models.AbstractModel):
             }},
         ]})
         try:
-            response = requests.post(
+            response = _post(
                 "https://api.openai.com/v1/chat/completions",
                 headers={
                     "Authorization": "Bearer %s" % config._get_decrypted_key('openai_api_key'),
@@ -984,7 +1024,7 @@ class AIProviderService(models.AbstractModel):
                     }]
                 else:
                     payload["system"] = system_prompt
-            response = requests.post(
+            response = _post(
                 "https://api.anthropic.com/v1/messages",
                 headers={
                     "x-api-key": config._get_decrypted_key('claude_api_key'),
@@ -1023,9 +1063,11 @@ class AIProviderService(models.AbstractModel):
         """Call Gemini with image (multimodal). Returns (text, usage_dict)."""
         model = model_override or config.gemini_model
         try:
-            url = "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s" % (
-                model, config._get_decrypted_key('gemini_api_key')
-            )
+            # Key goes in a header, never the URL: URLs end up in logs
+            # and exception text.
+            url = "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent" % model
+            gemini_headers = {"Content-Type": "application/json",
+                              "x-goog-api-key": config._get_decrypted_key('gemini_api_key')}
             generation_config = {
                 "temperature": config.temperature,
                 "maxOutputTokens": config.max_tokens,
@@ -1044,9 +1086,9 @@ class AIProviderService(models.AbstractModel):
             }
             if system_prompt:
                 payload["systemInstruction"] = {"parts": [{"text": system_prompt}]}
-            response = requests.post(
+            response = _post(
                 url,
-                headers={"Content-Type": "application/json"},
+                headers=gemini_headers,
                 json=payload,
                 timeout=config.timeout,
             )
@@ -1187,7 +1229,7 @@ class AIProviderService(models.AbstractModel):
             },
         }
         try:
-            resp = requests.post(
+            resp = _post(
                 f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',
                 headers={'x-goog-api-key': config._get_decrypted_key('gemini_api_key'),
                          'Content-Type': 'application/json'},
@@ -1219,7 +1261,7 @@ class AIProviderService(models.AbstractModel):
         if lang:
             data['language'] = lang
         try:
-            resp = requests.post(
+            resp = _post(
                 'https://api.openai.com/v1/audio/transcriptions',
                 headers={'Authorization': f"Bearer {config._get_decrypted_key('openai_api_key')}"},
                 files={'file': (f'speech.{ext}', base64.b64decode(audio_b64), mimetype)},
@@ -1248,7 +1290,7 @@ class AIProviderService(models.AbstractModel):
             'generationConfig': {'temperature': 0},
         }
         try:
-            resp = requests.post(
+            resp = _post(
                 'https://generativelanguage.googleapis.com/v1beta/models/'
                 f"{model}:generateContent",
                 headers={'x-goog-api-key': config._get_decrypted_key('gemini_api_key'),
@@ -1270,7 +1312,7 @@ class AIProviderService(models.AbstractModel):
     def _call_openai_speech(self, text, config):
         import base64
         try:
-            resp = requests.post(
+            resp = _post(
                 'https://api.openai.com/v1/audio/speech',
                 headers={'Authorization': f"Bearer {config._get_decrypted_key('openai_api_key')}",
                          'Content-Type': 'application/json'},
@@ -1299,8 +1341,10 @@ class AIProviderService(models.AbstractModel):
         model = "gemini-embedding-001"
         base_url = (
             "https://generativelanguage.googleapis.com/v1beta/models/"
-            "%s:embedContent?key=%s" % (model, config._get_decrypted_key('gemini_api_key'))
+            "%s:embedContent" % model
         )
+        embed_headers = {"Content-Type": "application/json",
+                         "x-goog-api-key": config._get_decrypted_key('gemini_api_key')}
         if len(texts) > 100:
             raise UserError(_('Embedding batch too large (max 100 per call).'))
 
@@ -1312,9 +1356,9 @@ class AIProviderService(models.AbstractModel):
                 vectors.append([])
                 continue
             try:
-                response = requests.post(
+                response = _post(
                     base_url,
-                    headers={"Content-Type": "application/json"},
+                    headers=embed_headers,
                     json={
                         "model": f"models/{model}",
                         "content": {"parts": [{"text": text}]},
@@ -1332,7 +1376,7 @@ class AIProviderService(models.AbstractModel):
                 if values:
                     ok += 1
             except requests.exceptions.RequestException as e:
-                _logger.warning("Gemini embed call failed for one text: %s", e)
+                _logger.warning("Gemini embed call failed for one text: %s", type(e).__name__)
                 vectors.append([])
         return vectors, {
             'provider': 'google',
@@ -1349,6 +1393,17 @@ class AIProviderService(models.AbstractModel):
         ``system_prompt`` there when supplied so the model template
         applies it correctly."""
         model = model_override or config.local_llm_model
+        icp = self.env['ir.config_parameter'].sudo()  # sudo: read a system flag for any caller
+        if str(icp.get_param('ab_ai_base.allow_local_llm', 'False')).lower() \
+                not in ('1', 'true', 'yes'):
+            raise UserError(_('Local LLM is disabled. An administrator must enable '
+                              'the "ab_ai_base.allow_local_llm" system parameter.'))
+        try:
+            endpoint_policy.check_local_url(config.local_llm_endpoint)
+        except endpoint_policy.EndpointNotAllowed as e:
+            _logger.warning('Local LLM endpoint refused: %s', e)
+            raise UserError(_('The local LLM endpoint must point to a loopback '
+                              'or private network address.')) from None
         try:
             payload = {
                 "model": model,
@@ -1362,6 +1417,7 @@ class AIProviderService(models.AbstractModel):
                 config.local_llm_endpoint,
                 json=payload,
                 timeout=config.timeout,
+                allow_redirects=False,  # a redirect could escape the private-address check
             )
             response.raise_for_status()
             data = response.json()
@@ -1593,7 +1649,7 @@ def _gemini_cached_content(model, stable, declarations, api_key, timeout):
         body["tools"] = [{"functionDeclarations": declarations}]
         body["toolConfig"] = {"functionCallingConfig": {"mode": "AUTO"}}
     try:
-        resp = requests.post(
+        resp = _post(
             "https://generativelanguage.googleapis.com/v1beta/cachedContents",
             headers={"Content-Type": "application/json", "x-goog-api-key": api_key},
             json=body, timeout=timeout)
