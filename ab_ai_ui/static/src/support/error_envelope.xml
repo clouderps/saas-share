@@ -3,11 +3,14 @@
     <t t-name="ab_ai_ui.ErrorEnvelope">
         <div class="ai-error" role="alert" aria-live="assertive">
             <div class="ai-error__title">
-                <i class="fa fa-exclamation-circle me-1"/>
-                AI request failed
+                <i class="fa fa-exclamation-circle me-1" aria-hidden="true"/>
+                <t t-esc="copy.title"/>
             </div>
-            <div t-esc="props.message || 'Unknown error'"/>
-            <div class="ai-error__hint" t-esc="hint"/>
+            <div t-esc="copy.body"/>
+            <div class="ai-error__hint" t-esc="copy.hint"/>
+            <div t-if="reference" class="ai-error__ref text-muted small mt-1">
+                <t>Reference:</t> <bdi dir="ltr" t-esc="reference"/>
+            </div>
         </div>
     </t>
 </templates>

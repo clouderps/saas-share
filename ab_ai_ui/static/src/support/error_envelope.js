@@ -1,10 +1,14 @@
 /** @odoo-module **/
 
 import { Component } from "@odoo/owl";
+import { _t } from "@web/core/l10n/translation";
 
-/** Consistent error surface for AI responses. Maps low-level error codes
- *  to friendly hints — e.g. quota_exceeded explains the next step, not
- *  just the raw status string. */
+/** User-facing error card for AI responses.
+ *  Raw codes (PROVIDER_ERROR, quota_exceeded, ...) are never shown as the
+ *  message: they map to plain text plus a next step, and the code is kept
+ *  only as a small reference for support. */
+const CODE_RE = /^[A-Za-z_]+$/;
+
 export class ErrorEnvelope extends Component {
     static template = "ab_ai_ui.ErrorEnvelope";
     static props = {
@@ -12,13 +16,53 @@ export class ErrorEnvelope extends Component {
         status: { type: String, optional: true },
     };
 
-    get hint() {
+    get code() {
+        const msg = (this.props.message || "").trim();
+        if (CODE_RE.test(msg)) {
+            return msg.toLowerCase();
+        }
+        return (this.props.status || "error").toLowerCase();
+    }
+
+    get copy() {
         const map = {
-            quota_exceeded: "This entity has hit its token quota. Top up the plan or wait for the next period.",
-            rate_limited: "Too many requests per minute. Retry in a moment.",
-            auth_error: "AI gateway token is missing or invalid. Check the X-Entity-Token configuration.",
-            error: "The provider returned an error. The audit log on ai.usage.log has the details.",
+            provider_error: {
+                title: _t("The assistant can't answer right now"),
+                body: _t("The AI service didn't respond, so no answer was created. Nothing in your data was changed."),
+                hint: _t("Try again in a few minutes. If it keeps happening, contact your administrator."),
+            },
+            quota_exceeded: {
+                title: _t("AI usage limit reached"),
+                body: _t("Your plan's AI usage for this period has been used up."),
+                hint: _t("Ask your administrator to upgrade the plan, or try again next period."),
+            },
+            rate_limited: {
+                title: _t("Too many requests"),
+                body: _t("The assistant received too many requests in a short time."),
+                hint: _t("Wait a moment, then try again."),
+            },
+            auth_error: {
+                title: _t("The assistant isn't set up correctly"),
+                body: _t("The connection to the AI service isn't configured."),
+                hint: _t("Contact your administrator."),
+            },
         };
-        return map[this.props.status] || "See the AI usage log for the full traceback.";
+        const generic = {
+            title: _t("Something went wrong"),
+            body: _t("The assistant couldn't finish this request."),
+            hint: _t("Try again. If it keeps happening, contact your administrator."),
+        };
+        const known = map[this.code];
+        if (known) {
+            return known;
+        }
+        // A real sentence from the server (already user-facing) wins over
+        // the generic body; a bare code never does.
+        const msg = (this.props.message || "").trim();
+        return msg && !CODE_RE.test(msg) ? { ...generic, body: msg } : generic;
+    }
+
+    get reference() {
+        return this.code === "error" ? "" : this.code.toUpperCase();
     }
 }

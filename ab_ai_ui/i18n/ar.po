@@ -74,3 +74,106 @@ msgstr "المعاملات:"
 #: code:addons/ab_ai_ui/static/src/blocks/tool_trace.xml:0
 msgid "result:"
 msgstr "النتيجة:"
+
+#. module: ab_ai_ui
+#. odoo-javascript
+#: code:addons/ab_ai_ui/static/src/support/error_envelope.js:0
+msgid "The assistant can't answer right now"
+msgstr "المساعد لا يستطيع الإجابة الآن"
+
+#. module: ab_ai_ui
+#. odoo-javascript
+#: code:addons/ab_ai_ui/static/src/support/error_envelope.js:0
+msgid ""
+"The AI service didn't respond, so no answer was created. Nothing in your "
+"data was changed."
+msgstr ""
+"لم تستجب خدمة الذكاء الاصطناعي، لذلك لم يتم إنشاء إجابة. لم يتغير أي شيء في "
+"بياناتك."
+
+#. module: ab_ai_ui
+#. odoo-javascript
+#: code:addons/ab_ai_ui/static/src/support/error_envelope.js:0
+msgid ""
+"Try again in a few minutes. If it keeps happening, contact your "
+"administrator."
+msgstr "حاول مرة أخرى بعد بضع دقائق. إذا تكرر ذلك، تواصل مع مسؤول النظام."
+
+#. module: ab_ai_ui
+#. odoo-javascript
+#: code:addons/ab_ai_ui/static/src/support/error_envelope.js:0
+msgid "AI usage limit reached"
+msgstr "تم بلوغ حد استخدام الذكاء الاصطناعي"
+
+#. module: ab_ai_ui
+#. odoo-javascript
+#: code:addons/ab_ai_ui/static/src/support/error_envelope.js:0
+msgid "Your plan's AI usage for this period has been used up."
+msgstr "تم استهلاك رصيد الذكاء الاصطناعي في باقتك لهذه الفترة."
+
+#. module: ab_ai_ui
+#. odoo-javascript
+#: code:addons/ab_ai_ui/static/src/support/error_envelope.js:0
+msgid "Ask your administrator to upgrade the plan, or try again next period."
+msgstr ""
+"اطلب من مسؤول النظام ترقية الباقة، أو حاول مرة أخرى في الفترة القادمة."
+
+#. module: ab_ai_ui
+#. odoo-javascript
+#: code:addons/ab_ai_ui/static/src/support/error_envelope.js:0
+msgid "Too many requests"
+msgstr "طلبات كثيرة جدًا"
+
+#. module: ab_ai_ui
+#. odoo-javascript
+#: code:addons/ab_ai_ui/static/src/support/error_envelope.js:0
+msgid "The assistant received too many requests in a short time."
+msgstr "تلقى المساعد طلبات كثيرة خلال وقت قصير."
+
+#. module: ab_ai_ui
+#. odoo-javascript
+#: code:addons/ab_ai_ui/static/src/support/error_envelope.js:0
+msgid "Wait a moment, then try again."
+msgstr "انتظر قليلًا ثم حاول مرة أخرى."
+
+#. module: ab_ai_ui
+#. odoo-javascript
+#: code:addons/ab_ai_ui/static/src/support/error_envelope.js:0
+msgid "The assistant isn't set up correctly"
+msgstr "المساعد غير مُعدّ بشكل صحيح"
+
+#. module: ab_ai_ui
+#. odoo-javascript
+#: code:addons/ab_ai_ui/static/src/support/error_envelope.js:0
+msgid "The connection to the AI service isn't configured."
+msgstr "الاتصال بخدمة الذكاء الاصطناعي غير مُعدّ."
+
+#. module: ab_ai_ui
+#. odoo-javascript
+#: code:addons/ab_ai_ui/static/src/support/error_envelope.js:0
+msgid "Contact your administrator."
+msgstr "تواصل مع مسؤول النظام."
+
+#. module: ab_ai_ui
+#. odoo-javascript
+#: code:addons/ab_ai_ui/static/src/support/error_envelope.js:0
+msgid "Something went wrong"
+msgstr "حدث خطأ ما"
+
+#. module: ab_ai_ui
+#. odoo-javascript
+#: code:addons/ab_ai_ui/static/src/support/error_envelope.js:0
+msgid "The assistant couldn't finish this request."
+msgstr "لم يتمكن المساعد من إكمال هذا الطلب."
+
+#. module: ab_ai_ui
+#. odoo-javascript
+#: code:addons/ab_ai_ui/static/src/support/error_envelope.js:0
+msgid "Try again. If it keeps happening, contact your administrator."
+msgstr "حاول مرة أخرى. إذا تكرر ذلك، تواصل مع مسؤول النظام."
+
+#. module: ab_ai_ui
+#. odoo-javascript
+#: code:addons/ab_ai_ui/static/src/support/error_envelope.xml:0
+msgid "Reference:"
+msgstr "المرجع:"
